@@ -1,0 +1,12 @@
+# For details see:
+# https://gitlab.invenia.ca/invenia/gitlab-ci-helper/-/blob/master/examples/julia.yml
+---
+include:
+  - project: invenia/gitlab-ci-helper
+    file: /templates/julia.yml
+
+# If you need to install system packages, such as `unzip`, you can do so as follows:
+#.test:
+#  before_script:
+#    - echo "$ci_init" > ci_init && source ci_init && rm ci_init
+#    - package_install unzip
