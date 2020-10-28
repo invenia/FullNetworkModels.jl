@@ -25,9 +25,11 @@ end
     @testset "add_thermal_generation!" begin
         add_thermal_generation!(fnm)
         tests_thermal_generation(fnm)
+        @test !InHouseFNM._has_commitment(fnm)
     end
     @testset "add_commitment!" begin
         add_commitment!(fnm)
         tests_commitment(fnm)
+        @test InHouseFNM._has_commitment(fnm)
     end
 end

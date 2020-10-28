@@ -1,11 +1,14 @@
 module InHouseFNM
 
+using Compat: only
+using Dates
 using JuMP
 using PowerSystems
 
 # Utility functions
-include("utils/api.jl")
+include("utils/structs.jl")
 include("utils/internal.jl")
+include("utils/api.jl")
 
 # Model functions
 include("model/variables.jl")
