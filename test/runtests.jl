@@ -11,6 +11,7 @@ const TEST_SYSTEM = fake_3bus_system(MISO)
 
 @testset "InHouseFNM.jl" begin
     include("api.jl")
+    include("constraints.jl")
     include("variables.jl")
     include("templates.jl")
 end

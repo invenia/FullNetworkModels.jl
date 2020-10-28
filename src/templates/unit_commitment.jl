@@ -12,5 +12,7 @@ function unit_commitment(system::System, solver)
     # Add variables
     add_thermal_generation!(fnm)
     add_commitment!(fnm)
+    # Add constraints
+    generation_limits!(fnm)
     return fnm
 end
