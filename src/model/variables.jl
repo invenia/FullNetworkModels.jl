@@ -5,7 +5,7 @@ Adds the thermal generation variables `p` indexed, respectively, by the unit cod
 thermal generators in `system` and by the time periods considered.
 
 ```math
-p_{g, t} >= 0, \forall g \in \text{unit codes}, t \in 1...T
+p_{g, t} \geq 0, \forall g \in \{\text{unit codes}\}, t \in 1, ..., T
 ```
 where `T` is the number of time periods defined in the forecasts in `system`.
 """
@@ -23,7 +23,7 @@ Adds the binary commitment variables `u` indexed, respectively, by the unit code
 thermal generators in `system` and by the time periods considered.
 
 ```math
-u_{g, t} \in {0, 1}, \forall g \in \text{unit codes}, t \in 1...T
+u_{g, t} \in \{0, 1\}, \forall g \in \{\text{unit codes}\}, t \in 1, ..., T
 ```
 where `T` is the number of time periods defined in the forecasts in `system`.
 """
