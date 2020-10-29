@@ -6,8 +6,6 @@ using JuMP
 using PowerSystems
 
 # Utility functions
-include("utils/structs.jl")
-include("utils/internal.jl")
 include("utils/api.jl")
 
 # Model functions
@@ -19,6 +17,19 @@ include("templates/unit_commitment.jl")
 
 # API functions
 export FullNetworkModel
+export get_cost_regulation
+export get_cost_spinning
+export get_cost_supp_on
+export get_cost_supp_off
+export get_generator_forecast
+export get_initial_time
+export get_pmax
+export get_pmin
+export get_regmax
+export get_regmin
+export get_unit_codes
+export has_constraint
+export has_variable
 
 # Variable functions
 export add_commitment!
