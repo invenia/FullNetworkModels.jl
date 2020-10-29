@@ -1,9 +1,9 @@
 function tests_thermal_generation(fnm)
     # Check if variables named `p` were created with the correct indices
-    @test InHouseFNM._has_variable(fnm.model, "p")
+    @test has_variable(fnm.model, "p")
     @test issetequal(
         fnm.model[:p].axes[1],
-        InHouseFNM._get_unit_codes(ThermalGen, fnm.system)
+        get_unit_codes(ThermalGen, fnm.system)
     )
     @test issetequal(fnm.model[:p].axes[2], 1:24)
     return nothing
@@ -11,10 +11,10 @@ end
 
 function tests_commitment(fnm)
     # Check if variables named `u` were created with the correct indices
-    @test InHouseFNM._has_variable(fnm.model, "u")
+    @test has_variable(fnm.model, "u")
     @test issetequal(
         fnm.model[:u].axes[1],
-        InHouseFNM._get_unit_codes(ThermalGen, fnm.system)
+        get_unit_codes(ThermalGen, fnm.system)
     )
     @test issetequal(fnm.model[:u].axes[2], 1:24)
     # Check if the created variables are binary
@@ -27,7 +27,7 @@ end
     @testset "add_thermal_generation!" begin
         add_thermal_generation!(fnm)
         tests_thermal_generation(fnm)
-        @test !InHouseFNM._has_variable(fnm.model, "u")
+        @test !has_variable(fnm.model, "u")
     end
     @testset "add_commitment!" begin
         add_commitment!(fnm)

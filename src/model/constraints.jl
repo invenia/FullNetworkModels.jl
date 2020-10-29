@@ -1,6 +1,8 @@
 @doc raw"""
     generation_limits!(fnm::FullNetworkModel)
 
+Adds generation limit constraints to the full network model.
+
 If `fnm` has commitment:
 
 ```math
@@ -13,16 +15,18 @@ If `fnm` does not have commitment:
 P^{\min}_{g, t} \leq p_{g, t} \leq P^{\max}_{g, t}, \forall g \in \{\text{unit codes}\}, t \in 1, ..., T
 ```
 where `T` is the number of time periods defined in the forecasts in `system`.
+
+The constraints added are named `generation_min` and `generation_max`.
 """
 function generation_limits!(fnm::FullNetworkModel)
-    @assert _has_variable(fnm.model, "p")
+    @assert has_variable(fnm.model, "p")
     generation_limits!(
         fnm,
-        Val(_has_variable(fnm.model, "u")),
-        fnm.params.unit_codes,
-        fnm.params.n_periods,
-        fnm.params.forecasts.active_power_min,
-        fnm.params.forecasts.active_power_max,
+        Val(has_variable(fnm.model, "u")),
+        get_unit_codes(ThermalGen, fnm.system),
+        get_forecasts_horizon(fnm.system),
+        get_pmin(fnm.system),
+        get_pmax(fnm.system),
     )
     return fnm
 end

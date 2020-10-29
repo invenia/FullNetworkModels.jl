@@ -10,7 +10,7 @@ p_{g, t} \geq 0, \forall g \in \{\text{unit codes}\}, t \in 1, ..., T
 where `T` is the number of time periods defined in the forecasts in `system`.
 """
 function add_thermal_generation!(fnm::FullNetworkModel)
-    unit_codes = _get_unit_codes(ThermalGen, fnm.system)
+    unit_codes = get_unit_codes(ThermalGen, fnm.system)
     n_periods = get_forecasts_horizon(fnm.system)
     @variable(fnm.model, p[g in unit_codes, t in 1:n_periods] >= 0)
     return fnm
@@ -28,7 +28,7 @@ u_{g, t} \in \{0, 1\}, \forall g \in \{\text{unit codes}\}, t \in 1, ..., T
 where `T` is the number of time periods defined in the forecasts in `system`.
 """
 function add_commitment!(fnm::FullNetworkModel)
-    unit_codes = _get_unit_codes(ThermalGen, fnm.system)
+    unit_codes = get_unit_codes(ThermalGen, fnm.system)
     n_periods = get_forecasts_horizon(fnm.system)
     @variable(fnm.model, u[g in unit_codes, t in 1:n_periods], Bin)
     return fnm

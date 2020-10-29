@@ -3,23 +3,16 @@
     @testset "Prints" begin
         @test sprint(show, fnm) == "FullNetworkModel\nModel formulation: 0 variables\nSystem: 23 components, 24 time periods\n"
     end
-end
-
-@testset "Structs" begin
-    fnm = FullNetworkModel(TEST_SYSTEM, GLPK.Optimizer)
-    @testset "FullNetworkParams" begin
-        @test issetequal(fnm.params.unit_codes, (7, 3))
-        @test fnm.params.n_periods == 24
-        @test fnm.params.initial_time == DateTime("2017-12-15T00:00:00")
-        @testset "ForecastData" begin
-            @test fnm.params.forecasts.active_power_min[7] == fill(0.5, 24)
-            @test fnm.params.forecasts.active_power_max[7] == fill(5.0, 24)
-            @test fnm.params.forecasts.regulation_min[7] == fill(1.0, 24)
-            @test fnm.params.forecasts.regulation_max[7] == fill(4.5, 24)
-            @test fnm.params.forecasts.cost_regulation[3] == fill(20_000, 24)
-            @test fnm.params.forecasts.cost_spinning[3] == fill(30_000.0, 24)
-            @test fnm.params.forecasts.cost_supp_on[3] == fill(35_000.0, 24)
-            @test fnm.params.forecasts.cost_supp_off[3] == fill(40_000.0, 24)
-        end
+    @testset "Getters" begin
+        @test issetequal(get_unit_codes(ThermalGen, fnm.system), (7, 3))
+        @test get_initial_time(fnm.system) == DateTime("2017-12-15T00:00:00")
+        @test get_pmin(fnm.system)[7] == fill(0.5, 24)
+        @test get_pmax(fnm.system)[7] == fill(5.0, 24)
+        @test get_regmin(fnm.system)[7] == fill(1.0, 24)
+        @test get_regmax(fnm.system)[7] == fill(4.5, 24)
+        @test get_cost_regulation(fnm.system)[3] == fill(20_000, 24)
+        @test get_cost_spinning(fnm.system)[3] == fill(30_000, 24)
+        @test get_cost_supp_on(fnm.system)[3] == fill(35_000, 24)
+        @test get_cost_supp_off(fnm.system)[3] == fill(40_000, 24)
     end
 end
