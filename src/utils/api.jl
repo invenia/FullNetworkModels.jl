@@ -144,3 +144,10 @@ get_cost_supp_on(system::System) = get_generator_forecast(system, :asm_costs, :s
 Returns the costs of offline supplemental reserve offered by the generators in `system`.
 """
 get_cost_supp_off(system::System) = get_generator_forecast(system, :asm_costs, :sup_off)
+
+"""
+    get_offer_curves(system::System) -> Dict
+
+Returns the offer curves of generators in `system`.
+"""
+get_offer_curves(system::System) = get_generator_forecast(system, :offer_curve)
