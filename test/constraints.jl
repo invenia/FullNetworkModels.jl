@@ -1,11 +1,12 @@
 function tests_generation_limits(fnm)
-    # Check if variables named `p` were created with the correct indices
-    @test has_constraint(fnm.model, "generation_min")
-    @test has_constraint(fnm.model, "generation_max")
-    @test issetequal(fnm.model[:generation_min].axes[1], (7, 3))
-    @test issetequal(fnm.model[:generation_min].axes[2], 1:24)
-    @test issetequal(fnm.model[:generation_max].axes[1], (7, 3))
-    @test issetequal(fnm.model[:generation_max].axes[2], 1:24)
+    @testset "Test if constraints were created with the correct indices" begin
+        @test has_constraint(fnm.model, "generation_min")
+        @test has_constraint(fnm.model, "generation_max")
+        @test issetequal(fnm.model[:generation_min].axes[1], (7, 3))
+        @test issetequal(fnm.model[:generation_min].axes[2], 1:24)
+        @test issetequal(fnm.model[:generation_max].axes[1], (7, 3))
+        @test issetequal(fnm.model[:generation_max].axes[2], 1:24)
+    end
     return nothing
 end
 
