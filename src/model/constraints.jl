@@ -1,20 +1,24 @@
-@doc raw"""
+function _generation_limits(; commitment::Bool)
+    u_gt = commitment ? "u_{g, t}" : ""
+    return """
+        ``P^{\\min}_{g, t} $u_gt \\leq p_{g, t} \\leq P^{\\max}_{g, t} $u_gt, \\forall g \\in \\mathcal{G}, t \\in \\mathcal{T}``
+        """
+end
+
+"""
     generation_limits!(fnm::FullNetworkModel)
 
 Adds generation limit constraints to the full network model.
 
 If `fnm` has commitment:
 
-```math
-P^{\min}_{g, t} u_{g, t} \leq p_{g, t} \leq P^{\max}_{g, t} u_{g, t}, \forall g \in \{\text{unit codes}\}, t \in 1, ..., T
-```
+$(_generation_limits(commitment=true))
 
 If `fnm` does not have commitment:
 
-```math
-P^{\min}_{g, t} \leq p_{g, t} \leq P^{\max}_{g, t}, \forall g \in \{\text{unit codes}\}, t \in 1, ..., T
-```
-where `T` is the number of time periods defined in the forecasts in `system`.
+$(_generation_limits(commitment=false))
+
+where ``\\mathcal{T}`` is the set of time periods defined in the forecasts in `system`.
 
 The constraints added are named `generation_min` and `generation_max`.
 """

@@ -1,4 +1,18 @@
-@doc raw"""
+function _thermal_variable_cost_objective()
+    return """
+    ``\\sum_{t \\in \\mathcal{T}} \\sum_{g \\in \\mathcal{G}} \\sum_{q \\in \\mathcal{Q}_{g, t}} p_{g, t, q} \\Lambda^{\\text{offer}}_{g, t, q}``
+    """
+end
+
+function _thermal_variable_cost_constraints(; commitment)
+    u_gt = commitment ? "u_{g, t}" : ""
+    return """
+        ``0 \\leq p^{\\text{aux}}_{g, t, q} \\leq \\bar{P}_{g, t, q} $u_gt, \\forall g \\in \\mathcal{G}, t \\in \\mathcal{T}, q \\in \\mathcal{Q}_{g, t}`` \n
+        ``p_{g, t} = \\sum_{q \\in \\mathcal{Q}_{g, t}} p^{\\text{aux}}_{g, t, q}, \\forall g \\in \\mathcal{G}, t \\in \\mathcal{T}``
+        """
+end
+
+"""
     thermal_variable_cost!(fnm::FullNetworkModel)
 
 Adds the variable cost related to thermal generators by using auxiliary generation variables
@@ -7,18 +21,21 @@ codes of the thermal generators in `system`, by the time periods considered, and
 offer block number.
 
 Adds to the objective function:
-```math
-\sum_{t \in 1, ..., T} \sum_{g \in \{\text{unit codes}\}} \sum_{q in 1, ..., Q_{g, t}} p_{g, t, q} \Lambda^{\text{offer}}_{g, t, q}
-```
+
+$(_thermal_variable_cost_objective())
 
 And adds the following constraints:
 
-```math
-0 \leq p^{\text{aux}}_{g, t, q} \leq \bar{P}_{g, t, q} u_{g, t}, \forall g \in \{\text{unit codes}\}, t \in 1, ..., T, q \in 1, ..., Q_{g, t} \\
-p_{g, t} = \sum_{q \in 1, ..., Q_{g, t}} p_{g, t, q}, \forall g \in \{\text{unit codes}\}, t \in 1, ..., T
-```
-where `T` is the number of time periods defined in the forecasts in `system` and `Q_{g, t}`
-is the number of offer blocks.
+If the model has commitment
+
+$(_thermal_variable_cost_constraints(commitment=true))
+
+If the model does not have commitment
+
+$(_thermal_variable_cost_constraints(commitment=false))
+
+where ``\\mathcal{T}`` is the set of time periods defined in the forecasts in `system` and
+``\\mathcal{Q}_{g, t}`` is the set of offer blocks.
 """
 function thermal_variable_cost!(fnm::FullNetworkModel)
     @assert has_variable(fnm.model, "p")
