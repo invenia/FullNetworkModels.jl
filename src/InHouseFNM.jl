@@ -7,6 +7,7 @@ using PowerSystems
 
 # Utility functions
 include("utils/api.jl")
+include("utils/write.jl")
 
 # Model functions
 include("model/constraints.jl")

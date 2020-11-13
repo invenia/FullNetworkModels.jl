@@ -15,4 +15,5 @@ const TEST_SYSTEM = fake_3bus_system(MISO)
     include("objectives.jl")
     include("variables.jl")
     include("templates.jl")
+    include("write.jl")
 end
