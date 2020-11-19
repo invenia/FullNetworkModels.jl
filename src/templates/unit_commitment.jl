@@ -7,6 +7,7 @@ and returns a JuMP model with the following formulation:
 $(_write_formulation(
     objectives=[
         _thermal_variable_cost_objective(),
+        _thermal_noload_cost_latex()
     ],
     constraints=[
         _thermal_variable_cost_constraints(commitment=true),
@@ -29,5 +30,6 @@ function unit_commitment(system::System, solver)
     generation_limits!(fnm)
     # Add objectives
     thermal_variable_cost!(fnm)
+    thermal_noload_cost!(fnm)
     return fnm
 end

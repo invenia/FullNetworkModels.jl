@@ -13,6 +13,19 @@ function tests_thermal_variable_cost(fnm)
     return nothing
 end
 
+function tests_thermal_noload_cost(fnm)
+    unit_codes = get_unit_codes(ThermalGen, fnm.system)
+    n_periods = get_forecasts_horizon(fnm.system)
+    cost_nl = get_noload_cost(fnm.system)
+    str = string(objective_function(fnm.model))
+    @testset "No-load cost was correctly added to objective" begin
+        @testset for g in unit_codes, t in 1:n_periods
+            C_nl = mod(cost_nl[g][t], 1) == 0 ? convert(Int, cost_nl[g][t]) : cost_nl[g][t]
+            @test occursin("+ $C_nl u[$g,$t]", str)
+        end
+    end
+end
+
 @testset "Objectives" begin
     @testset "thermal_variable_cost!" begin
         system = fake_3bus_system(MISO, n_periods=4)
@@ -37,5 +50,13 @@ end
             @test sprint(show, constraint_by_name(fnm.model, "gen_block_limits[7,1,1]")) ==
                 "gen_block_limits[7,1,1] : -0.5 u[7,1] + p_aux[7,1,1] ≤ 0.0"
         end
+    end
+    @testset "thermal_noload_cost!" begin
+        fnm = FullNetworkModel(TEST_SYSTEM, GLPK.Optimizer)
+        add_thermal_generation!(fnm)
+        add_commitment!(fnm)
+        thermal_variable_cost!(fnm)
+        thermal_noload_cost!(fnm)
+        tests_thermal_noload_cost(fnm)
     end
 end

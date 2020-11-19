@@ -7,6 +7,7 @@ using PowerSystems
 
 # Utility functions
 include("utils/api.jl")
+include("utils/internal.jl")
 include("utils/write.jl")
 
 # Model functions
@@ -19,10 +20,12 @@ include("templates/unit_commitment.jl")
 
 # API functions
 export FullNetworkModel
-export get_cost_regulation
-export get_cost_spinning
-export get_cost_supp_on
-export get_cost_supp_off
+export get_noload_cost
+export get_regulation_cost
+export get_spinning_cost
+export get_startup_cost
+export get_on_sup_cost
+export get_off_sup_cost
 export get_generator_forecast
 export get_initial_time
 export get_offer_curves
@@ -43,6 +46,7 @@ export generation_limits!
 
 # Objective functions
 export thermal_variable_cost!
+export thermal_noload_cost!
 
 # Templates
 export unit_commitment

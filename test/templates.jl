@@ -5,5 +5,6 @@
         tests_commitment(fnm)
         tests_generation_limits(fnm)
         tests_thermal_variable_cost(fnm)
+        tests_thermal_noload_cost(fnm)
     end
 end

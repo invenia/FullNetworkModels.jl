@@ -8,17 +8,15 @@ end
 """
     generation_limits!(fnm::FullNetworkModel)
 
-Adds generation limit constraints to the full network model.
-
-If `fnm` has commitment:
+Adds generation limit constraints to the full network model:
 
 $(_generation_limits(commitment=true))
 
-If `fnm` does not have commitment:
+if `fnm.model` has commitment, or
 
 $(_generation_limits(commitment=false))
 
-where ``\\mathcal{T}`` is the set of time periods defined in the forecasts in `system`.
+if `fnm.model` does not have commitment.
 
 The constraints added are named `generation_min` and `generation_max`.
 """
