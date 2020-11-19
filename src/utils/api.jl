@@ -118,32 +118,32 @@ Returns the maximum power outputs with regulation of the generators in `system`.
 get_regmax(system::System) = get_generator_forecast(system, :regulation_max)
 
 """
-    get_cost_regulation(system::System) -> Dict
+    get_regulation_cost(system::System) -> Dict
 
 Returns the costs of regulation offered by the generators in `system`.
 """
-get_cost_regulation(system::System) = get_generator_forecast(system, :asm_costs, :reg)
+get_regulation_cost(system::System) = get_generator_forecast(system, :asm_costs, :reg)
 
 """
-    get_cost_spinning(system::System) -> Dict
+    get_spinning_cost(system::System) -> Dict
 
 Returns the costs of spinning reserve offered by the generators in `system`.
 """
-get_cost_spinning(system::System) = get_generator_forecast(system, :asm_costs, :spin)
+get_spinning_cost(system::System) = get_generator_forecast(system, :asm_costs, :spin)
 
 """
-    get_cost_supp_on(system::System) -> Dict
+    get_on_sup_cost(system::System) -> Dict
 
 Returns the costs of online supplemental reserve offered by the generators in `system`.
 """
-get_cost_supp_on(system::System) = get_generator_forecast(system, :asm_costs, :sup)
+get_on_sup_cost(system::System) = get_generator_forecast(system, :asm_costs, :sup)
 
 """
-    get_cost_supp_off(system::System) -> Dict
+    get_off_sup_cost(system::System) -> Dict
 
 Returns the costs of offline supplemental reserve offered by the generators in `system`.
 """
-get_cost_supp_off(system::System) = get_generator_forecast(system, :asm_costs, :sup_off)
+get_off_sup_cost(system::System) = get_generator_forecast(system, :asm_costs, :sup_off)
 
 """
     get_offer_curves(system::System) -> Dict
@@ -151,3 +151,18 @@ get_cost_supp_off(system::System) = get_generator_forecast(system, :asm_costs, :
 Returns the offer curves of generators in `system`.
 """
 get_offer_curves(system::System) = get_generator_forecast(system, :offer_curve)
+
+"""
+    get_noload_cost(system::System) -> Dict
+
+Returns the no-load costs of the generators in `system`, which are represented in the
+`:fixed` field of the operation cost.
+"""
+get_noload_cost(system::System) = get_generator_forecast(system, :operation_cost, :fixed)
+
+"""
+    get_startup_cost(system::System) -> Dict
+
+Returns the start-up costs of the generators in `system`.
+"""
+get_startup_cost(system::System) = get_generator_forecast(system, :operation_cost, :startup)

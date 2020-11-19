@@ -1,7 +1,7 @@
 function _thermal_variable_cost_objective()
     return """
-    ``\\sum_{t \\in \\mathcal{T}} \\sum_{g \\in \\mathcal{G}} \\sum_{q \\in \\mathcal{Q}_{g, t}} p_{g, t, q} \\Lambda^{\\text{offer}}_{g, t, q}``
-    """
+        ``\\sum_{t \\in \\mathcal{T}} \\sum_{g \\in \\mathcal{G}} \\sum_{q \\in \\mathcal{Q}_{g, t}} p_{g, t, q} \\Lambda^{\\text{offer}}_{g, t, q}``
+        """
 end
 
 function _thermal_variable_cost_constraints(; commitment)
@@ -26,16 +26,13 @@ $(_thermal_variable_cost_objective())
 
 And adds the following constraints:
 
-If the model has commitment
-
 $(_thermal_variable_cost_constraints(commitment=true))
 
-If the model does not have commitment
+if `fnm.model` has commitment, or
 
 $(_thermal_variable_cost_constraints(commitment=false))
 
-where ``\\mathcal{T}`` is the set of time periods defined in the forecasts in `system` and
-``\\mathcal{Q}_{g, t}`` is the set of offer blocks.
+if `fnm.model` does not have commitment.
 """
 function thermal_variable_cost!(fnm::FullNetworkModel)
     @assert has_variable(fnm.model, "p")
@@ -51,28 +48,30 @@ function thermal_variable_cost!(fnm::FullNetworkModel)
     return fnm
 end
 
-"""
-    _offer_curve_properties(offer_curves, n_periods) -> Dict, Dict, Dict
+function _thermal_noload_cost_latex()
+    return """
+        ``\\sum_{t \\in \\mathcal{T}} \\sum_{g \\in \\mathcal{G}} C^{\\text{nl}}_{g, t} u_{g, t}``
+        """
+end
 
-Returns dictionaries for several properties of offer curves, namely the prices, block
-generation limits and number of blocks for each generator in each time period. All
-dictionaries have the unit codes as keys.
 """
-function _offer_curve_properties(offer_curves, n_periods)
-    prices = Dict{Int, Vector{Vector{Float64}}}()
-    limits = Dict{Int, Vector{Vector{Float64}}}()
-    n_blocks = Dict{Int, Vector{Int}}()
-    for (g, offer_curve) in offer_curves
-        prices[g] = [first.(offer_curve[i]) for i in 1:n_periods]
-        limits[g] = [last.(offer_curve[i]) for i in 1:n_periods]
-        n_blocks[g] = length.(limits[g])
-    end
-    # Change block MW values to block limits - e.g. if the MW values are (50, 100, 200),
-    # the corresponding limits of each block are (50, 50, 100).
-    for g in keys(n_blocks), t in 1:n_periods, q in n_blocks[g][t]:-1:2
-        limits[g][t][q] -= limits[g][t][q - 1]
-    end
-    return prices, limits, n_blocks
+    thermal_noload_cost!(fnm::FullNetworkModel)
+
+Adds the no-load cost of thermal generators to the model formulation:
+
+$(_thermal_noload_cost_latex())
+"""
+function thermal_noload_cost!(fnm::FullNetworkModel)
+    model = fnm.model
+    system = fnm.system
+    @assert has_variable(model, "u")
+    unit_codes = get_unit_codes(ThermalGen, system)
+    n_periods = get_forecasts_horizon(system)
+    cost_nl = get_noload_cost(system)
+    u = model[:u]
+    obj_nl = sum(cost_nl[g][t] * u[g, t] for g in unit_codes, t in 1:n_periods)
+    _add_to_objective!(model, obj_nl)
+    return fnm
 end
 
 function _add_thermal_gen_blocks!(fnm, unit_codes, p_aux_lims, n_periods, n_blocks)
@@ -106,13 +105,12 @@ function _add_thermal_gen_blocks!(fnm, unit_codes, p_aux_lims, n_periods, n_bloc
 end
 
 function _thermal_variable_cost_objective!(fnm, unit_codes, n_periods, n_blocks, Λ)
-    p_aux = fnm.model[:p_aux]
-    obj = objective_function(fnm.model)
+    model = fnm.model
+    p_aux = model[:p_aux]
     variable_cost = AffExpr(0.0)
     for g in unit_codes, t in 1:n_periods, q in 1:n_blocks[g][t]
         variable_cost += p_aux[g, t, q] * Λ[g][t][q]
     end
-    add_to_expression!(obj, variable_cost)
-    @objective(fnm.model, Min, obj)
+    _add_to_objective!(model, variable_cost)
     return fnm
 end
