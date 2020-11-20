@@ -38,13 +38,16 @@ export has_constraint
 export has_variable
 
 # Variable functions
+export add_ancillary_services!
 export add_commitment!
 export add_thermal_generation!
 
 # Constraint functions
+export ancillary_service_limits!
 export generation_limits!
 
 # Objective functions
+export ancillary_service_costs!
 export thermal_variable_cost!
 export thermal_noload_cost!
 

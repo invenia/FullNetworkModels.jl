@@ -1,10 +1,10 @@
-function _thermal_variable_cost_objective()
+function _thermal_variable_cost_objective_latex()
     return """
-        ``\\sum_{t \\in \\mathcal{T}} \\sum_{g \\in \\mathcal{G}} \\sum_{q \\in \\mathcal{Q}_{g, t}} p_{g, t, q} \\Lambda^{\\text{offer}}_{g, t, q}``
-        """
+    ``\\sum_{t \\in \\mathcal{T}} \\sum_{g \\in \\mathcal{G}} \\sum_{q \\in \\mathcal{Q}_{g, t}} p^{\\text{aux}}_{g, t, q} \\Lambda^{\\text{offer}}_{g, t, q}``
+    """
 end
 
-function _thermal_variable_cost_constraints(; commitment)
+function _thermal_variable_cost_constraints_latex(; commitment)
     u_gt = commitment ? "u_{g, t}" : ""
     return """
         ``0 \\leq p^{\\text{aux}}_{g, t, q} \\leq \\bar{P}_{g, t, q} $u_gt, \\forall g \\in \\mathcal{G}, t \\in \\mathcal{T}, q \\in \\mathcal{Q}_{g, t}`` \n
@@ -22,29 +22,75 @@ offer block number.
 
 Adds to the objective function:
 
-$(_thermal_variable_cost_objective())
+$(_thermal_variable_cost_objective_latex())
 
 And adds the following constraints:
 
-$(_thermal_variable_cost_constraints(commitment=true))
+If the model has commitment
+
+$(_thermal_variable_cost_constraints_latex(commitment=true))
 
 if `fnm.model` has commitment, or
 
-$(_thermal_variable_cost_constraints(commitment=false))
+$(_thermal_variable_cost_constraints_latex(commitment=false))
 
 if `fnm.model` does not have commitment.
 """
 function thermal_variable_cost!(fnm::FullNetworkModel)
-    @assert has_variable(fnm.model, "p")
-    unit_codes = get_unit_codes(ThermalGen, fnm.system)
-    n_periods = get_forecasts_horizon(fnm.system)
-    offer_curves = get_offer_curves(fnm.system)
+    model = fnm.model
+    system = fnm.system
+    @assert has_variable(model, "p")
+    unit_codes = get_unit_codes(ThermalGen, system)
+    n_periods = get_forecasts_horizon(system)
+    offer_curves = get_offer_curves(system)
     # Get properties of the offer curves: prices, block MW limits, number of blocks
     Λ, p_aux_lims, n_blocks = _offer_curve_properties(offer_curves, n_periods)
     # Add variables and constraints for thermal generation blocks
-    _add_thermal_gen_blocks!(fnm, unit_codes, p_aux_lims, n_periods, n_blocks)
+    _add_thermal_gen_blocks!(model, unit_codes, p_aux_lims, n_periods, n_blocks)
     # Add thermal variable cost to objective
-    _thermal_variable_cost_objective!(fnm, unit_codes, n_periods, n_blocks, Λ)
+    _thermal_variable_cost_objective!(model, unit_codes, n_periods, n_blocks, Λ)
+    return fnm
+end
+
+function _ancillary_service_costs_latex()
+    return """
+        ``\\sum_{g \\in \\mathcal{G}} \\sum_{t \\in \\mathcal{T}} (C^{\\text{reg}}_{g, t} r^{\\text{reg}}_{g, t} + C^{\\text{spin}}_{g, t} r^{\\text{spin}}_{g, t} + C^{\\text{on-sup}}_{g, t} r^{\\text{on-sup}}_{g, t} + C^{\\text{off-sup}}_{g, t} r^{\\text{off-sup}}_{g, t})``
+        """
+end
+
+"""
+    ancillary_service_costs!(fnm::FullNetworkModel)
+
+Adds the ancillary service costs related to thermal generators, namely regulation, spinning,
+online supplemental, and offline supplemental reserves.
+
+Adds to the objective function:
+
+$(_ancillary_service_costs_latex())
+"""
+function ancillary_service_costs!(fnm::FullNetworkModel)
+    model = fnm.model
+    system = fnm.system
+    unit_codes = get_unit_codes(ThermalGen, system)
+    n_periods = get_forecasts_horizon(system)
+    C_reg = get_regulation_cost(system)
+    C_spin = get_spinning_cost(system)
+    C_on_sup = get_on_sup_cost(system)
+    C_off_sup = get_off_sup_cost(system)
+    # Get variables for better readability
+    r_reg = model[:r_reg]
+    r_spin = model[:r_spin]
+    r_on_sup = model[:r_on_sup]
+    r_off_sup = model[:r_off_sup]
+    # Compute ancillary cost and replace current objective with new one
+    ancillary_cost = AffExpr()
+    for g in unit_codes, t in 1:n_periods
+        add_to_expression!(ancillary_cost, C_reg[g][t] * r_reg[g, t])
+        add_to_expression!(ancillary_cost, C_spin[g][t] * r_spin[g, t])
+        add_to_expression!(ancillary_cost, C_on_sup[g][t] * r_on_sup[g, t])
+        add_to_expression!(ancillary_cost, C_off_sup[g][t] * r_off_sup[g, t])
+    end
+    _add_to_objective!(model, ancillary_cost)
     return fnm
 end
 
@@ -74,43 +120,44 @@ function thermal_noload_cost!(fnm::FullNetworkModel)
     return fnm
 end
 
-function _add_thermal_gen_blocks!(fnm, unit_codes, p_aux_lims, n_periods, n_blocks)
+function _add_thermal_gen_blocks!(
+    model::Model, unit_codes, p_aux_lims, n_periods, n_blocks
+)
     @variable(
-        fnm.model,
+        model,
         p_aux[g in unit_codes, t in 1:n_periods, q in 1:n_blocks[g][t]] >= 0
     )
     # Add constraints linking `p` to `p_aux`
-    p = fnm.model[:p]
+    p = model[:p]
     @constraint(
-        fnm.model,
+        model,
         generation_definition[g in unit_codes, t in 1:n_periods],
         p[g, t] == sum(p_aux[g, t, q] for q in 1:n_blocks[g][t])
     )
     # Add upper bounds to `p_aux` - formulation changes a bit if there is commitment or not
-    if has_variable(fnm.model, "u")
-        u = fnm.model[:u]
+    if has_variable(model, "u")
+        u = model[:u]
         @constraint(
-            fnm.model,
+            model,
             gen_block_limits[g in unit_codes, t in 1:n_periods, q in 1:n_blocks[g][t]],
             p_aux[g, t, q] <= p_aux_lims[g][t][q] * u[g, t]
         )
     else
         @constraint(
-            fnm.model,
+            model,
             gen_block_limits[g in unit_codes, t in 1:n_periods, q in 1:n_blocks[g][t]],
             p_aux[g, t, q] <= p_aux_lims[g][t][q]
         )
     end
-    return fnm
+    return model
 end
 
-function _thermal_variable_cost_objective!(fnm, unit_codes, n_periods, n_blocks, Λ)
-    model = fnm.model
+function _thermal_variable_cost_objective!(model::Model, unit_codes, n_periods, n_blocks, Λ)
     p_aux = model[:p_aux]
     variable_cost = AffExpr(0.0)
     for g in unit_codes, t in 1:n_periods, q in 1:n_blocks[g][t]
         variable_cost += p_aux[g, t, q] * Λ[g][t][q]
     end
     _add_to_objective!(model, variable_cost)
-    return fnm
+    return model
 end
