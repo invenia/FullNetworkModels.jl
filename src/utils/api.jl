@@ -166,3 +166,49 @@ get_noload_cost(system::System) = get_generator_forecast(system, :operation_cost
 Returns the start-up costs of the generators in `system`.
 """
 get_startup_cost(system::System) = get_generator_forecast(system, :operation_cost, :startup)
+
+"""
+    get_reserve_zones(system::System) -> Vector{Int}
+
+Returns a vector with the reserve zone numbers in `system`. The market-wide zone is defined
+as $(MARKET_WIDE_ZONE) in accordance with FullNetworkDataPrep.jl.
+"""
+function get_reserve_zones(system::System)
+    reserve_zones = Vector{Int}(undef, 0)
+    services = collect(get_components(Service, system))
+    for serv in services
+        push!(reserve_zones, serv.ext["reserve_zone"])
+    end
+    return unique(reserve_zones)
+end
+
+"""
+    get_regulation_requirements(system::System) -> Dict
+
+Returns the zonal and market-wide regulation requirements in `system`. The keys of the
+dictionary represent the reserve zones and the values represent the requirements.
+"""
+function get_regulation_requirements(system::System)
+    services = collect(get_components(Service, system))
+    filter!(x -> x.ext["label"] == :reg, services)
+    reg_reqs = Dict()
+    for reg in services
+        reg_reqs[reg.ext["reserve_zone"]] = reg.requirement
+    end
+    return reg_reqs
+end
+
+"""
+    get_operating_reserve_requirements(system::System) -> Dict
+
+Returns the zonal and market-wide operating reserve requirements in `system`. The keys of
+the dictionary represent the reserve zones and the values represent the requirements.
+"""
+function get_operating_reserve_requirements(system::System)
+    group_reserves = collect(get_components(StaticReserveGroup, system))
+    or_reqs = Dict()
+    for rsrv in group_reserves
+        or_reqs[rsrv.ext["reserve_zone"]] = rsrv.requirement
+    end
+    return or_reqs
+end

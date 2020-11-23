@@ -33,3 +33,24 @@ function _offer_curve_properties(offer_curves, n_periods)
     end
     return prices, limits, n_blocks
 end
+
+"""
+    _generators_by_reserve_zone(system::System, gentype) -> Dict
+
+Returns the unit codes of the generators in each reserve zone.
+"""
+function _generators_by_reserve_zone(system::System)
+    reserve_zones = get_reserve_zones(system)
+    gens = collect(get_components(ThermalGen, system))
+    reserve_zone_gens = Dict{Int, Vector{Int}}()
+    for zone in reserve_zones
+        if zone == MARKET_WIDE_ZONE
+            reserve_zone_gens[zone] = parse.(Int, get_name.(gens))
+        else
+            reserve_zone_gens[zone] = parse.(Int, get_name.(
+                filter(x -> x.ext["reserve_zone"] == zone, gens)
+            ))
+        end
+    end
+    return reserve_zone_gens
+end

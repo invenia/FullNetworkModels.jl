@@ -5,6 +5,9 @@ using Dates
 using JuMP
 using PowerSystems
 
+# We use -9999 as the code for the market-wide reserve zone in accordance with FNDataPrep
+const MARKET_WIDE_ZONE = -9999
+
 # Utility functions
 include("utils/api.jl")
 include("utils/internal.jl")
@@ -29,10 +32,13 @@ export get_off_sup_cost
 export get_generator_forecast
 export get_initial_time
 export get_offer_curves
+export get_operating_reserve_requirements
 export get_pmax
 export get_pmin
 export get_regmax
 export get_regmin
+export get_regulation_requirements
+export get_reserve_zones
 export get_unit_codes
 export has_constraint
 export has_variable
@@ -45,6 +51,8 @@ export add_thermal_generation!
 # Constraint functions
 export ancillary_service_limits!
 export generation_limits!
+export operating_reserve_requirements!
+export regulation_requirements!
 
 # Objective functions
 export ancillary_service_costs!

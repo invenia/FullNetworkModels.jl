@@ -79,6 +79,74 @@ function ancillary_service_limits!(fnm::FullNetworkModel)
     return fnm
 end
 
+function _regulation_requirements_latex()
+    return """
+        ``\\sum_{g \\in \\mathcal{G}_{z}} r^{\\text{reg}}_{g, t} \\geq R^{\\text{reg-req}}_{z}, \\forall z \\in \\mathcal{Z}, \\forall t \\in \\mathcal{T}``
+        """
+end
+
+"""
+    regulation_requirements!(fnm::FullNetworkModel)
+
+Adds zonal and market-wide regulation requirements to the full network model:
+
+$(_regulation_requirements_latex())
+"""
+function regulation_requirements!(fnm::FullNetworkModel)
+    model = fnm.model
+    system = fnm.system
+    unit_codes = get_unit_codes(ThermalGen, system)
+    n_periods = get_forecasts_horizon(system)
+    reserve_zones = get_reserve_zones(system)
+    zone_gens = _generators_by_reserve_zone(system)
+    reg_requirements = get_regulation_requirements(system)
+    # Get variable for better readability
+    r_reg = model[:r_reg]
+    @constraint(
+        model,
+        regulation_requirements[z in reserve_zones, t in 1:n_periods],
+        sum(r_reg[g, t] for g in zone_gens[z]) >= reg_requirements[z]
+    )
+    return fnm
+end
+
+function _operating_reserve_requirements_latex()
+    return """
+        ``\\sum_{g \\in \\mathcal{G}_{z}} (r^{\\text{reg}}_{g, t} + r^{\\text{spin}}_{g, t} + r^{\\text{on-sup}}_{g, t} + r^{\\text{off-sup}}_{g, t}) \\geq R^{\\text{OR-req}}_{z}, \\forall z \\in \\mathcal{Z}, \\forall t \\in \\mathcal{T}``
+        """
+end
+
+"""
+    operating_reserve_requirements!(fnm::FullNetworkModel)
+
+Adds zonal and market-wide operating reserve requirements to the full network model:
+
+$(_operating_reserve_requirements_latex())
+"""
+function operating_reserve_requirements!(fnm::FullNetworkModel)
+    model = fnm.model
+    system = fnm.system
+    unit_codes = get_unit_codes(ThermalGen, system)
+    n_periods = get_forecasts_horizon(system)
+    reserve_zones = get_reserve_zones(system)
+    zone_gens = _generators_by_reserve_zone(system)
+    or_requirements = get_operating_reserve_requirements(system)
+    # Get variables for better readability
+    r_reg = model[:r_reg]
+    r_spin = model[:r_spin]
+    r_on_sup = model[:r_on_sup]
+    r_off_sup = model[:r_off_sup]
+    @constraint(
+        model,
+        operating_reserve_requirements[z in reserve_zones, t in 1:n_periods],
+        sum(
+            r_reg[g, t] + r_spin[g, t] + r_on_sup[g, t] + r_off_sup[g, t]
+                for g in zone_gens[z]
+        ) >= or_requirements[z]
+    )
+    return fnm
+end
+
 function _generation_limits!(model::Model, ::Val{true}, unit_codes, n_periods, Pmin, Pmax)
     p = model[:p]
     u = model[:u]
