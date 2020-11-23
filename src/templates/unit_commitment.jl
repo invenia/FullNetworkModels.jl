@@ -14,6 +14,8 @@ $(_write_formulation(
         _thermal_variable_cost_constraints_latex(commitment=true),
         _generation_limits_latex(commitment=true),
         _ancillary_service_limits_latex(),
+        _regulation_requirements_latex(),
+        _operating_reserve_requirements_latex(),
     ],
     variables=[
         _add_thermal_generation_latex(),
@@ -25,14 +27,16 @@ $(_write_formulation(
 function unit_commitment(system::System, solver)
     # Initialize FNM
     fnm = FullNetworkModel(system, solver)
-    # Add variables
+    # Variables
     add_thermal_generation!(fnm)
     add_commitment!(fnm)
     add_ancillary_services!(fnm)
-    # Add constraints
+    # Constraints
     generation_limits!(fnm)
     ancillary_service_limits!(fnm)
-    # Add objectives
+    regulation_requirements!(fnm)
+    operating_reserve_requirements!(fnm)
+    # Objectives
     thermal_variable_cost!(fnm)
     ancillary_service_costs!(fnm)
     thermal_noload_cost!(fnm)
