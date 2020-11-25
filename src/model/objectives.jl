@@ -26,8 +26,6 @@ $(_thermal_variable_cost_objective_latex())
 
 And adds the following constraints:
 
-If the model has commitment
-
 $(_thermal_variable_cost_constraints_latex(commitment=true))
 
 if `fnm.model` has commitment, or

@@ -23,22 +23,28 @@ include("templates/unit_commitment.jl")
 
 # API functions
 export FullNetworkModel
-export get_noload_cost
-export get_regulation_cost
-export get_spinning_cost
-export get_startup_cost
-export get_on_sup_cost
-export get_off_sup_cost
 export get_generator_forecast
+export get_initial_commitment
+export get_initial_downtime
+export get_initial_generation
 export get_initial_time
+export get_initial_uptime
+export get_minimum_downtime
+export get_minimum_uptime
+export get_noload_cost
 export get_offer_curves
+export get_off_sup_cost
+export get_on_sup_cost
 export get_operating_reserve_requirements
 export get_pmax
 export get_pmin
 export get_regmax
 export get_regmin
+export get_regulation_cost
 export get_regulation_requirements
 export get_reserve_zones
+export get_spinning_cost
+export get_startup_cost
 export get_unit_codes
 export has_constraint
 export has_variable
