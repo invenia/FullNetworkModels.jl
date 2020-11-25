@@ -212,3 +212,73 @@ function get_operating_reserve_requirements(system::System)
     end
     return or_reqs
 end
+
+"""
+    get_initial_generation(system::System) -> Dict
+
+Returns the initial generation the units in `system`.
+"""
+get_initial_generation(system::System) = _generator_dict(get_active_power, system)
+
+"""
+    get_initial_commitment(system::System) -> Dict
+
+Returns the initial commitment status the units in `system`.
+"""
+get_initial_commitment(system::System) = _generator_dict(get_status, system)
+
+"""
+    get_minimum_uptime(system::System) -> Dict
+
+Returns the minimum up-time of the units in `system`.
+"""
+function get_minimum_uptime(system::System)
+    return _generator_dict(system) do gen
+        get_time_limits(gen).up
+    end
+end
+
+"""
+    get_minimum_downtime(system::System) -> Dict
+
+Returns the minimum down-time of the units in `system`.
+"""
+function get_minimum_downtime(system::System)
+    return _generator_dict(system) do gen
+        get_time_limits(gen).down
+    end
+end
+
+"""
+    get_initial_uptime(system::System) -> Dict
+
+Returns the number of hours that each generator was online in the initial moment.
+"""
+function get_initial_uptime(system::System)
+    time_at_status = _generator_dict(get_time_at_status, system)
+    initial_commitment = get_initial_commitment(system)
+    # Those that were offline have uptime of zero
+    for (g, online) in initial_commitment
+        if !online
+            time_at_status[g] = 0.0
+        end
+    end
+    return time_at_status
+end
+
+"""
+    get_initial_downtime(system::System) -> Dict
+
+Returns the number of hours that each generator was offline in the initial moment.
+"""
+function get_initial_downtime(system::System)
+    time_at_status = _generator_dict(get_time_at_status, system)
+    initial_commitment = get_initial_commitment(system)
+    # Those that were online have downtime of zero
+    for (g, online) in initial_commitment
+        if online
+            time_at_status[g] = 0.0
+        end
+    end
+    return time_at_status
+end

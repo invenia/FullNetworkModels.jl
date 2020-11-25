@@ -54,3 +54,18 @@ function _generators_by_reserve_zone(system::System)
     end
     return reserve_zone_gens
 end
+
+"""
+    generator_dict(f, system::System) -> Dict
+
+Returns a dictionary with the generator properties fetched by PowerSystems API function `f`.
+"""
+function _generator_dict(f, system::System)
+    unit_codes = get_unit_codes(ThermalGen, system)
+    gen_dict = Dict()
+    for unit in unit_codes
+        gen = get_component(ThermalGen, system, string(unit))
+        gen_dict[unit] = f(gen)
+    end
+    return gen_dict
+end
