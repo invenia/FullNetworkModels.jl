@@ -11,6 +11,25 @@ function _add_to_objective!(model::Model, expr)
 end
 
 """
+    _thermal_linear_cost(fnm::FullNetworkModel, var::Symbol, f)
+
+Adds a linear cost (cost * variable) to the objective, where the cost is fetched by function
+`f` and the variable is named `var` within `fnm.model`.
+"""
+function _thermal_linear_cost!(fnm::FullNetworkModel, var::Symbol, f)
+    model = fnm.model
+    system = fnm.system
+    @assert has_variable(model, var)
+    unit_codes = get_unit_codes(ThermalGen, system)
+    n_periods = get_forecasts_horizon(system)
+    cost = f(system)
+    x = model[var]
+    obj_cost = sum(cost[g][t] * x[g, t] for g in unit_codes, t in 1:n_periods)
+    _add_to_objective!(model, obj_cost)
+    return fnm
+end
+
+"""
     _offer_curve_properties(offer_curves, n_periods) -> Dict, Dict, Dict
 
 Returns dictionaries for several properties of offer curves, namely the prices, block

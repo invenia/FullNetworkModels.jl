@@ -18,6 +18,19 @@ function tests_commitment(fnm, n_periods)
     return nothing
 end
 
+function tests_startup_shutdown(fnm, n_periods)
+    tests_thermal_variable(fnm, "v", n_periods)
+    tests_thermal_variable(fnm, "w", n_periods)
+    @test sprint(show, constraint_by_name(
+        fnm.model, "startup_shutdown_definition[7,2]"
+    )) == "startup_shutdown_definition[7,2] : -u[7,1] + u[7,2] - v[7,2] + w[7,2] = 0.0"
+    @test !has_constraint(fnm.model, "startup_shutdown_definition[7,1]")
+    @test sprint(show, constraint_by_name(
+        fnm.model, "startup_shutdown_definition_initial[7]"
+    )) == "startup_shutdown_definition_initial[7] : u[7,1] - v[7,1] + w[7,1] = 0.0"
+    return nothing
+end
+
 @testset "Variables" begin
     fnm = FullNetworkModel(TEST_SYSTEM, GLPK.Optimizer)
     n_periods = get_forecasts_horizon(fnm.system)
@@ -29,6 +42,10 @@ end
     @testset "add_commitment!" begin
         add_commitment!(fnm)
         tests_commitment(fnm, n_periods)
+    end
+    @testset "add_startup_shutdown!" begin
+        add_startup_shutdown!(fnm)
+        tests_startup_shutdown(fnm, n_periods)
     end
     @testset "add_ancillary_services!" begin
         add_ancillary_services!(fnm)

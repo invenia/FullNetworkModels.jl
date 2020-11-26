@@ -50,6 +50,40 @@ function thermal_variable_cost!(fnm::FullNetworkModel)
     return fnm
 end
 
+function _thermal_noload_cost_latex()
+    return """
+        ``\\sum_{t \\in \\mathcal{T}} \\sum_{g \\in \\mathcal{G}} C^{\\text{nl}}_{g, t} u_{g, t}``
+        """
+end
+
+"""
+    thermal_noload_cost!(fnm::FullNetworkModel)
+
+Adds the no-load cost of thermal generators to the model formulation:
+
+$(_thermal_noload_cost_latex())
+"""
+thermal_noload_cost!(fnm::FullNetworkModel) = _thermal_linear_cost!(
+    fnm, :u, get_noload_cost
+)
+
+function _thermal_startup_cost_latex()
+    return """
+        ``\\sum_{t \\in \\mathcal{T}} \\sum_{g \\in \\mathcal{G}} C^{\\text{st}}_{g, t} v_{g, t}``
+        """
+end
+
+"""
+    thermal_startup_cost!(fnm::FullNetworkModel)
+
+Adds the start-up cost of thermal generators to the model formulation:
+
+$(_thermal_startup_cost_latex())
+"""
+thermal_startup_cost!(fnm::FullNetworkModel) = _thermal_linear_cost!(
+    fnm, :v, get_startup_cost
+)
+
 function _ancillary_service_costs_latex()
     return """
         ``\\sum_{g \\in \\mathcal{G}} \\sum_{t \\in \\mathcal{T}} (C^{\\text{reg}}_{g, t} r^{\\text{reg}}_{g, t} + C^{\\text{spin}}_{g, t} r^{\\text{spin}}_{g, t} + C^{\\text{on-sup}}_{g, t} r^{\\text{on-sup}}_{g, t} + C^{\\text{off-sup}}_{g, t} r^{\\text{off-sup}}_{g, t})``
@@ -67,54 +101,10 @@ Adds to the objective function:
 $(_ancillary_service_costs_latex())
 """
 function ancillary_service_costs!(fnm::FullNetworkModel)
-    model = fnm.model
-    system = fnm.system
-    unit_codes = get_unit_codes(ThermalGen, system)
-    n_periods = get_forecasts_horizon(system)
-    C_reg = get_regulation_cost(system)
-    C_spin = get_spinning_cost(system)
-    C_on_sup = get_on_sup_cost(system)
-    C_off_sup = get_off_sup_cost(system)
-    # Get variables for better readability
-    r_reg = model[:r_reg]
-    r_spin = model[:r_spin]
-    r_on_sup = model[:r_on_sup]
-    r_off_sup = model[:r_off_sup]
-    # Compute ancillary cost and replace current objective with new one
-    ancillary_cost = AffExpr()
-    for g in unit_codes, t in 1:n_periods
-        add_to_expression!(ancillary_cost, C_reg[g][t] * r_reg[g, t])
-        add_to_expression!(ancillary_cost, C_spin[g][t] * r_spin[g, t])
-        add_to_expression!(ancillary_cost, C_on_sup[g][t] * r_on_sup[g, t])
-        add_to_expression!(ancillary_cost, C_off_sup[g][t] * r_off_sup[g, t])
-    end
-    _add_to_objective!(model, ancillary_cost)
-    return fnm
-end
-
-function _thermal_noload_cost_latex()
-    return """
-        ``\\sum_{t \\in \\mathcal{T}} \\sum_{g \\in \\mathcal{G}} C^{\\text{nl}}_{g, t} u_{g, t}``
-        """
-end
-
-"""
-    thermal_noload_cost!(fnm::FullNetworkModel)
-
-Adds the no-load cost of thermal generators to the model formulation:
-
-$(_thermal_noload_cost_latex())
-"""
-function thermal_noload_cost!(fnm::FullNetworkModel)
-    model = fnm.model
-    system = fnm.system
-    @assert has_variable(model, "u")
-    unit_codes = get_unit_codes(ThermalGen, system)
-    n_periods = get_forecasts_horizon(system)
-    cost_nl = get_noload_cost(system)
-    u = model[:u]
-    obj_nl = sum(cost_nl[g][t] * u[g, t] for g in unit_codes, t in 1:n_periods)
-    _add_to_objective!(model, obj_nl)
+    _thermal_linear_cost!(fnm, :r_reg, get_regulation_cost)
+    _thermal_linear_cost!(fnm, :r_spin, get_spinning_cost)
+    _thermal_linear_cost!(fnm, :r_on_sup, get_on_sup_cost)
+    _thermal_linear_cost!(fnm, :r_off_sup, get_off_sup_cost)
     return fnm
 end
 
