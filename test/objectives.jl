@@ -17,6 +17,22 @@ function tests_thermal_variable_cost(fnm)
     return nothing
 end
 
+function tests_thermal_linear_cost(fnm, var, f)
+    unit_codes = get_unit_codes(ThermalGen, fnm.system)
+    n_periods = get_forecasts_horizon(fnm.system)
+    cost = f(fnm.system)
+    str = string(objective_function(fnm.model))
+    @testset "Cost was correctly added to objective" begin
+        @testset for g in unit_codes, t in 1:n_periods
+            C = mod(cost[g][t], 1) == 0 ? convert(Int, cost[g][t]) : cost[g][t]
+            @test occursin("+ $C $var[$g,$t]", str)
+        end
+    end
+end
+
+tests_thermal_noload_cost(fnm) = tests_thermal_linear_cost(fnm, :u, get_noload_cost)
+tests_thermal_startup_cost(fnm) = tests_thermal_linear_cost(fnm, :v, get_startup_cost)
+
 function tests_ancillary_costs(fnm)
     unit_codes = get_unit_codes(ThermalGen, fnm.system)
     n_periods = get_forecasts_horizon(fnm.system)
@@ -38,19 +54,6 @@ function tests_ancillary_costs(fnm)
         end
     end
     return nothing
-end
-
-function tests_thermal_noload_cost(fnm)
-    unit_codes = get_unit_codes(ThermalGen, fnm.system)
-    n_periods = get_forecasts_horizon(fnm.system)
-    cost_nl = get_noload_cost(fnm.system)
-    str = string(objective_function(fnm.model))
-    @testset "No-load cost was correctly added to objective" begin
-        @testset for g in unit_codes, t in 1:n_periods
-            C_nl = mod(cost_nl[g][t], 1) == 0 ? convert(Int, cost_nl[g][t]) : cost_nl[g][t]
-            @test occursin("+ $C_nl u[$g,$t]", str)
-        end
-    end
 end
 
 @testset "Objectives" begin
@@ -91,5 +94,13 @@ end
         thermal_variable_cost!(fnm)
         thermal_noload_cost!(fnm)
         tests_thermal_noload_cost(fnm)
+    end
+    @testset "thermal_startup_cost!" begin
+        fnm = FullNetworkModel(TEST_SYSTEM, GLPK.Optimizer)
+        add_commitment!(fnm)
+        add_startup_shutdown!(fnm)
+        thermal_noload_cost!(fnm)
+        thermal_startup_cost!(fnm)
+        tests_thermal_startup_cost(fnm)
     end
 end

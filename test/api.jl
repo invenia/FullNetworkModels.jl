@@ -50,7 +50,7 @@
         )
         @test issetequal(get_reserve_zones(system), (1, 2, InHouseFNM.MARKET_WIDE_ZONE))
         @test get_initial_generation(system) == Dict(3 => 0.0, 7 => 0.0)
-        @test get_initial_commitment(system) == Dict(3 => false, 7 => false)
+        @test get_initial_commitment(system) == Dict(3 => 0.0, 7 => 0.0)
         @test get_minimum_uptime(system) == Dict(3 => 3.0, 7 => 3.0)
         @test get_minimum_downtime(system) == Dict(3 => 3.0, 7 => 3.0)
         @test get_initial_uptime(system) == Dict(3 => 0.0, 7 => 0.0)

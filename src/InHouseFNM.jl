@@ -52,6 +52,7 @@ export has_variable
 # Variable functions
 export add_ancillary_services!
 export add_commitment!
+export add_startup_shutdown!
 export add_thermal_generation!
 
 # Constraint functions
@@ -62,8 +63,9 @@ export regulation_requirements!
 
 # Objective functions
 export ancillary_service_costs!
-export thermal_variable_cost!
 export thermal_noload_cost!
+export thermal_startup_cost!
+export thermal_variable_cost!
 
 # Templates
 export unit_commitment
