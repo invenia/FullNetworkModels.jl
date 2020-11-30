@@ -48,10 +48,19 @@ has_constraint(model::Model, con::String) = has_constraint(model, Symbol(con))
 """
     get_unit_codes(gentype::Type{<:Generator}, system::System) -> Vector{Int}
 
-Returns the unit codes of all generators under type `gentype`.
+Returns the unit codes of all generators in `system` under type `gentype`.
 """
 function get_unit_codes(gentype::Type{<:Generator}, system::System)
     return parse.(Int, get_name.(get_components(gentype, system)))
+end
+
+"""
+    get_load_names(loadtype::Type{<:StaticLoad}, system::System) -> Vector{String}
+
+Returns the names of all loads in `system` under type `loadtype`.
+"""
+function get_load_names(loadtype::Type{<:StaticLoad}, system::System)
+    return get_name.(get_components(loadtype, system))
 end
 
 """
@@ -85,6 +94,30 @@ function get_generator_forecast(system::System, label::Symbol, inner_label=:null
         else
             getproperty.(getproperty.(unit_forecasts, label), inner_label)
         end
+    end
+    return forec
+end
+
+"""
+    get_fixed_loads(system::System) -> Dict
+
+Returns a dictionary with the fixed load forecasts stored in `system`. The keys of the
+dictionary are the load names.
+"""
+function get_fixed_loads(system::System)
+    initial_time = only(get_forecast_initial_times(system))
+    n_periods = get_forecasts_horizon(system)
+    forec = Dict()
+    for load in get_components(PowerLoad, system)
+        load_name = get_name(load)
+        active_power = get_max_active_power(load)
+        # Load forecasts are multiplicative, which means the forecast multiplies the base
+        # value stored in the field `max_active_power`.
+        forec[load_name] = active_power .* values(
+            get_forecast(
+                Deterministic, load, initial_time, "get_max_active_power", n_periods
+            ).data
+        )
     end
     return forec
 end

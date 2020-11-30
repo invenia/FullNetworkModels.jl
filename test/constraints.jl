@@ -16,7 +16,7 @@ function tests_ancillary_limits(fnm)
     @test sprint(show, constraint_by_name(fnm.model, "ancillary_min[7,1]")) ==
         "ancillary_min[7,1] : p[7,1] - 0.5 u[7,1] - r_reg[7,1] - 0.5 u_reg[7,1] ≥ 0.0"
     @test sprint(show, constraint_by_name(fnm.model, "regulation_max[7,1]")) ==
-        "regulation_max[7,1] : r_reg[7,1] ≤ 1.75"
+        "regulation_max[7,1] : r_reg[7,1] - 1.75 u_reg[7,1] ≤ 0.0"
     @test sprint(show, constraint_by_name(fnm.model, "spin_and_sup_max[7,1]")) ==
         "spin_and_sup_max[7,1] : -4.5 u[7,1] + r_spin[7,1] + r_on_sup[7,1] ≤ 0.0"
     @test sprint(show, constraint_by_name(fnm.model, "off_sup_max[7,1]")) ==
@@ -32,6 +32,7 @@ function tests_regulation_requirements(fnm)
     @test sprint(show, constraint_by_name(
         fnm.model, "regulation_requirements[$(InHouseFNM.MARKET_WIDE_ZONE),1]"
     )) == "regulation_requirements[$(InHouseFNM.MARKET_WIDE_ZONE),1] : r_reg[7,1] + r_reg[3,1] ≥ 0.16"
+    return nothing
 end
 
 function tests_operating_reserve_requirements(fnm)
@@ -44,6 +45,20 @@ function tests_operating_reserve_requirements(fnm)
     @test sprint(show, constraint_by_name(
         fnm.model, "operating_reserve_requirements[$(InHouseFNM.MARKET_WIDE_ZONE),1]"
     )) == "operating_reserve_requirements[$(InHouseFNM.MARKET_WIDE_ZONE),1] : r_reg[7,1] + r_reg[3,1] + r_spin[7,1] + r_spin[3,1] + r_on_sup[7,1] + r_on_sup[3,1] + r_off_sup[7,1] + r_off_sup[3,1] ≥ 0.21"
+    return nothing
+end
+
+function tests_energy_balance(fnm)
+    unit_codes = get_unit_codes(ThermalGen, fnm.system)
+    load_names = get_load_names(PowerLoad, fnm.system)
+    n_periods = get_forecasts_horizon(fnm.system)
+    D = get_fixed_loads(fnm.system)
+    @testset "Constraints were correctly defined" for t in 1:n_periods
+        system_load = sum(D[f][t] for f in load_names)
+        @test sprint(show, constraint_by_name(fnm.model, "energy_balance[$t]")) ==
+            "energy_balance[$t] : p[7,$t] + p[3,$t] = $(system_load)"
+    end
+    return nothing
 end
 
 @testset "Constraints" begin
@@ -78,6 +93,14 @@ end
         @testset "regulation_requirements!" begin
             operating_reserve_requirements!(fnm)
             tests_operating_reserve_requirements(fnm)
+        end
+    end
+    @testset "Energy balance constraints" begin
+        @testset "energy_balance!" begin
+            fnm = FullNetworkModel(TEST_SYSTEM, GLPK.Optimizer)
+            add_thermal_generation!(fnm)
+            energy_balance!(fnm)
+            tests_energy_balance(fnm)
         end
     end
 end
