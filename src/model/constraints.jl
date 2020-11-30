@@ -147,6 +147,37 @@ function operating_reserve_requirements!(fnm::FullNetworkModel)
     return fnm
 end
 
+function _energy_balance_latex()
+    return """
+        ``\\sum_{g \\in \\mathcal{G}} p_{g, t} = \\sum_{f \\in \\mathcal{F}} D_{f, t}, \\forall t \\in \\mathcal{T}``
+        """
+end
+
+"""
+    energy_balance!(fnm::FullNetworkModel)
+
+Adds the energy balance constraints to the full network model. The constraints ensure that
+the total generation in the system meets the demand in each time period, assuming no loss:
+
+$(_energy_balance_latex())
+"""
+function energy_balance!(fnm::FullNetworkModel)
+    model = fnm.model
+    system = fnm.system
+    unit_codes = get_unit_codes(ThermalGen, system)
+    load_names = get_load_names(PowerLoad, system)
+    n_periods = get_forecasts_horizon(system)
+    D = get_fixed_loads(system)
+    # Get variables for better readability
+    p = model[:p]
+    @constraint(
+        model,
+        energy_balance[t in 1:n_periods],
+        sum(p[g, t] for g in unit_codes) == sum(D[f][t] for f in load_names)
+    )
+    return fnm
+end
+
 function _generation_limits!(model::Model, ::Val{true}, unit_codes, n_periods, Pmin, Pmax)
     p = model[:p]
     u = model[:u]
@@ -212,10 +243,11 @@ end
 function _regulation_max!(model::Model, unit_codes, n_periods, Pregmin, Pregmax)
     # Get variable for better readability
     r_reg = model[:r_reg]
+    u_reg = model[:u_reg]
     @constraint(
         model,
         regulation_max[g in unit_codes, t in 1:n_periods],
-        r_reg[g, t] <= 0.5 * (Pregmax[g][t] - Pregmin[g][t])
+        r_reg[g, t] <= 0.5 * (Pregmax[g][t] - Pregmin[g][t]) * u_reg[g, t]
     )
     return model
 end

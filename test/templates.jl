@@ -13,5 +13,6 @@
         tests_ancillary_limits(fnm)
         tests_regulation_requirements(fnm)
         tests_operating_reserve_requirements(fnm)
+        tests_energy_balance(fnm)
     end
 end

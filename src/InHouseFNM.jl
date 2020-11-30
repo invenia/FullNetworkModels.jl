@@ -23,12 +23,14 @@ include("templates/unit_commitment.jl")
 
 # API functions
 export FullNetworkModel
+export get_fixed_loads
 export get_generator_forecast
 export get_initial_commitment
 export get_initial_downtime
 export get_initial_generation
 export get_initial_time
 export get_initial_uptime
+export get_load_names
 export get_minimum_downtime
 export get_minimum_uptime
 export get_noload_cost
@@ -57,6 +59,7 @@ export add_thermal_generation!
 
 # Constraint functions
 export ancillary_service_limits!
+export energy_balance!
 export generation_limits!
 export operating_reserve_requirements!
 export regulation_requirements!
