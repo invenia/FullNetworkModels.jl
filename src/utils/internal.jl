@@ -81,10 +81,26 @@ Returns a dictionary with the generator properties fetched by PowerSystems API f
 """
 function _generator_dict(f, system::System)
     unit_codes = get_unit_codes(ThermalGen, system)
-    gen_dict = Dict()
+    gen_dict = Dict{Int, Float64}()
     for unit in unit_codes
         gen = get_component(ThermalGen, system, string(unit))
         gen_dict[unit] = f(gen)
     end
     return gen_dict
+end
+
+"""
+    _get_service_providers(system::System, service_name::String) -> Vector{Int}
+
+Returns the unit codes of generators that provide the ancillary service with name
+`service_name`.
+"""
+function _get_service_providers(system::System, service_name::String)
+    providers = Int[]
+    for gen in get_components(ThermalGen, system)
+        if service_name in get_name.(gen.services)
+            push!(providers, parse(Int, get_name(gen)))
+        end
+    end
+    return providers
 end
