@@ -76,6 +76,8 @@ function ancillary_service_limits!(fnm::FullNetworkModel)
     _spin_and_sup_max!(model, unit_codes, n_periods, Pmin, Pmax)
     # Upper bound on offline supplemental reserve
     _off_sup_max!(model, unit_codes, n_periods, Pmin, Pmax)
+    # Ensure that units that don't provide services have services set to zero
+    _zero_non_providers!(model, system, unit_codes, n_periods)
     return fnm
 end
 
@@ -273,6 +275,46 @@ function _off_sup_max!(model::Model, unit_codes, n_periods, Pmin, Pmax)
         model,
         off_sup_max[g in unit_codes, t in 1:n_periods],
         r_off_sup[g, t] <= (Pmax[g][t] - Pmin[g][t]) * (1 - u[g, t])
+    )
+    return model
+end
+
+function _zero_non_providers!(model::Model, system::System, unit_codes, n_periods)
+    # Units that provide each service
+    reg_providers = get_regulation_providers(system)
+    spin_providers = get_spinning_providers(system)
+    on_sup_providers = get_on_sup_providers(system)
+    off_sup_providers = get_off_sup_providers(system)
+    # Get variables for better readability
+    r_reg = model[:r_reg]
+    u_reg = model[:u_reg]
+    r_spin = model[:r_spin]
+    r_on_sup = model[:r_on_sup]
+    r_off_sup = model[:r_off_sup]
+    @constraint(
+        model,
+        zero_reg[g in setdiff(unit_codes, reg_providers), t in 1:n_periods],
+        r_reg[g, t] == 0
+    )
+    @constraint(
+        model,
+        zero_u_reg[g in setdiff(unit_codes, reg_providers), t in 1:n_periods],
+        u_reg[g, t] == 0
+    )
+    @constraint(
+        model,
+        zero_spin[g in setdiff(unit_codes, spin_providers), t in 1:n_periods],
+        r_spin[g, t] == 0
+    )
+    @constraint(
+        model,
+        zero_on_sup[g in setdiff(unit_codes, on_sup_providers), t in 1:n_periods],
+        r_on_sup[g, t] == 0
+    )
+    @constraint(
+        model,
+        zero_off_sup[g in setdiff(unit_codes, off_sup_providers), t in 1:n_periods],
+        r_off_sup[g, t] == 0
     )
     return model
 end

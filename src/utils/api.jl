@@ -81,7 +81,7 @@ function get_generator_forecast(system::System, label::Symbol, inner_label=:null
     unit_codes = get_unit_codes(ThermalGen, system)
     initial_time = only(get_forecast_initial_times(system))
     n_periods = get_forecasts_horizon(system)
-    forec = Dict()
+    forec = Dict{Int, Vector}()
     for unit in unit_codes
         gen = get_component(ThermalGen, system, string(unit))
         unit_forecasts = values(
@@ -107,7 +107,7 @@ dictionary are the load names.
 function get_fixed_loads(system::System)
     initial_time = only(get_forecast_initial_times(system))
     n_periods = get_forecasts_horizon(system)
-    forec = Dict()
+    forec = Dict{String, Vector{Float64}}()
     for load in get_components(PowerLoad, system)
         load_name = get_name(load)
         active_power = get_max_active_power(load)
@@ -224,7 +224,7 @@ dictionary represent the reserve zones and the values represent the requirements
 function get_regulation_requirements(system::System)
     services = collect(get_components(Service, system))
     filter!(x -> x.ext["label"] == :reg, services)
-    reg_reqs = Dict()
+    reg_reqs = Dict{Int, Float64}()
     for reg in services
         reg_reqs[reg.ext["reserve_zone"]] = reg.requirement
     end
@@ -239,7 +239,7 @@ the dictionary represent the reserve zones and the values represent the requirem
 """
 function get_operating_reserve_requirements(system::System)
     group_reserves = collect(get_components(StaticReserveGroup, system))
-    or_reqs = Dict()
+    or_reqs = Dict{Int, Float64}()
     for rsrv in group_reserves
         or_reqs[rsrv.ext["reserve_zone"]] = rsrv.requirement
     end
@@ -314,4 +314,40 @@ function get_initial_downtime(system::System)
         end
     end
     return time_at_status
+end
+
+"""
+    get_regulation_providers(system::System) -> Vector{Int}
+
+Returns the unit codes of the units that provide regulation.
+"""
+function get_regulation_providers(system::System)
+    return _get_service_providers(system, "regulation_$MARKET_WIDE_ZONE")
+end
+
+"""
+    get_spinning_providers(system::System) -> Vector{Int}
+
+Returns the unit codes of the units that provide spinning reserve.
+"""
+function get_spinning_providers(system::System)
+    return _get_service_providers(system, "spinning_$MARKET_WIDE_ZONE")
+end
+
+"""
+    get_on_sup_providers(system::System) -> Vector{Int}
+
+Returns the unit codes of the units that provide online supplemental reserve.
+"""
+function get_on_sup_providers(system::System)
+    return _get_service_providers(system, "supplemental_on_$MARKET_WIDE_ZONE")
+end
+
+"""
+    get_off_sup_providers(system::System) -> Vector{Int}
+
+Returns the unit codes of the units that provide offline supplemental reserve.
+"""
+function get_off_sup_providers(system::System)
+    return _get_service_providers(system, "supplemental_off_$MARKET_WIDE_ZONE")
 end
