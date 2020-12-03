@@ -7,7 +7,7 @@ makedocs(;
     repo="https://gitlab.invenia.ca/invenia/research/InHouseFNM.jl/blob/{commit}{path}#L{line}",
     sitename="InHouseFNM.jl",
     format=Documenter.HTML(;
-        prettyurls=get(ENV, "CI", "false") == "true",
+        prettyurls=false,
         assets=String[],
     ),
     pages=[

@@ -8,10 +8,13 @@ using PowerSystems
 # We use -9999 as the code for the market-wide reserve zone in accordance with FNDataPrep
 const MARKET_WIDE_ZONE = -9999
 
+# Type
+include("fnm.jl")
+
 # Utility functions
-include("utils/api.jl")
 include("utils/internal.jl")
 include("utils/write.jl")
+include("utils/accessors.jl")
 
 # Model functions
 include("model/constraints.jl")
@@ -21,8 +24,10 @@ include("model/variables.jl")
 # Templates
 include("templates/unit_commitment.jl")
 
-# API functions
+# Type
 export FullNetworkModel
+
+# Accessor functions
 export get_fixed_loads
 export get_generator_forecast
 export get_initial_commitment
