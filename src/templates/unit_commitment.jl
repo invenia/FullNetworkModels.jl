@@ -20,6 +20,7 @@ $(_write_formulation(
         _regulation_requirements_latex(),
         _operating_reserve_requirements_latex(),
         _add_ancillary_services_constraints_latex(),
+        _ramp_rates_latex(),
         _energy_balance_latex(),
     ],
     variables=[
@@ -43,6 +44,7 @@ function unit_commitment(system::System, solver; relax_integrality=false)
     ancillary_service_limits!(fnm)
     regulation_requirements!(fnm)
     operating_reserve_requirements!(fnm)
+    ramp_rates!(fnm)
     energy_balance!(fnm)
     # Objectives
     thermal_variable_cost!(fnm)

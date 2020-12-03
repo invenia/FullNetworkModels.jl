@@ -351,3 +351,24 @@ Returns the unit codes of the units that provide offline supplemental reserve.
 function get_off_sup_providers(system::System)
     return _get_service_providers(system, "supplemental_off_$MARKET_WIDE_ZONE")
 end
+
+"""
+    get_ramp_rates(system::System) -> Dict
+
+Returns a dictionary with the ramp rates in pu/min of each unit in `system`.
+"""
+function get_ramp_rates(system::System)
+    return _generator_dict(system) do gen
+        get_ramp_limits(gen).up
+    end
+end
+
+"""
+    get_startup_limits(system::System) -> Dict
+
+Returns a dictionary with the start-up limits of each unit in `system`. The start-up limits
+are defined as equal to Pmin following the convention of PowerSimulations.jl. Since we don't
+currently differentiate between ramp up and down, this can also be used to obtain the
+shutdown limits, which are identical under this assumption.
+"""
+get_startup_limits(system::System) = get_pmin(system)

@@ -57,6 +57,30 @@ function tests_operating_reserve_requirements(fnm)
     return nothing
 end
 
+function tests_ramp_rates(fnm)
+    @test sprint(show, constraint_by_name(
+        fnm.model, "ramp_regulation[3,1]"
+    )) == "ramp_regulation[3,1] : r_reg[3,1] ≤ 0.1"
+    @test sprint(show, constraint_by_name(
+        fnm.model, "ramp_spin_sup[3,1]"
+    )) == "ramp_spin_sup[3,1] : r_spin[3,1] + r_on_sup[3,1] + r_off_sup[3,1] ≤ 0.2"
+    @test constraint_by_name(fnm.model, "ramp_up[3,1]") === nothing
+    @test constraint_by_name(fnm.model, "ramp_down[3,1]") === nothing
+    @test sprint(show, constraint_by_name(
+        fnm.model, "ramp_up[3,2]"
+    )) == "ramp_up[3,2] : -p[3,1] + p[3,2] - 1.2 u[3,1] - 0.5 v[3,2] ≤ 0.0"
+    @test sprint(show, constraint_by_name(
+        fnm.model, "ramp_down[3,2]"
+    )) == "ramp_down[3,2] : p[3,1] - p[3,2] - 1.2 u[3,2] - 0.5 w[3,2] ≤ 0.0"
+    @test sprint(show, constraint_by_name(
+        fnm.model, "ramp_up_initial[3]"
+    )) == "ramp_up_initial[3] : p[3,1] - 0.5 v[3,1] ≤ 0.0"
+    @test sprint(show, constraint_by_name(
+        fnm.model, "ramp_down_initial[3]"
+    )) == "ramp_down_initial[3] : -p[3,1] - 1.2 u[3,1] - 0.5 w[3,1] ≤ 0.0"
+    return nothing
+end
+
 function tests_energy_balance(fnm)
     unit_codes = get_unit_codes(ThermalGen, fnm.system)
     load_names = get_load_names(PowerLoad, fnm.system)
@@ -103,6 +127,15 @@ end
             operating_reserve_requirements!(fnm)
             tests_operating_reserve_requirements(fnm)
         end
+    end
+    @testset "Ramp constraints" begin
+        fnm = FullNetworkModel(TEST_SYSTEM, GLPK.Optimizer)
+        add_thermal_generation!(fnm)
+        add_commitment!(fnm)
+        add_startup_shutdown!(fnm)
+        add_ancillary_services!(fnm)
+        ramp_rates!(fnm)
+        tests_ramp_rates(fnm)
     end
     @testset "Energy balance constraints" begin
         @testset "energy_balance!" begin
