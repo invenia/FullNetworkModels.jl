@@ -42,6 +42,7 @@ export get_on_sup_providers
 export get_operating_reserve_requirements
 export get_pmax
 export get_pmin
+export get_ramp_rates
 export get_regmax
 export get_regmin
 export get_regulation_cost
@@ -51,6 +52,7 @@ export get_reserve_zones
 export get_spinning_cost
 export get_spinning_providers
 export get_startup_cost
+export get_startup_limits
 export get_unit_codes
 export has_constraint
 export has_variable
@@ -66,6 +68,7 @@ export ancillary_service_limits!
 export energy_balance!
 export generation_limits!
 export operating_reserve_requirements!
+export ramp_rates!
 export regulation_requirements!
 
 # Objective functions

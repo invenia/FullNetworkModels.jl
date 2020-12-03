@@ -149,6 +149,42 @@ function operating_reserve_requirements!(fnm::FullNetworkModel)
     return fnm
 end
 
+function _ancillary_ramp_rates_latex()
+    return """
+        ``r^{\\text{reg}}_{g, t} \\leq 5 RR_{g}, \\forall g \\in \\mathcal{G}, t \\in \\mathcal{T}`` \n
+        ``r^{\\text{spin}}_{g, t} + r^{\\text{on-sup}}_{g, t} + r^{\\text{off-sup}}_{g, t} \\leq 10 RR_{g}, \\forall g \\in \\mathcal{G}, t \\in \\mathcal{T}``
+        """
+end
+
+function _generation_ramp_rates_latex()
+    return """
+        ``p_{g, t} - p_{g, t - 1} \\leq 60 RR_{g} u_{g, t - 1} + SU_{g} v_{g, t}, \\forall g \\in \\mathcal{G}, t \\in \\mathcal{T} \\setminus \\{1\\}`` \n
+        ``p_{g, 1} - P^{0}_{g} \\leq 60 RR_{g} U^{0}_{g} + SU_{g} v_{g, 1}, \\forall g \\in \\mathcal{G}`` \n
+        ``p_{g, t - 1} - p_{g, t} \\leq 60 RR_{g} u_{g, t} + SD_{g} w_{g, t}, \\forall g \\in \\mathcal{G}, t \\in \\mathcal{T} \\setminus \\{1\\}`` \n
+        ``P^{0}_{g} - p_{g, 1} \\leq 60 RR_{g} u_{g, 1} + SD_{g} w_{g, 1}, \\forall g \\in \\mathcal{G}``
+        """
+end
+
+function _ramp_rates_latex()
+    return join([_ancillary_ramp_rates_latex(), _generation_ramp_rates_latex()], "\n")
+end
+
+"""
+    ramp_rates!(fnm::FullNetworkModel)
+
+Adds ramp rate constraints to the full network model:
+
+$(_ramp_rates_latex())
+
+The constraints are named `ramp_regulation`, `ramp_spin_sup`, `ramp_up`, `ramp_up_initial`,
+`ramp_down`, and `ramp_down_initial` respectively.
+"""
+function ramp_rates!(fnm::FullNetworkModel)
+    _ancillary_ramp_rates!(fnm)
+    _generation_ramp_rates!(fnm)
+    return fnm
+end
+
 function _energy_balance_latex()
     return """
         ``\\sum_{g \\in \\mathcal{G}} p_{g, t} = \\sum_{f \\in \\mathcal{F}} D_{f, t}, \\forall t \\in \\mathcal{T}``
@@ -162,6 +198,8 @@ Adds the energy balance constraints to the full network model. The constraints e
 the total generation in the system meets the demand in each time period, assuming no loss:
 
 $(_energy_balance_latex())
+
+The constraint is named `energy_balance`.
 """
 function energy_balance!(fnm::FullNetworkModel)
     model = fnm.model
@@ -317,4 +355,70 @@ function _zero_non_providers!(model::Model, system::System, unit_codes, n_period
         r_off_sup[g, t] == 0
     )
     return model
+end
+
+function _ancillary_ramp_rates!(fnm::FullNetworkModel)
+    model = fnm.model
+    system = fnm.system
+    unit_codes = get_unit_codes(ThermalGen, system)
+    n_periods = get_forecasts_horizon(system)
+    # Get ramp rates in pu/min
+    RR_rate = get_ramp_rates(system)
+    # Get variables for better readability
+    r_reg = model[:r_reg]
+    r_spin = model[:r_spin]
+    r_on_sup = model[:r_on_sup]
+    r_off_sup = model[:r_off_sup]
+    # Allocated regulation can't be over 5 minutes of ramping
+    @constraint(
+        model,
+        ramp_regulation[g in unit_codes, t in 1:n_periods],
+        r_reg[g, t] <= 5 * RR_rate[g]
+    )
+    # Allocated reserves can't be over 10 minutes of ramping
+    @constraint(
+        model,
+        ramp_spin_sup[g in unit_codes, t in 1:n_periods],
+        r_spin[g, t] + r_on_sup[g, t] + r_off_sup[g, t] <= 10 * RR_rate[g]
+    )
+    return fnm
+end
+
+function _generation_ramp_rates!(fnm::FullNetworkModel)
+    model = fnm.model
+    system = fnm.system
+    unit_codes = get_unit_codes(ThermalGen, system)
+    n_periods = get_forecasts_horizon(system)
+    RR_rate = get_ramp_rates(system)
+    SU = get_startup_limits(system)
+    P0 = get_initial_generation(system)
+    U0 = get_initial_commitment(system)
+    p = model[:p]
+    u = model[:u]
+    v = model[:v]
+    w = model[:w]
+    # Ramp up - generation can't go up more than the hourly (60 min) ramp capacity
+    @constraint(
+        model,
+        ramp_up[g in unit_codes, t in 2:n_periods],
+        p[g, t] - p[g, t - 1] <= 60 * RR_rate[g] * u[g, t - 1] + SU[g][t] * v[g, t]
+    )
+    @constraint(
+        model,
+        ramp_up_initial[g in unit_codes],
+        p[g, 1] - P0[g] <= 60 * RR_rate[g] * U0[g] + SU[g][1] * v[g, 1]
+    )
+    # Ramp down - generation can't go down more than the hourly (60 min) ramp capacity
+    # We consider SU = SD
+    @constraint(
+        model,
+        ramp_down[g in unit_codes, t in 2:n_periods],
+        p[g, t - 1] - p[g, t] <= 60 * RR_rate[g] * u[g, t] + SU[g][t] * w[g, t]
+    )
+    @constraint(
+        model,
+        ramp_down_initial[g in unit_codes],
+        P0[g] - p[g, 1] <= 60 * RR_rate[g] * u[g, 1] + SU[g][1] * w[g, 1]
+    )
+    return fnm
 end

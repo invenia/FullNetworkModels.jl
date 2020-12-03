@@ -58,5 +58,6 @@
         @test get_initial_downtime(system) == Dict(
             3 => PowerSystems.INFINITE_TIME, 7 => PowerSystems.INFINITE_TIME
         )
+        @test get_ramp_rates(system) == Dict(3 => 0.02, 7 => 0.02)
     end
 end
