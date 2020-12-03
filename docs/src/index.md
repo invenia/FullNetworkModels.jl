@@ -9,4 +9,5 @@ The notation used in the code follows the one used in [Invenia's formulation of 
 ## Contents
 ```@contents
 Pages = ["api.md"]
+Depth = 3
 ```
