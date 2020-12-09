@@ -363,7 +363,7 @@ function _ancillary_ramp_rates!(fnm::FullNetworkModel)
     unit_codes = get_unit_codes(ThermalGen, system)
     n_periods = get_forecasts_horizon(system)
     # Get ramp rates in pu/min
-    RR_rate = get_ramp_rates(system)
+    RR = get_ramp_rates(system)
     # Get variables for better readability
     r_reg = model[:r_reg]
     r_spin = model[:r_spin]
@@ -373,13 +373,13 @@ function _ancillary_ramp_rates!(fnm::FullNetworkModel)
     @constraint(
         model,
         ramp_regulation[g in unit_codes, t in 1:n_periods],
-        r_reg[g, t] <= 5 * RR_rate[g]
+        r_reg[g, t] <= 5 * RR[g]
     )
     # Allocated reserves can't be over 10 minutes of ramping
     @constraint(
         model,
         ramp_spin_sup[g in unit_codes, t in 1:n_periods],
-        r_spin[g, t] + r_on_sup[g, t] + r_off_sup[g, t] <= 10 * RR_rate[g]
+        r_spin[g, t] + r_on_sup[g, t] + r_off_sup[g, t] <= 10 * RR[g]
     )
     return fnm
 end
@@ -389,7 +389,7 @@ function _generation_ramp_rates!(fnm::FullNetworkModel)
     system = fnm.system
     unit_codes = get_unit_codes(ThermalGen, system)
     n_periods = get_forecasts_horizon(system)
-    RR_rate = get_ramp_rates(system)
+    RR = get_ramp_rates(system)
     SU = get_startup_limits(system)
     P0 = get_initial_generation(system)
     U0 = get_initial_commitment(system)
@@ -401,24 +401,24 @@ function _generation_ramp_rates!(fnm::FullNetworkModel)
     @constraint(
         model,
         ramp_up[g in unit_codes, t in 2:n_periods],
-        p[g, t] - p[g, t - 1] <= 60 * RR_rate[g] * u[g, t - 1] + SU[g][t] * v[g, t]
+        p[g, t] - p[g, t - 1] <= 60 * RR[g] * u[g, t - 1] + SU[g][t] * v[g, t]
     )
     @constraint(
         model,
         ramp_up_initial[g in unit_codes],
-        p[g, 1] - P0[g] <= 60 * RR_rate[g] * U0[g] + SU[g][1] * v[g, 1]
+        p[g, 1] - P0[g] <= 60 * RR[g] * U0[g] + SU[g][1] * v[g, 1]
     )
     # Ramp down - generation can't go down more than the hourly (60 min) ramp capacity
     # We consider SU = SD
     @constraint(
         model,
         ramp_down[g in unit_codes, t in 2:n_periods],
-        p[g, t - 1] - p[g, t] <= 60 * RR_rate[g] * u[g, t] + SU[g][t] * w[g, t]
+        p[g, t - 1] - p[g, t] <= 60 * RR[g] * u[g, t] + SU[g][t] * w[g, t]
     )
     @constraint(
         model,
         ramp_down_initial[g in unit_codes],
-        P0[g] - p[g, 1] <= 60 * RR_rate[g] * u[g, 1] + SU[g][1] * w[g, 1]
+        P0[g] - p[g, 1] <= 60 * RR[g] * u[g, 1] + SU[g][1] * w[g, 1]
     )
     return fnm
 end
