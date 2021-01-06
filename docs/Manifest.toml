@@ -177,7 +177,7 @@ version = "0.10.14"
 [[FullNetworkModels]]
 deps = ["Compat", "Dates", "JuMP", "PowerSystems"]
 path = ".."
-uuid = "325a905e-d147-45ac-9d6c-064569d20dc1"
+uuid = "73927447-18cb-4351-9246-c402eb8d0c47"
 version = "0.1.0"
 
 [[Future]]
