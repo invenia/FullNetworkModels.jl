@@ -9,7 +9,7 @@ FullNetworkModel
 ### Unit Commitment
 
 ```@autodocs
-Modules = [InHouseFNM]
+Modules = [FullNetworkModels]
 Pages = ["templates/unit_commitment.jl"]
 Private = false
 ```
@@ -17,7 +17,7 @@ Private = false
 ## Variables
 
 ```@autodocs
-Modules = [InHouseFNM]
+Modules = [FullNetworkModels]
 Pages = ["model/variables.jl"]
 Private = false
 ```
@@ -25,7 +25,7 @@ Private = false
 ## Objective Terms
 
 ```@autodocs
-Modules = [InHouseFNM]
+Modules = [FullNetworkModels]
 Pages = ["model/objectives.jl"]
 Private = false
 ```
@@ -33,7 +33,7 @@ Private = false
 ## Constraints
 
 ```@autodocs
-Modules = [InHouseFNM]
+Modules = [FullNetworkModels]
 Pages = ["model/constraints.jl"]
 Private = false
 ```
@@ -41,7 +41,7 @@ Private = false
 ## Accessors
 
 ```@autodocs
-Modules = [InHouseFNM]
+Modules = [FullNetworkModels]
 Pages = ["utils/accessors.jl"]
 Private = false
 ```
@@ -51,6 +51,6 @@ Private = false
 These functions are not public API, they may change or be removed at any time.
 
 ```@autodocs
-Modules = [InHouseFNM]
+Modules = [FullNetworkModels]
 Public = false
 ```

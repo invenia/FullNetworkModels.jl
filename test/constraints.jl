@@ -39,8 +39,8 @@ function tests_regulation_requirements(fnm)
     @test sprint(show, constraint_by_name(fnm.model, "regulation_requirements[2,1]")) ==
         "regulation_requirements[2,1] : r_reg[7,1] ≥ 0.1"
     @test sprint(show, constraint_by_name(
-        fnm.model, "regulation_requirements[$(InHouseFNM.MARKET_WIDE_ZONE),1]"
-    )) == "regulation_requirements[$(InHouseFNM.MARKET_WIDE_ZONE),1] : r_reg[7,1] + r_reg[3,1] ≥ 0.16"
+        fnm.model, "regulation_requirements[$(FullNetworkModels.MARKET_WIDE_ZONE),1]"
+    )) == "regulation_requirements[$(FullNetworkModels.MARKET_WIDE_ZONE),1] : r_reg[7,1] + r_reg[3,1] ≥ 0.16"
     return nothing
 end
 
@@ -52,8 +52,8 @@ function tests_operating_reserve_requirements(fnm)
         fnm.model, "operating_reserve_requirements[2,1]"
     )) == "operating_reserve_requirements[2,1] : r_reg[7,1] + r_spin[7,1] + r_on_sup[7,1] + r_off_sup[7,1] ≥ 0.15"
     @test sprint(show, constraint_by_name(
-        fnm.model, "operating_reserve_requirements[$(InHouseFNM.MARKET_WIDE_ZONE),1]"
-    )) == "operating_reserve_requirements[$(InHouseFNM.MARKET_WIDE_ZONE),1] : r_reg[7,1] + r_reg[3,1] + r_spin[7,1] + r_spin[3,1] + r_on_sup[7,1] + r_on_sup[3,1] + r_off_sup[7,1] + r_off_sup[3,1] ≥ 0.21"
+        fnm.model, "operating_reserve_requirements[$(FullNetworkModels.MARKET_WIDE_ZONE),1]"
+    )) == "operating_reserve_requirements[$(FullNetworkModels.MARKET_WIDE_ZONE),1] : r_reg[7,1] + r_reg[3,1] + r_spin[7,1] + r_spin[3,1] + r_on_sup[7,1] + r_on_sup[3,1] + r_off_sup[7,1] + r_off_sup[3,1] ≥ 0.21"
     return nothing
 end
 

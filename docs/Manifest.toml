@@ -174,6 +174,12 @@ git-tree-sha1 = "8de2519a83c6c1c2442c2f481dd9a8364855daf4"
 uuid = "f6369f11-7733-5829-9624-2563aa707210"
 version = "0.10.14"
 
+[[FullNetworkModels]]
+deps = ["Compat", "Dates", "JuMP", "PowerSystems"]
+path = ".."
+uuid = "325a905e-d147-45ac-9d6c-064569d20dc1"
+version = "0.1.0"
+
 [[Future]]
 deps = ["Random"]
 uuid = "9fa8497b-333b-5362-9e8d-4d0656e87820"
@@ -201,12 +207,6 @@ deps = ["Logging"]
 git-tree-sha1 = "377252859f740c217b936cebcd918a44f9b53b59"
 uuid = "b5f81e59-6552-4d32-b1f0-c071b021bf89"
 version = "0.1.1"
-
-[[InHouseFNM]]
-deps = ["Compat", "Dates", "JuMP", "PowerSystems"]
-path = ".."
-uuid = "325a905e-d147-45ac-9d6c-064569d20dc1"
-version = "0.1.0"
 
 [[InfrastructureSystems]]
 deps = ["CSV", "DataFrames", "Dates", "DocStringExtensions", "HDF5", "InteractiveUtils", "JSON", "JSON2", "Logging", "Mustache", "PrettyTables", "Test", "TimeSeries", "UUIDs", "YAML"]

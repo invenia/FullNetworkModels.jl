@@ -1,11 +1,11 @@
-using InHouseFNM
+using FullNetworkModels
 using Documenter
 
 makedocs(;
-    modules=[InHouseFNM],
+    modules=[FullNetworkModels],
     authors="Invenia Technical Computing Corporation",
-    repo="https://gitlab.invenia.ca/invenia/research/InHouseFNM.jl/blob/{commit}{path}#L{line}",
-    sitename="InHouseFNM.jl",
+    repo="https://gitlab.invenia.ca/invenia/research/FullNetworkModels.jl/blob/{commit}{path}#L{line}",
+    sitename="FullNetworkModels.jl",
     format=Documenter.HTML(;
         prettyurls=false,
         assets=String[],
