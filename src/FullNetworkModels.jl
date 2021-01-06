@@ -1,4 +1,4 @@
-module InHouseFNM
+module FullNetworkModels
 
 using Compat: only
 using Dates

@@ -44,12 +44,14 @@
             3 => fill(300.0, n_periods), 7 => fill(150.0, n_periods)
         )
         @test get_regulation_requirements(system) == Dict(
-            1 => 0.05, 2 => 0.1, InHouseFNM.MARKET_WIDE_ZONE => 0.16
+            1 => 0.05, 2 => 0.1, FullNetworkModels.MARKET_WIDE_ZONE => 0.16
         )
         @test get_operating_reserve_requirements(system) == Dict(
-            1 => 0.1, 2 => 0.15, InHouseFNM.MARKET_WIDE_ZONE => 0.21
+            1 => 0.1, 2 => 0.15, FullNetworkModels.MARKET_WIDE_ZONE => 0.21
         )
-        @test issetequal(get_reserve_zones(system), (1, 2, InHouseFNM.MARKET_WIDE_ZONE))
+        @test issetequal(
+            get_reserve_zones(system), (1, 2, FullNetworkModels.MARKET_WIDE_ZONE)
+        )
         @test get_initial_generation(system) == Dict(3 => 0.0, 7 => 0.0)
         @test get_initial_commitment(system) == Dict(3 => 0.0, 7 => 0.0)
         @test get_minimum_uptime(system) == Dict(3 => 3.0, 7 => 3.0)
