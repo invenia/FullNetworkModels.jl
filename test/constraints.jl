@@ -12,15 +12,15 @@ end
 
 function tests_ancillary_limits(fnm)
     @test sprint(show, constraint_by_name(fnm.model, "ancillary_max[7,1]")) ==
-        "ancillary_max[7,1] : p[7,1] - 5 u[7,1] + r_reg[7,1] + 0.5 u_reg[7,1] + r_spin[7,1] + r_on_sup[7,1] ≤ 0.0"
+        "ancillary_max[7,1] : p[7,1] - 8 u[7,1] + r_reg[7,1] + 0.5 u_reg[7,1] + r_spin[7,1] + r_on_sup[7,1] ≤ 0.0"
     @test sprint(show, constraint_by_name(fnm.model, "ancillary_min[7,1]")) ==
-        "ancillary_min[7,1] : p[7,1] - 0.5 u[7,1] - r_reg[7,1] - 0.5 u_reg[7,1] ≥ 0.0"
+        "ancillary_min[7,1] : p[7,1] - 0.5 u[7,1] - r_reg[7,1] ≥ 0.0"
     @test sprint(show, constraint_by_name(fnm.model, "regulation_max[7,1]")) ==
-        "regulation_max[7,1] : r_reg[7,1] - 1.75 u_reg[7,1] ≤ 0.0"
+        "regulation_max[7,1] : r_reg[7,1] - 3.5 u_reg[7,1] ≤ 0.0"
     @test sprint(show, constraint_by_name(fnm.model, "spin_and_sup_max[7,1]")) ==
-        "spin_and_sup_max[7,1] : -4.5 u[7,1] + r_spin[7,1] + r_on_sup[7,1] ≤ 0.0"
+        "spin_and_sup_max[7,1] : -7.5 u[7,1] + r_spin[7,1] + r_on_sup[7,1] ≤ 0.0"
     @test sprint(show, constraint_by_name(fnm.model, "off_sup_max[7,1]")) ==
-        "off_sup_max[7,1] : 4.5 u[7,1] + r_off_sup[7,1] ≤ 4.5"
+        "off_sup_max[7,1] : 7.5 u[7,1] + r_off_sup[7,1] ≤ 7.5"
     # Units in test system do not provide offline supplemental
     @test sprint(show, constraint_by_name(fnm.model, "zero_off_sup[7,1]")) ==
         "zero_off_sup[7,1] : r_off_sup[7,1] = 0.0"
@@ -35,49 +35,49 @@ end
 
 function tests_regulation_requirements(fnm)
     @test sprint(show, constraint_by_name(fnm.model, "regulation_requirements[1,1]")) ==
-        "regulation_requirements[1,1] : r_reg[3,1] ≥ 0.05"
+        "regulation_requirements[1,1] : r_reg[3,1] ≥ 0.3"
     @test sprint(show, constraint_by_name(fnm.model, "regulation_requirements[2,1]")) ==
-        "regulation_requirements[2,1] : r_reg[7,1] ≥ 0.1"
+        "regulation_requirements[2,1] : r_reg[7,1] ≥ 0.4"
     @test sprint(show, constraint_by_name(
         fnm.model, "regulation_requirements[$(FullNetworkModels.MARKET_WIDE_ZONE),1]"
-    )) == "regulation_requirements[$(FullNetworkModels.MARKET_WIDE_ZONE),1] : r_reg[7,1] + r_reg[3,1] ≥ 0.16"
+    )) == "regulation_requirements[$(FullNetworkModels.MARKET_WIDE_ZONE),1] : r_reg[7,1] + r_reg[3,1] ≥ 0.8"
     return nothing
 end
 
 function tests_operating_reserve_requirements(fnm)
     @test sprint(show, constraint_by_name(
         fnm.model, "operating_reserve_requirements[1,1]"
-    )) == "operating_reserve_requirements[1,1] : r_reg[3,1] + r_spin[3,1] + r_on_sup[3,1] + r_off_sup[3,1] ≥ 0.1"
+    )) == "operating_reserve_requirements[1,1] : r_reg[3,1] + r_spin[3,1] + r_on_sup[3,1] + r_off_sup[3,1] ≥ 0.4"
     @test sprint(show, constraint_by_name(
         fnm.model, "operating_reserve_requirements[2,1]"
-    )) == "operating_reserve_requirements[2,1] : r_reg[7,1] + r_spin[7,1] + r_on_sup[7,1] + r_off_sup[7,1] ≥ 0.15"
+    )) == "operating_reserve_requirements[2,1] : r_reg[7,1] + r_spin[7,1] + r_on_sup[7,1] + r_off_sup[7,1] ≥ 0.5"
     @test sprint(show, constraint_by_name(
         fnm.model, "operating_reserve_requirements[$(FullNetworkModels.MARKET_WIDE_ZONE),1]"
-    )) == "operating_reserve_requirements[$(FullNetworkModels.MARKET_WIDE_ZONE),1] : r_reg[7,1] + r_reg[3,1] + r_spin[7,1] + r_spin[3,1] + r_on_sup[7,1] + r_on_sup[3,1] + r_off_sup[7,1] + r_off_sup[3,1] ≥ 0.21"
+    )) == "operating_reserve_requirements[$(FullNetworkModels.MARKET_WIDE_ZONE),1] : r_reg[7,1] + r_reg[3,1] + r_spin[7,1] + r_spin[3,1] + r_on_sup[7,1] + r_on_sup[3,1] + r_off_sup[7,1] + r_off_sup[3,1] ≥ 1.2"
     return nothing
 end
 
 function tests_ramp_rates(fnm)
     @test sprint(show, constraint_by_name(
         fnm.model, "ramp_regulation[3,1]"
-    )) == "ramp_regulation[3,1] : r_reg[3,1] ≤ 0.1"
+    )) == "ramp_regulation[3,1] : r_reg[3,1] ≤ 1.25"
     @test sprint(show, constraint_by_name(
         fnm.model, "ramp_spin_sup[3,1]"
-    )) == "ramp_spin_sup[3,1] : r_spin[3,1] + r_on_sup[3,1] + r_off_sup[3,1] ≤ 0.2"
+    )) == "ramp_spin_sup[3,1] : r_spin[3,1] + r_on_sup[3,1] + r_off_sup[3,1] ≤ 2.5"
     @test constraint_by_name(fnm.model, "ramp_up[3,1]") === nothing
     @test constraint_by_name(fnm.model, "ramp_down[3,1]") === nothing
     @test sprint(show, constraint_by_name(
         fnm.model, "ramp_up[3,2]"
-    )) == "ramp_up[3,2] : -p[3,1] + p[3,2] - 1.2 u[3,1] - 0.5 v[3,2] ≤ 0.0"
+    )) == "ramp_up[3,2] : -p[3,1] + p[3,2] - 15 u[3,1] - 0.5 v[3,2] ≤ 0.0"
     @test sprint(show, constraint_by_name(
         fnm.model, "ramp_down[3,2]"
-    )) == "ramp_down[3,2] : p[3,1] - p[3,2] - 1.2 u[3,2] - 0.5 w[3,2] ≤ 0.0"
+    )) == "ramp_down[3,2] : p[3,1] - p[3,2] - 15 u[3,2] - 0.5 w[3,2] ≤ 0.0"
     @test sprint(show, constraint_by_name(
         fnm.model, "ramp_up_initial[3]"
-    )) == "ramp_up_initial[3] : p[3,1] - 0.5 v[3,1] ≤ 0.0"
+    )) == "ramp_up_initial[3] : p[3,1] - 0.5 v[3,1] ≤ 16.0"
     @test sprint(show, constraint_by_name(
         fnm.model, "ramp_down_initial[3]"
-    )) == "ramp_down_initial[3] : -p[3,1] - 1.2 u[3,1] - 0.5 w[3,1] ≤ 0.0"
+    )) == "ramp_down_initial[3] : -p[3,1] - 15 u[3,1] - 0.5 w[3,1] ≤ -1.0"
     return nothing
 end
 

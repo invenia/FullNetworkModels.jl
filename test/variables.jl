@@ -27,7 +27,7 @@ function tests_startup_shutdown(fnm, n_periods)
     @test !has_constraint(fnm.model, "startup_shutdown_definition[7,1]")
     @test sprint(show, constraint_by_name(
         fnm.model, "startup_shutdown_definition_initial[7]"
-    )) == "startup_shutdown_definition_initial[7] : u[7,1] - v[7,1] + w[7,1] = 0.0"
+    )) == "startup_shutdown_definition_initial[7] : u[7,1] - v[7,1] + w[7,1] = 1.0"
     return nothing
 end
 
