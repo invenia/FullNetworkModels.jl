@@ -1,4 +1,14 @@
-function _generation_limits_latex(; commitment::Bool)
+# Define functions so that `_latex` can be dispatched over them
+function ancillary_service_limits! end
+function energy_balance! end
+function generation_limits! end
+function operating_reserve_requirements! end
+function ramp_rates! end
+function regulation_requirements! end
+function _ancillary_ramp_rates! end
+function _generation_ramp_rates! end
+
+function _latex(::typeof(generation_limits!); commitment::Bool)
     u_gt = commitment ? "u_{g, t}" : ""
     return """
         ``P^{\\min}_{g, t} $u_gt \\leq p_{g, t} \\leq P^{\\max}_{g, t} $u_gt, \\forall g \\in \\mathcal{G}, t \\in \\mathcal{T}``
@@ -10,11 +20,11 @@ end
 
 Adds generation limit constraints to the full network model:
 
-$(_generation_limits_latex(commitment=true))
+$(_latex(generation_limits!; commitment=true))
 
 if `fnm.model` has commitment, or
 
-$(_generation_limits_latex(commitment=false))
+$(_latex(generation_limits!; commitment=false))
 
 if `fnm.model` does not have commitment.
 
@@ -35,7 +45,7 @@ function generation_limits!(fnm::FullNetworkModel)
     return fnm
 end
 
-function _ancillary_service_limits_latex()
+function _latex(::typeof(ancillary_service_limits!))
     return """
         ``p_{g, t} + r^{\\text{reg}}_{g, t} + r^{\\text{spin}}_{g, t} + r^{\\text{on-sup}}_{g, t} \\leq P^{\\max}_{g, t} (u_{g, t} - u^{\\text{reg}}_{g, t}) + P^{\\text{reg-max}}_{g, t} u^{\\text{reg}}_{g, t}, \\forall g \\in \\mathcal{G}, \\forall t \\in \\mathcal{T}`` \n
         ``p_{g, t} - r^{\\text{reg}}_{g, t} \\geq P^{\\min}_{g, t} (u_{g, t} - u^{\\text{reg}}_{g, t}) + P^{\\text{reg-min}}_{g, t} u^{\\text{reg}}_{g, t}, \\forall g \\in \\mathcal{G}, \\forall t \\in \\mathcal{T}`` \n
@@ -50,7 +60,7 @@ end
 
 Adds the constraints related to ancillary service limits to the full network model:
 
-$(_ancillary_service_limits_latex())
+$(_latex(ancillary_service_limits!))
 
 The constraints added are named, respectively, `ancillary_max`, `ancillary_min`,
 `regulation_max`, `spin_and_sup_max`, and `off_sup_max`.
@@ -81,7 +91,7 @@ function ancillary_service_limits!(fnm::FullNetworkModel)
     return fnm
 end
 
-function _regulation_requirements_latex()
+function _latex(::typeof(regulation_requirements!))
     return """
         ``\\sum_{g \\in \\mathcal{G}_{z}} r^{\\text{reg}}_{g, t} \\geq R^{\\text{reg-req}}_{z}, \\forall z \\in \\mathcal{Z}, \\forall t \\in \\mathcal{T}``
         """
@@ -92,7 +102,7 @@ end
 
 Adds zonal and market-wide regulation requirements to the full network model:
 
-$(_regulation_requirements_latex())
+$(_latex(regulation_requirements!))
 """
 function regulation_requirements!(fnm::FullNetworkModel)
     model = fnm.model
@@ -112,7 +122,7 @@ function regulation_requirements!(fnm::FullNetworkModel)
     return fnm
 end
 
-function _operating_reserve_requirements_latex()
+function _latex(::typeof(operating_reserve_requirements!))
     return """
         ``\\sum_{g \\in \\mathcal{G}_{z}} (r^{\\text{reg}}_{g, t} + r^{\\text{spin}}_{g, t} + r^{\\text{on-sup}}_{g, t} + r^{\\text{off-sup}}_{g, t}) \\geq R^{\\text{OR-req}}_{z}, \\forall z \\in \\mathcal{Z}, \\forall t \\in \\mathcal{T}``
         """
@@ -123,7 +133,7 @@ end
 
 Adds zonal and market-wide operating reserve requirements to the full network model:
 
-$(_operating_reserve_requirements_latex())
+$(_latex(operating_reserve_requirements!))
 """
 function operating_reserve_requirements!(fnm::FullNetworkModel)
     model = fnm.model
@@ -149,14 +159,14 @@ function operating_reserve_requirements!(fnm::FullNetworkModel)
     return fnm
 end
 
-function _ancillary_ramp_rates_latex()
+function _latex(::typeof(_ancillary_ramp_rates!))
     return """
         ``r^{\\text{reg}}_{g, t} \\leq 5 RR_{g}, \\forall g \\in \\mathcal{G}, t \\in \\mathcal{T}`` \n
         ``r^{\\text{spin}}_{g, t} + r^{\\text{on-sup}}_{g, t} + r^{\\text{off-sup}}_{g, t} \\leq 10 RR_{g}, \\forall g \\in \\mathcal{G}, t \\in \\mathcal{T}``
         """
 end
 
-function _generation_ramp_rates_latex()
+function _latex(::typeof(_generation_ramp_rates!))
     return """
         ``p_{g, t} - p_{g, t - 1} \\leq 60 RR_{g} u_{g, t - 1} + SU_{g} v_{g, t}, \\forall g \\in \\mathcal{G}, t \\in \\mathcal{T} \\setminus \\{1\\}`` \n
         ``p_{g, 1} - P^{0}_{g} \\leq 60 RR_{g} U^{0}_{g} + SU_{g} v_{g, 1}, \\forall g \\in \\mathcal{G}`` \n
@@ -165,8 +175,8 @@ function _generation_ramp_rates_latex()
         """
 end
 
-function _ramp_rates_latex()
-    return join([_ancillary_ramp_rates_latex(), _generation_ramp_rates_latex()], "\n")
+function _latex(::typeof(ramp_rates!))
+    return join([_latex(_ancillary_ramp_rates!), _latex(_generation_ramp_rates!)], "\n")
 end
 
 """
@@ -174,7 +184,7 @@ end
 
 Adds ramp rate constraints to the full network model:
 
-$(_ramp_rates_latex())
+$(_latex(ramp_rates!))
 
 The constraints are named `ramp_regulation`, `ramp_spin_sup`, `ramp_up`, `ramp_up_initial`,
 `ramp_down`, and `ramp_down_initial` respectively.
@@ -185,7 +195,7 @@ function ramp_rates!(fnm::FullNetworkModel)
     return fnm
 end
 
-function _energy_balance_latex()
+function _latex(::typeof(energy_balance!))
     return """
         ``\\sum_{g \\in \\mathcal{G}} p_{g, t} = \\sum_{f \\in \\mathcal{F}} D_{f, t}, \\forall t \\in \\mathcal{T}``
         """
@@ -197,7 +207,7 @@ end
 Adds the energy balance constraints to the full network model. The constraints ensure that
 the total generation in the system meets the demand in each time period, assuming no loss:
 
-$(_energy_balance_latex())
+$(_latex(energy_balance!))
 
 The constraint is named `energy_balance`.
 """

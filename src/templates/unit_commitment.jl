@@ -7,27 +7,27 @@ returns a `FullNetworkModel` with a `model` with the following formulation:
 
 $(_write_formulation(
     objectives=[
-        _thermal_variable_cost_objective_latex(),
-        _thermal_noload_cost_latex(),
-        _thermal_startup_cost_latex(),
-        _ancillary_service_costs_latex(),
+        _latex(_thermal_variable_cost_objective!),
+        _latex(thermal_noload_cost!),
+        _latex(thermal_startup_cost!),
+        _latex(ancillary_service_costs!),
     ],
     constraints=[
-        _thermal_variable_cost_constraints_latex(commitment=true),
-        _generation_limits_latex(commitment=true),
-        _add_startup_shutdown_constraints_latex(),
-        _ancillary_service_limits_latex(),
-        _regulation_requirements_latex(),
-        _operating_reserve_requirements_latex(),
-        _add_ancillary_services_constraints_latex(),
-        _ramp_rates_latex(),
-        _energy_balance_latex(),
+        _latex(_add_thermal_gen_blocks!; commitment=true),
+        _latex(generation_limits!; commitment=true),
+        _latex(_add_startup_shutdown_constraints!),
+        _latex(ancillary_service_limits!),
+        _latex(regulation_requirements!),
+        _latex(operating_reserve_requirements!),
+        _latex(_add_ancillary_services_constraints!),
+        _latex(ramp_rates!),
+        _latex(energy_balance!),
     ],
     variables=[
-        _add_thermal_generation_latex(),
-        _add_commitment_latex(),
-        _add_startup_shutdown_variables_latex(),
-        _add_ancillary_services_variables_latex(),
+        _latex(add_thermal_generation!),
+        _latex(add_commitment!),
+        _latex(_add_startup_shutdown_variables!),
+        _latex(_add_ancillary_services_variables!),
     ]
 ))
 """

@@ -1,10 +1,17 @@
-function _thermal_variable_cost_objective_latex()
+# Define functions so that `_latex` can be dispatched over them
+function _thermal_variable_cost_objective! end
+function _add_thermal_gen_blocks! end
+function ancillary_service_costs! end
+function thermal_noload_cost! end
+function thermal_startup_cost! end
+
+function _latex(::typeof(_thermal_variable_cost_objective!))
     return """
     ``\\sum_{t \\in \\mathcal{T}} \\sum_{g \\in \\mathcal{G}} \\sum_{q \\in \\mathcal{Q}_{g, t}} p^{\\text{aux}}_{g, t, q} \\Lambda^{\\text{offer}}_{g, t, q}``
     """
 end
 
-function _thermal_variable_cost_constraints_latex(; commitment)
+function _latex(::typeof(_add_thermal_gen_blocks!); commitment)
     u_gt = commitment ? "u_{g, t}" : ""
     return """
         ``0 \\leq p^{\\text{aux}}_{g, t, q} \\leq \\bar{P}_{g, t, q} $u_gt, \\forall g \\in \\mathcal{G}, t \\in \\mathcal{T}, q \\in \\mathcal{Q}_{g, t}`` \n
@@ -22,15 +29,15 @@ offer block number.
 
 Adds to the objective function:
 
-$(_thermal_variable_cost_objective_latex())
+$(_latex(_thermal_variable_cost_objective!))
 
 And adds the following constraints:
 
-$(_thermal_variable_cost_constraints_latex(commitment=true))
+$(_latex(_add_thermal_gen_blocks!; commitment=true))
 
 if `fnm.model` has commitment, or
 
-$(_thermal_variable_cost_constraints_latex(commitment=false))
+$(_latex(_add_thermal_gen_blocks!; commitment=false))
 
 if `fnm.model` does not have commitment.
 """
@@ -50,7 +57,7 @@ function thermal_variable_cost!(fnm::FullNetworkModel)
     return fnm
 end
 
-function _thermal_noload_cost_latex()
+function _latex(::typeof(thermal_noload_cost!))
     return """
         ``\\sum_{t \\in \\mathcal{T}} \\sum_{g \\in \\mathcal{G}} C^{\\text{nl}}_{g, t} u_{g, t}``
         """
@@ -61,13 +68,13 @@ end
 
 Adds the no-load cost of thermal generators to the model formulation:
 
-$(_thermal_noload_cost_latex())
+$(_latex(thermal_noload_cost!))
 """
-thermal_noload_cost!(fnm::FullNetworkModel) = _thermal_linear_cost!(
-    fnm, :u, get_noload_cost
-)
+function thermal_noload_cost!(fnm::FullNetworkModel)
+    return _thermal_linear_cost!(fnm, :u, get_noload_cost)
+end
 
-function _thermal_startup_cost_latex()
+function _latex(::typeof(thermal_startup_cost!))
     return """
         ``\\sum_{t \\in \\mathcal{T}} \\sum_{g \\in \\mathcal{G}} C^{\\text{st}}_{g, t} v_{g, t}``
         """
@@ -78,13 +85,13 @@ end
 
 Adds the start-up cost of thermal generators to the model formulation:
 
-$(_thermal_startup_cost_latex())
+$(_latex(thermal_startup_cost!))
 """
-thermal_startup_cost!(fnm::FullNetworkModel) = _thermal_linear_cost!(
-    fnm, :v, get_startup_cost
-)
+function thermal_startup_cost!(fnm::FullNetworkModel)
+    return _thermal_linear_cost!(fnm, :v, get_startup_cost)
+end
 
-function _ancillary_service_costs_latex()
+function _latex(::typeof(ancillary_service_costs!))
     return """
         ``\\sum_{g \\in \\mathcal{G}} \\sum_{t \\in \\mathcal{T}} (C^{\\text{reg}}_{g, t} r^{\\text{reg}}_{g, t} + C^{\\text{spin}}_{g, t} r^{\\text{spin}}_{g, t} + C^{\\text{on-sup}}_{g, t} r^{\\text{on-sup}}_{g, t} + C^{\\text{off-sup}}_{g, t} r^{\\text{off-sup}}_{g, t})``
         """
@@ -98,7 +105,7 @@ online supplemental, and offline supplemental reserves.
 
 Adds to the objective function:
 
-$(_ancillary_service_costs_latex())
+$(_latex(ancillary_service_costs!))
 """
 function ancillary_service_costs!(fnm::FullNetworkModel)
     _thermal_linear_cost!(fnm, :r_reg, get_regulation_cost)
