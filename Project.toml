@@ -1,7 +1,7 @@
 name = "FullNetworkModels"
 uuid = "73927447-18cb-4351-9246-c402eb8d0c47"
 authors = ["Invenia Technical Computing Corporation"]
-version = "1.0.2"
+version = "1.0.3"
 
 [deps]
 Compat = "34da2185-b29b-5c13-b0c7-acf172513d20"

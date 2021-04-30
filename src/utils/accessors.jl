@@ -346,4 +346,4 @@ are defined as equal to Pmin following the convention of PowerSimulations.jl. Si
 currently differentiate between ramp up and down, this can also be used to obtain the
 shutdown limits, which are identical under this assumption.
 """
-get_startup_limits(system::System) = get_pmin(system)
+get_startup_limits(system::System) = get_regmin(system)
