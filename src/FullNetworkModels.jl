@@ -1,6 +1,5 @@
 module FullNetworkModels
 
-using Compat: only
 using Dates
 using JuMP
 using PowerSystems
@@ -12,6 +11,7 @@ const MARKET_WIDE_ZONE = -9999
 include("fnm.jl")
 
 # Utility functions
+include("utils/api_extensions.jl")
 include("utils/internal.jl")
 include("utils/write.jl")
 include("utils/accessors.jl")
@@ -84,5 +84,10 @@ export thermal_variable_cost!
 
 # Templates
 export unit_commitment
+
+# API extensions
+export optimize!
+export set_optimizer_attribute
+export set_optimizer_attributes
 
 end

@@ -1,9 +1,11 @@
 @testset "API functions" begin
     fnm = FullNetworkModel(TEST_SYSTEM, GLPK.Optimizer)
+
     @testset "Prints" begin
         @test sprint(show, fnm) == "FullNetworkModel\nModel formulation: 0 variables\nSystem: 23 components, 24 time periods\n"
     end
-    @testset "Getters" begin
+
+    @testset "Accessors" begin
         system = fnm.system
         n_periods = get_forecasts_horizon(system)
         @test issetequal(get_unit_codes(ThermalGen, system), (7, 3))
@@ -61,5 +63,17 @@
         )
         @test get_initial_downtime(system) == Dict(3 => 0.0, 7 => 0.0)
         @test get_ramp_rates(system) == Dict(3 => 0.25, 7 => 0.25)
+    end
+
+    @testset "API extensions" begin
+        set_optimizer_attribute(fnm, "tol_obj", 1e-2)
+        @test get_optimizer_attribute(fnm, "tol_obj") == 1e-2
+
+        set_optimizer_attributes(fnm, "tol_obj" => 1e-3, "it_lim" => 10_000)
+        @test get_optimizer_attribute(fnm, "tol_obj") == 1e-3
+        @test get_optimizer_attribute(fnm, "it_lim") == 10_000
+
+        optimize!(fnm)
+        @test solve_time(fnm.model) > 0
     end
 end
