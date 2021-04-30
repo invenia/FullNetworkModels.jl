@@ -4,19 +4,18 @@ authors = ["Invenia Technical Computing Corporation"]
 version = "1.0.3"
 
 [deps]
-Compat = "34da2185-b29b-5c13-b0c7-acf172513d20"
 Dates = "ade2ca70-3891-5945-98fb-dc099432e06a"
+FullNetworkDataPrep = "a21943b2-60f3-11e9-2dbc-73f7bf1f23ac"
 JuMP = "4076af6c-e467-56ae-b986-b466b2749572"
 PowerSystems = "bcd98974-b02a-5e2f-9ee0-a103f5c450dd"
 
 [compat]
-Compat = "3"
 ElectricityMarkets = "1.14"
 FullNetworkDataPrep = "0.4.4"
 GLPK = "0.14"
 JuMP = "0.21"
 PowerSystems = "0.28"
-julia = "1"
+julia = "1.5"
 
 [extras]
 ElectricityMarkets = "fc2b1cf9-69e4-584d-aa69-fb07a6454787"
