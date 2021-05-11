@@ -38,7 +38,7 @@ function generation_limits!(fnm::FullNetworkModel)
         model,
         Val(has_variable(model, "u")),
         get_unit_codes(ThermalGen, system),
-        get_forecasts_horizon(system),
+        get_forecast_horizon(system),
         get_pmin(system),
         get_pmax(system),
     )
@@ -71,7 +71,7 @@ function ancillary_service_limits!(fnm::FullNetworkModel)
     @assert has_variable(model, "p")
     @assert has_variable(model, "u")
     unit_codes = get_unit_codes(ThermalGen, system)
-    n_periods = get_forecasts_horizon(system)
+    n_periods = get_forecast_horizon(system)
     Pmax = get_pmax(system)
     Pregmax = get_regmax(system)
     # Upper bound on generation + ancillary services
@@ -108,7 +108,7 @@ function regulation_requirements!(fnm::FullNetworkModel)
     model = fnm.model
     system = fnm.system
     unit_codes = get_unit_codes(ThermalGen, system)
-    n_periods = get_forecasts_horizon(system)
+    n_periods = get_forecast_horizon(system)
     reserve_zones = get_reserve_zones(system)
     zone_gens = _generators_by_reserve_zone(system)
     reg_requirements = get_regulation_requirements(system)
@@ -139,7 +139,7 @@ function operating_reserve_requirements!(fnm::FullNetworkModel)
     model = fnm.model
     system = fnm.system
     unit_codes = get_unit_codes(ThermalGen, system)
-    n_periods = get_forecasts_horizon(system)
+    n_periods = get_forecast_horizon(system)
     reserve_zones = get_reserve_zones(system)
     zone_gens = _generators_by_reserve_zone(system)
     or_requirements = get_operating_reserve_requirements(system)
@@ -216,7 +216,7 @@ function energy_balance!(fnm::FullNetworkModel)
     system = fnm.system
     unit_codes = get_unit_codes(ThermalGen, system)
     load_names = get_load_names(PowerLoad, system)
-    n_periods = get_forecasts_horizon(system)
+    n_periods = get_forecast_horizon(system)
     D = get_fixed_loads(system)
     # Get variables for better readability
     p = model[:p]
@@ -371,7 +371,7 @@ function _ancillary_ramp_rates!(fnm::FullNetworkModel)
     model = fnm.model
     system = fnm.system
     unit_codes = get_unit_codes(ThermalGen, system)
-    n_periods = get_forecasts_horizon(system)
+    n_periods = get_forecast_horizon(system)
     # Get ramp rates in pu/min
     RR = get_ramp_rates(system)
     # Get variables for better readability
@@ -398,7 +398,7 @@ function _generation_ramp_rates!(fnm::FullNetworkModel)
     model = fnm.model
     system = fnm.system
     unit_codes = get_unit_codes(ThermalGen, system)
-    n_periods = get_forecasts_horizon(system)
+    n_periods = get_forecast_horizon(system)
     RR = get_ramp_rates(system)
     SU = get_startup_limits(system)
     P0 = get_initial_generation(system)

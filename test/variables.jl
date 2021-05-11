@@ -33,7 +33,7 @@ end
 
 @testset "Variables" begin
     fnm = FullNetworkModel(TEST_SYSTEM, GLPK.Optimizer)
-    n_periods = get_forecasts_horizon(fnm.system)
+    n_periods = get_forecast_horizon(fnm.system)
     @testset "add_thermal_generation!" begin
         add_thermal_generation!(fnm)
         tests_thermal_variable(fnm, "p", n_periods)

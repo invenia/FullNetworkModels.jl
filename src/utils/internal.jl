@@ -21,7 +21,7 @@ function _thermal_linear_cost!(fnm::FullNetworkModel, var::Symbol, f)
     system = fnm.system
     @assert has_variable(model, var)
     unit_codes = get_unit_codes(ThermalGen, system)
-    n_periods = get_forecasts_horizon(system)
+    n_periods = get_forecast_horizon(system)
     cost = f(system)
     x = model[var]
     obj_cost = sum(cost[g][t] * x[g, t] for g in unit_codes, t in 1:n_periods)
