@@ -43,7 +43,7 @@ end
 
 Returns the initial `DateTime` of the forecasts in `system`.
 """
-PowerSystems.get_initial_time(system::System) = only(get_forecast_initial_times(system))
+get_initial_time(system::System) = only(get_forecast_initial_times(system))
 
 """
     get_generator_forecast(system::System, label::Symbol; inner_label=:null) -> Dict
