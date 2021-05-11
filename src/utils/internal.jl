@@ -18,7 +18,7 @@ Adds a linear cost (cost * variable) to the objective, where the cost is fetched
 """
 function _thermal_linear_cost!(
     fnm::FullNetworkModel, var::Symbol, f;
-    unit_codes=get_unit_codes(ThermalGen, system)
+    unit_codes=get_unit_codes(ThermalGen, fnm.system)
 )
     model = fnm.model
     system = fnm.system

@@ -85,7 +85,7 @@ function get_fixed_loads(system::System)
         # Load forecasts are multiplicative, which means the forecast multiplies the base
         # value stored in the field `max_active_power`.
         ts_dict[load_name] = active_power .* values(get_data(
-            get_time_series(SingleTimeSeries, load, "get_max_active_power")
+            get_time_series(SingleTimeSeries, load, "max_active_power")
         ))
     end
     return ts_dict
