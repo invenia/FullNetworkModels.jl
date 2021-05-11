@@ -46,31 +46,27 @@ Returns the initial `DateTime` of the forecasts in `system`.
 get_initial_time(system::System) = only(get_forecast_initial_times(system))
 
 """
-    get_generator_forecast(system::System, label::Symbol; inner_label=:null) -> Dict
+    get_generator_time_series(system::System, label::AbstractString; suffix=false) -> Dict
 
-Returns a dictionary with the forecasts for `label` stored in `system`. The keys of the
-dictionary are the unit codes. If there forecast has a label within a label, `inner_label`
-should be also used.
+Returns a dictionary with the time series values for `label` stored in `system`. The keys
+of the dictionary are the unit codes. If the label is supposed to have a zone suffix, e.g.
+for ancillary costs, then `suffix` should be set to `true`.
 """
-function get_generator_forecast(system::System, label::Symbol, inner_label=:null)
+function get_generator_time_series(system::System, label::AbstractString; suffix=false)
     unit_codes = get_unit_codes(ThermalGen, system)
-    initial_time = only(get_forecast_initial_times(system))
-    n_periods = get_forecast_horizon(system)
-    forec = Dict{Int, Vector}()
+    ts_dict = Dict{Int, Vector}()
     for unit in unit_codes
         gen = get_component(ThermalGen, system, string(unit))
-        unit_forecasts = values(
-            get_forecast(
-                Deterministic, gen, initial_time, "get_thermal_params", n_periods
-            ).data
-        )
-        forec[unit] = if inner_label == :null
-            getproperty.(unit_forecasts, label)
-        else
-            getproperty.(getproperty.(unit_forecasts, label), inner_label)
+        # If the label is supposed to have a zone suffix, append it
+        full_label = suffix ? label * "_$(gen.ext["reserve_zone"])" : label
+        # Add the dict entry only if the unit actually has that time series
+        if full_label in get_time_series_names(SingleTimeSeries, gen)
+            ts_dict[unit] = values(get_data(
+                get_time_series(SingleTimeSeries, gen, full_label)
+            ))
         end
     end
-    return forec
+    return ts_dict
 end
 
 """
@@ -80,21 +76,19 @@ Returns a dictionary with the fixed load forecasts stored in `system`. The keys 
 dictionary are the load names.
 """
 function get_fixed_loads(system::System)
-    initial_time = only(get_forecast_initial_times(system))
+    initial_time = get_initial_time(system)
     n_periods = get_forecast_horizon(system)
-    forec = Dict{String, Vector{Float64}}()
+    ts_dict = Dict{String, Vector{Float64}}()
     for load in get_components(PowerLoad, system)
         load_name = get_name(load)
         active_power = get_max_active_power(load)
         # Load forecasts are multiplicative, which means the forecast multiplies the base
         # value stored in the field `max_active_power`.
-        forec[load_name] = active_power .* values(
-            get_forecast(
-                Deterministic, load, initial_time, "get_max_active_power", n_periods
-            ).data
-        )
+        ts_dict[load_name] = active_power .* values(get_data(
+            get_time_series(SingleTimeSeries, load, "get_max_active_power")
+        ))
     end
-    return forec
+    return ts_dict
 end
 
 """
@@ -102,78 +96,85 @@ end
 
 Returns Pmin, i.e., the minimum power outputs of the generators in `system`.
 """
-get_pmin(system::System) = get_generator_forecast(system, :active_power_min)
+get_pmin(system::System) = get_generator_time_series(system, "active_power_min")
 
 """
     get_pmax(system::System) -> Dict
 
 Returns Pmax, i.e., the maximum power outputs of the generators in `system`.
 """
-get_pmax(system::System) = get_generator_forecast(system, :active_power_max)
+get_pmax(system::System) = get_generator_time_series(system, "active_power_max")
 
 """
     get_regmin(system::System) -> Dict
 
 Returns the minimum power outputs with regulation of the generators in `system`.
 """
-get_regmin(system::System) = get_generator_forecast(system, :regulation_min)
+get_regmin(system::System) = get_generator_time_series(system, "regulation_min")
 
 """
     get_regmax(system::System) -> Dict
 
 Returns the maximum power outputs with regulation of the generators in `system`.
 """
-get_regmax(system::System) = get_generator_forecast(system, :regulation_max)
+get_regmax(system::System) = get_generator_time_series(system, "regulation_max")
 
 """
     get_regulation_cost(system::System) -> Dict
 
 Returns the costs of regulation offered by the generators in `system`.
 """
-get_regulation_cost(system::System) = get_generator_forecast(system, :asm_costs, :reg)
+function get_regulation_cost(system::System)
+    return get_generator_time_series(system, "regulation"; suffix=true)
+end
 
 """
     get_spinning_cost(system::System) -> Dict
 
 Returns the costs of spinning reserve offered by the generators in `system`.
 """
-get_spinning_cost(system::System) = get_generator_forecast(system, :asm_costs, :spin)
+function get_spinning_cost(system::System)
+    return get_generator_time_series(system, "spinning"; suffix=true)
+end
 
 """
     get_on_sup_cost(system::System) -> Dict
 
 Returns the costs of online supplemental reserve offered by the generators in `system`.
 """
-get_on_sup_cost(system::System) = get_generator_forecast(system, :asm_costs, :sup)
+function get_on_sup_cost(system::System)
+    return get_generator_time_series(system, "supplemental_on"; suffix=true)
+end
 
 """
     get_off_sup_cost(system::System) -> Dict
 
 Returns the costs of offline supplemental reserve offered by the generators in `system`.
 """
-get_off_sup_cost(system::System) = get_generator_forecast(system, :asm_costs, :sup_off)
+function get_off_sup_cost(system::System)
+    return get_generator_time_series(system, "supplemental_off"; suffix=true)
+end
 
 """
     get_offer_curves(system::System) -> Dict
 
 Returns the offer curves of generators in `system`.
 """
-get_offer_curves(system::System) = get_generator_forecast(system, :offer_curve)
+get_offer_curves(system::System) = get_generator_time_series(system, "offer_curve")
 
 """
     get_noload_cost(system::System) -> Dict
 
-Returns the no-load costs of the generators in `system`, which are represented in the
-`:fixed` field of the operation cost.
+Returns the no-load costs of the generators in `system`.
 """
-get_noload_cost(system::System) = get_generator_forecast(system, :operation_cost, :fixed)
+get_noload_cost(system::System) = get_generator_time_series(system, "no_load_cost")
 
 """
     get_startup_cost(system::System) -> Dict
 
 Returns the start-up costs of the generators in `system`.
 """
-get_startup_cost(system::System) = get_generator_forecast(system, :operation_cost, :startup)
+get_startup_cost(system::System) = get_generator_time_series(system, "start_up_cost")
 
 """
     get_reserve_zones(system::System) -> Vector{Int}
@@ -182,7 +183,7 @@ Returns a vector with the reserve zone numbers in `system`. The market-wide zone
 as $(MARKET_WIDE_ZONE) in accordance with FullNetworkDataPrep.jl.
 """
 function get_reserve_zones(system::System)
-    reserve_zones = Vector{Int}(undef, 0)
+    reserve_zones = Int[]
     services = collect(get_components(Service, system))
     for serv in services
         push!(reserve_zones, serv.ext["reserve_zone"])

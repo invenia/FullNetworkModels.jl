@@ -16,11 +16,13 @@ end
 Adds a linear cost (cost * variable) to the objective, where the cost is fetched by function
 `f` and the variable is named `var` within `fnm.model`.
 """
-function _thermal_linear_cost!(fnm::FullNetworkModel, var::Symbol, f)
+function _thermal_linear_cost!(
+    fnm::FullNetworkModel, var::Symbol, f;
+    unit_codes=get_unit_codes(ThermalGen, system)
+)
     model = fnm.model
     system = fnm.system
     @assert has_variable(model, var)
-    unit_codes = get_unit_codes(ThermalGen, system)
     n_periods = get_forecast_horizon(system)
     cost = f(system)
     x = model[var]
