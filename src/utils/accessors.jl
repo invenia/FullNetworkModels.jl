@@ -55,7 +55,7 @@ should be also used.
 function get_generator_forecast(system::System, label::Symbol, inner_label=:null)
     unit_codes = get_unit_codes(ThermalGen, system)
     initial_time = only(get_forecast_initial_times(system))
-    n_periods = get_forecasts_horizon(system)
+    n_periods = get_forecast_horizon(system)
     forec = Dict{Int, Vector}()
     for unit in unit_codes
         gen = get_component(ThermalGen, system, string(unit))
@@ -81,7 +81,7 @@ dictionary are the load names.
 """
 function get_fixed_loads(system::System)
     initial_time = only(get_forecast_initial_times(system))
-    n_periods = get_forecasts_horizon(system)
+    n_periods = get_forecast_horizon(system)
     forec = Dict{String, Vector{Float64}}()
     for load in get_components(PowerLoad, system)
         load_name = get_name(load)

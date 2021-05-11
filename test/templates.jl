@@ -1,7 +1,7 @@
 @testset "Templates" begin
     @testset "unit_commitment" begin
         fnm = unit_commitment(TEST_SYSTEM, GLPK.Optimizer)
-        n_periods = get_forecasts_horizon(fnm.system)
+        n_periods = get_forecast_horizon(fnm.system)
         tests_thermal_variable(fnm, "p", n_periods)
         tests_commitment(fnm, n_periods)
         tests_startup_shutdown(fnm, n_periods)

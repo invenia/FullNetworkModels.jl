@@ -26,7 +26,7 @@ function tests_ancillary_limits(fnm)
         "zero_off_sup[7,1] : r_off_sup[7,1] = 0.0"
     # Units in test system provide regulation, spinning, and online supplemental
     unit_codes = get_unit_codes(ThermalGen, fnm.system)
-    n_periods = get_forecasts_horizon(fnm.system)
+    n_periods = get_forecast_horizon(fnm.system)
     @testset for str in ("reg", "u_reg", "spin", "on_sup"), g in unit_codes, t in 1:n_periods
         @test constraint_by_name(fnm.model, "zero_$str[$g,$t]") === nothing
     end
@@ -84,7 +84,7 @@ end
 function tests_energy_balance(fnm)
     unit_codes = get_unit_codes(ThermalGen, fnm.system)
     load_names = get_load_names(PowerLoad, fnm.system)
-    n_periods = get_forecasts_horizon(fnm.system)
+    n_periods = get_forecast_horizon(fnm.system)
     D = get_fixed_loads(fnm.system)
     @testset "Constraints were correctly defined" for t in 1:n_periods
         system_load = sum(D[f][t] for f in load_names)
