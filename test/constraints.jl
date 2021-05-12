@@ -21,13 +21,10 @@ function tests_ancillary_limits(fnm)
         "spin_and_sup_max[7,1] : -7.5 u[7,1] + r_spin[7,1] + r_on_sup[7,1] ≤ 0.0"
     @test sprint(show, constraint_by_name(fnm.model, "off_sup_max[7,1]")) ==
         "off_sup_max[7,1] : 7.5 u[7,1] + r_off_sup[7,1] ≤ 7.5"
-    # Units in test system do not provide offline supplemental
-    @test sprint(show, constraint_by_name(fnm.model, "zero_off_sup[7,1]")) ==
-        "zero_off_sup[7,1] : r_off_sup[7,1] = 0.0"
-    # Units in test system provide regulation, spinning, and online supplemental
+    # Units in test system provide regulation, spinning, and on/off supplemental
     unit_codes = get_unit_codes(ThermalGen, fnm.system)
     n_periods = get_forecast_horizon(fnm.system)
-    @testset for str in ("reg", "u_reg", "spin", "on_sup"), g in unit_codes, t in 1:n_periods
+    for str in ("reg", "u_reg", "spin", "on_sup", "off_sup"), g in unit_codes, t in 1:n_periods
         @test constraint_by_name(fnm.model, "zero_$str[$g,$t]") === nothing
     end
     return nothing

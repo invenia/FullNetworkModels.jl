@@ -109,16 +109,16 @@ $(_latex(ancillary_service_costs!))
 """
 function ancillary_service_costs!(fnm::FullNetworkModel)
     _thermal_linear_cost!(
-        fnm, :r_reg, get_regulation_cost; unit_codes=get_regulation_providers(system)
+        fnm, :r_reg, get_regulation_cost; unit_codes=get_regulation_providers(fnm.system)
     )
     _thermal_linear_cost!(
-        fnm, :r_spin, get_spinning_cost; unit_codes=get_spinning_providers(system)
+        fnm, :r_spin, get_spinning_cost; unit_codes=get_spinning_providers(fnm.system)
     )
     _thermal_linear_cost!(
-        fnm, :r_on_sup, get_on_sup_cost; unit_codes=get_on_sup_providers(system)
+        fnm, :r_on_sup, get_on_sup_cost; unit_codes=get_on_sup_providers(fnm.system)
     )
     _thermal_linear_cost!(
-        fnm, :r_off_sup, get_off_sup_cost; unit_codes=get_off_sup_providers(system)
+        fnm, :r_off_sup, get_off_sup_cost; unit_codes=get_off_sup_providers(fnm.system)
     )
     return fnm
 end

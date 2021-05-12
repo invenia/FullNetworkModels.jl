@@ -10,10 +10,10 @@ PowerSystems = "bcd98974-b02a-5e2f-9ee0-a103f5c450dd"
 
 [compat]
 ElectricityMarkets = "1.14"
-FullNetworkDataPrep = "0.6"
+FullNetworkDataPrep = "0.7"
 GLPK = "0.14"
 JuMP = "0.21"
-PowerSystems = "1"
+PowerSystems = "1.5"
 julia = "1.5"
 
 [extras]
