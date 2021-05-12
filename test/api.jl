@@ -2,8 +2,7 @@
     fnm = FullNetworkModel(TEST_SYSTEM, GLPK.Optimizer)
 
     @testset "Prints" begin
-        # PowerSystems is counting components in a weird way: https://github.com/NREL-SIIP/PowerSystems.jl/issues/740
-        @test sprint(show, fnm) == "FullNetworkModel\nModel formulation: 0 variables\nSystem: 26 components, 24 time periods\n"
+        @test sprint(show, fnm) == "FullNetworkModel\nModel formulation: 0 variables\nSystem: 29 components, 24 time periods\n"
     end
 
     @testset "Accessors" begin
