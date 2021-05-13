@@ -22,7 +22,7 @@ $(_latex(add_thermal_generation!))
 """
 function add_thermal_generation!(fnm::FullNetworkModel)
     unit_codes = get_unit_codes(ThermalGen, fnm.system)
-    n_periods = get_forecasts_horizon(fnm.system)
+    n_periods = get_forecast_horizon(fnm.system)
     @variable(fnm.model, p[g in unit_codes, t in 1:n_periods] >= 0)
     return fnm
 end
@@ -43,7 +43,7 @@ $(_latex(add_commitment!))
 """
 function add_commitment!(fnm::FullNetworkModel)
     unit_codes = get_unit_codes(ThermalGen, fnm.system)
-    n_periods = get_forecasts_horizon(fnm.system)
+    n_periods = get_forecast_horizon(fnm.system)
     @variable(fnm.model, u[g in unit_codes, t in 1:n_periods], Bin)
     return fnm
 end
@@ -77,7 +77,7 @@ function add_startup_shutdown!(fnm::FullNetworkModel)
     system = fnm.system
     @assert has_variable(model, "u")
     unit_codes = get_unit_codes(ThermalGen, system)
-    n_periods = get_forecasts_horizon(system)
+    n_periods = get_forecast_horizon(system)
     _add_startup_shutdown_variables!(model, unit_codes, n_periods)
     _add_startup_shutdown_constraints!(model, system, unit_codes, n_periods)
     return fnm
@@ -143,7 +143,7 @@ function add_ancillary_services!(fnm::FullNetworkModel)
     model = fnm.model
     @assert has_variable(model, "u")
     unit_codes = get_unit_codes(ThermalGen, fnm.system)
-    n_periods = get_forecasts_horizon(fnm.system)
+    n_periods = get_forecast_horizon(fnm.system)
     _add_ancillary_services_variables!(model, unit_codes, n_periods)
     _add_ancillary_services_constraints!(model, unit_codes, n_periods)
     return fnm

@@ -29,11 +29,10 @@ export FullNetworkModel
 
 # Accessor functions
 export get_fixed_loads
-export get_generator_forecast
+export get_generator_time_series
 export get_initial_commitment
 export get_initial_downtime
 export get_initial_generation
-export get_initial_time
 export get_initial_uptime
 export get_load_names
 export get_minimum_downtime

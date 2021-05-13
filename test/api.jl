@@ -2,15 +2,14 @@
     fnm = FullNetworkModel(TEST_SYSTEM, GLPK.Optimizer)
 
     @testset "Prints" begin
-        @test sprint(show, fnm) == "FullNetworkModel\nModel formulation: 0 variables\nSystem: 23 components, 24 time periods\n"
+        @test sprint(show, fnm) == "FullNetworkModel\nModel formulation: 0 variables\nSystem: 29 components, 24 time periods\n"
     end
 
     @testset "Accessors" begin
         system = fnm.system
-        n_periods = get_forecasts_horizon(system)
+        n_periods = get_forecast_horizon(system)
         @test issetequal(get_unit_codes(ThermalGen, system), (7, 3))
         @test issetequal(get_load_names(PowerLoad, system), ("Load1", "Load2"))
-        @test get_initial_time(system) == DateTime("2017-12-15T00:00:00")
         @test get_pmin(system) == Dict(
             3 => fill(0.5, n_periods), 7 => fill(0.5, n_periods)
         )

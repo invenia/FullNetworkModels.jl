@@ -1,20 +1,19 @@
 name = "FullNetworkModels"
 uuid = "73927447-18cb-4351-9246-c402eb8d0c47"
 authors = ["Invenia Technical Computing Corporation"]
-version = "1.0.2"
+version = "2.0.0-DEV"
 
 [deps]
 Dates = "ade2ca70-3891-5945-98fb-dc099432e06a"
-FullNetworkDataPrep = "a21943b2-60f3-11e9-2dbc-73f7bf1f23ac"
 JuMP = "4076af6c-e467-56ae-b986-b466b2749572"
 PowerSystems = "bcd98974-b02a-5e2f-9ee0-a103f5c450dd"
 
 [compat]
 ElectricityMarkets = "1.14"
-FullNetworkDataPrep = "0.4.4"
+FullNetworkDataPrep = "0.7"
 GLPK = "0.14"
 JuMP = "0.21"
-PowerSystems = "0.28"
+PowerSystems = "1.5"
 julia = "1.5"
 
 [extras]
