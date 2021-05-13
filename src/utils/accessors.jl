@@ -170,10 +170,8 @@ Returns a vector with the reserve zone numbers in `system`. The market-wide zone
 as $(MARKET_WIDE_ZONE) in accordance with FullNetworkDataPrep.jl.
 """
 function get_reserve_zones(system::System)
-    reserve_zones = Int[]
-    services = collect(get_components(Service, system))
-    for serv in services
-        push!(reserve_zones, serv.ext["reserve_zone"])
+    reserve_zones = map(get_components(Service, system)) do serv
+        serv.ext["reserve_zone"] 
     end
     return unique(reserve_zones)
 end
