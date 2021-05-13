@@ -54,9 +54,7 @@ function get_generator_time_series(system::System, label::AbstractString; suffix
         full_label = suffix ? label * "_$(gen.ext["reserve_zone"])" : label
         # Add the dict entry only if the unit actually has that time series
         if full_label in get_time_series_names(SingleTimeSeries, gen)
-            ts_dict[unit] = values(get_data(
-                get_time_series(SingleTimeSeries, gen, full_label)
-            ))
+            ts_dict[unit] = get_time_series_values(SingleTimeSeries, gen, full_label)
         end
     end
     return ts_dict
@@ -75,9 +73,7 @@ function get_fixed_loads(system::System)
         active_power = get_max_active_power(load)
         # Load forecasts are multiplicative, which means the forecast multiplies the base
         # value stored in the field `max_active_power`.
-        ts_dict[load_name] = active_power .* values(get_data(
-            get_time_series(SingleTimeSeries, load, "max_active_power")
-        ))
+        ts_dict[load_name] = active_power .* get_time_series_values(SingleTimeSeries, load, "max_active_power")
     end
     return ts_dict
 end
