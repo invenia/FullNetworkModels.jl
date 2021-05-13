@@ -39,13 +39,6 @@ function get_load_names(loadtype::Type{<:StaticLoad}, system::System)
 end
 
 """
-    get_initial_time(system::System) -> DateTime
-
-Returns the initial `DateTime` of the forecasts in `system`.
-"""
-get_initial_time(system::System) = only(get_forecast_initial_times(system))
-
-"""
     get_generator_time_series(system::System, label::AbstractString; suffix=false) -> Dict
 
 Returns a dictionary with the time series values for `label` stored in `system`. The keys
@@ -76,8 +69,6 @@ Returns a dictionary with the fixed load forecasts stored in `system`. The keys 
 dictionary are the load names.
 """
 function get_fixed_loads(system::System)
-    initial_time = get_initial_time(system)
-    n_periods = get_forecast_horizon(system)
     ts_dict = Dict{String, Vector{Float64}}()
     for load in get_components(PowerLoad, system)
         load_name = get_name(load)
