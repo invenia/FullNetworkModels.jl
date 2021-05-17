@@ -79,7 +79,6 @@ function tests_ramp_rates(fnm)
 end
 
 function tests_energy_balance(fnm)
-    unit_codes = get_unit_codes(ThermalGen, fnm.system)
     load_names = get_load_names(PowerLoad, fnm.system)
     n_periods = get_forecast_horizon(fnm.system)
     D = get_fixed_loads(fnm.system)
@@ -92,53 +91,53 @@ function tests_energy_balance(fnm)
 end
 
 @testset "Constraints" begin
-    @testset "generation_limits!" begin
+    @testset "con_generation_limits!" begin
         # Test if trying to add constraints without having variables throws error
         fnm = FullNetworkModel(TEST_SYSTEM, GLPK.Optimizer)
-        @test_throws AssertionError generation_limits!(fnm)
+        @test_throws AssertionError con_generation_limits!(fnm)
         # Test for economic dispatch (just thermal generation added)
-        add_thermal_generation!(fnm)
-        generation_limits!(fnm)
+        var_thermal_generation!(fnm)
+        con_generation_limits!(fnm)
         tests_generation_limits(fnm)
         # Test for unit commitment (both thermal generation and commitment added)
         fnm = FullNetworkModel(TEST_SYSTEM, GLPK.Optimizer)
-        add_thermal_generation!(fnm)
-        add_commitment!(fnm)
-        generation_limits!(fnm)
+        var_thermal_generation!(fnm)
+        var_commitment!(fnm)
+        con_generation_limits!(fnm)
         tests_generation_limits(fnm)
     end
     @testset "Ancillary service constraints" begin
         fnm = FullNetworkModel(TEST_SYSTEM, GLPK.Optimizer)
-        add_thermal_generation!(fnm)
-        add_commitment!(fnm)
-        add_ancillary_services!(fnm)
-        @testset "ancillary_service_limits!" begin
-            ancillary_service_limits!(fnm)
+        var_thermal_generation!(fnm)
+        var_commitment!(fnm)
+        var_ancillary_services!(fnm)
+        @testset "con_ancillary_limits!" begin
+            con_ancillary_limits!(fnm)
             tests_ancillary_limits(fnm)
         end
-        @testset "regulation_requirements!" begin
-            regulation_requirements!(fnm)
+        @testset "con_regulation_requirements!" begin
+            con_regulation_requirements!(fnm)
             tests_regulation_requirements(fnm)
         end
-        @testset "regulation_requirements!" begin
-            operating_reserve_requirements!(fnm)
+        @testset "con_operating_reserve_requirements!" begin
+            con_operating_reserve_requirements!(fnm)
             tests_operating_reserve_requirements(fnm)
         end
     end
     @testset "Ramp constraints" begin
         fnm = FullNetworkModel(TEST_SYSTEM, GLPK.Optimizer)
-        add_thermal_generation!(fnm)
-        add_commitment!(fnm)
-        add_startup_shutdown!(fnm)
-        add_ancillary_services!(fnm)
-        ramp_rates!(fnm)
+        var_thermal_generation!(fnm)
+        var_commitment!(fnm)
+        var_startup_shutdown!(fnm)
+        var_ancillary_services!(fnm)
+        con_ramp_rates!(fnm)
         tests_ramp_rates(fnm)
     end
     @testset "Energy balance constraints" begin
-        @testset "energy_balance!" begin
+        @testset "con_energy_balance!" begin
             fnm = FullNetworkModel(TEST_SYSTEM, GLPK.Optimizer)
-            add_thermal_generation!(fnm)
-            energy_balance!(fnm)
+            var_thermal_generation!(fnm)
+            con_energy_balance!(fnm)
             tests_energy_balance(fnm)
         end
     end

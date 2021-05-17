@@ -11,12 +11,12 @@ function _add_to_objective!(model::Model, expr)
 end
 
 """
-    _thermal_linear_cost(fnm::FullNetworkModel, var::Symbol, f)
+    _obj_thermal_linear_cost(fnm::FullNetworkModel, var::Symbol, f)
 
 Adds a linear cost (cost * variable) to the objective, where the cost is fetched by function
 `f` and the variable is named `var` within `fnm.model`.
 """
-function _thermal_linear_cost!(
+function _obj_thermal_linear_cost!(
     fnm::FullNetworkModel, var::Symbol, f;
     unit_codes=get_unit_codes(ThermalGen, fnm.system)
 )
