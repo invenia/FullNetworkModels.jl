@@ -13,6 +13,7 @@ makedocs(;
     pages=[
         "Home" => "index.md",
         "API" => "api.md",
+        "Contributing" => "contributing.md",
     ],
     strict=true,
     checkdocs=:exports,
