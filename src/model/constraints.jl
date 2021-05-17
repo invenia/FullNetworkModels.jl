@@ -1,14 +1,14 @@
 # Define functions so that `_latex` can be dispatched over them
-function ancillary_service_limits! end
-function energy_balance! end
-function generation_limits! end
-function operating_reserve_requirements! end
-function ramp_rates! end
-function regulation_requirements! end
-function _ancillary_ramp_rates! end
-function _generation_ramp_rates! end
+function con_ancillary_limits! end
+function con_energy_balance! end
+function con_generation_limits! end
+function con_operating_reserve_requirements! end
+function con_ramp_rates! end
+function con_regulation_requirements! end
+function _con_ancillary_ramp_rates! end
+function _con_generation_ramp_rates! end
 
-function _latex(::typeof(generation_limits!); commitment::Bool)
+function _latex(::typeof(con_generation_limits!); commitment::Bool)
     u_gt = commitment ? "u_{g, t}" : ""
     return """
         ``P^{\\min}_{g, t} $u_gt \\leq p_{g, t} \\leq P^{\\max}_{g, t} $u_gt, \\forall g \\in \\mathcal{G}, t \\in \\mathcal{T}``
@@ -16,25 +16,25 @@ function _latex(::typeof(generation_limits!); commitment::Bool)
 end
 
 """
-    generation_limits!(fnm::FullNetworkModel)
+    con_generation_limits!(fnm::FullNetworkModel)
 
 Adds generation limit constraints to the full network model:
 
-$(_latex(generation_limits!; commitment=true))
+$(_latex(con_generation_limits!; commitment=true))
 
 if `fnm.model` has commitment, or
 
-$(_latex(generation_limits!; commitment=false))
+$(_latex(con_generation_limits!; commitment=false))
 
 if `fnm.model` does not have commitment.
 
 The constraints added are named `generation_min` and `generation_max`.
 """
-function generation_limits!(fnm::FullNetworkModel)
+function con_generation_limits!(fnm::FullNetworkModel)
     model = fnm.model
     system = fnm.system
     @assert has_variable(model, "p")
-    _generation_limits!(
+    _con_generation_limits!(
         model,
         Val(has_variable(model, "u")),
         get_unit_codes(ThermalGen, system),
@@ -45,7 +45,7 @@ function generation_limits!(fnm::FullNetworkModel)
     return fnm
 end
 
-function _latex(::typeof(ancillary_service_limits!))
+function _latex(::typeof(con_ancillary_limits!))
     return """
         ``p_{g, t} + r^{\\text{reg}}_{g, t} + r^{\\text{spin}}_{g, t} + r^{\\text{on-sup}}_{g, t} \\leq P^{\\max}_{g, t} (u_{g, t} - u^{\\text{reg}}_{g, t}) + P^{\\text{reg-max}}_{g, t} u^{\\text{reg}}_{g, t}, \\forall g \\in \\mathcal{G}, \\forall t \\in \\mathcal{T}`` \n
         ``p_{g, t} - r^{\\text{reg}}_{g, t} \\geq P^{\\min}_{g, t} (u_{g, t} - u^{\\text{reg}}_{g, t}) + P^{\\text{reg-min}}_{g, t} u^{\\text{reg}}_{g, t}, \\forall g \\in \\mathcal{G}, \\forall t \\in \\mathcal{T}`` \n
@@ -56,16 +56,16 @@ function _latex(::typeof(ancillary_service_limits!))
 end
 
 """
-    ancillary_service_limits!(fnm::FullNetworkModel)
+    con_ancillary_limits!(fnm::FullNetworkModel)
 
 Adds the constraints related to ancillary service limits to the full network model:
 
-$(_latex(ancillary_service_limits!))
+$(_latex(con_ancillary_limits!))
 
 The constraints added are named, respectively, `ancillary_max`, `ancillary_min`,
 `regulation_max`, `spin_and_sup_max`, and `off_sup_max`.
 """
-function ancillary_service_limits!(fnm::FullNetworkModel)
+function con_ancillary_limits!(fnm::FullNetworkModel)
     model = fnm.model
     system = fnm.system
     @assert has_variable(model, "p")
@@ -75,39 +75,38 @@ function ancillary_service_limits!(fnm::FullNetworkModel)
     Pmax = get_pmax(system)
     Pregmax = get_regmax(system)
     # Upper bound on generation + ancillary services
-    _ancillary_max!(model, unit_codes, n_periods, Pmax, Pregmax)
+    _con_ancillary_max!(model, unit_codes, n_periods, Pmax, Pregmax)
     Pmin = get_pmin(system)
     Pregmin = get_regmin(system)
     # Lower bound on generation - ancillary services
-    _ancillary_min!(model, unit_codes, n_periods, Pmin, Pregmin)
+    _con_ancillary_min!(model, unit_codes, n_periods, Pmin, Pregmin)
     # Upper bound on regulation
-    _regulation_max!(model, unit_codes, n_periods, Pregmin, Pregmax)
+    _con_regulation_max!(model, unit_codes, n_periods, Pregmin, Pregmax)
     # Upper bound on spinning + online supplemental reserves
-    _spin_and_sup_max!(model, unit_codes, n_periods, Pmin, Pmax)
+    _con_spin_and_sup_max!(model, unit_codes, n_periods, Pmin, Pmax)
     # Upper bound on offline supplemental reserve
-    _off_sup_max!(model, unit_codes, n_periods, Pmin, Pmax)
+    _con_off_sup_max!(model, unit_codes, n_periods, Pmin, Pmax)
     # Ensure that units that don't provide services have services set to zero
-    _zero_non_providers!(model, system, unit_codes, n_periods)
+    _con_zero_non_providers!(model, system, unit_codes, n_periods)
     return fnm
 end
 
-function _latex(::typeof(regulation_requirements!))
+function _latex(::typeof(con_regulation_requirements!))
     return """
         ``\\sum_{g \\in \\mathcal{G}_{z}} r^{\\text{reg}}_{g, t} \\geq R^{\\text{reg-req}}_{z}, \\forall z \\in \\mathcal{Z}, \\forall t \\in \\mathcal{T}``
         """
 end
 
 """
-    regulation_requirements!(fnm::FullNetworkModel)
+    con_regulation_requirements!(fnm::FullNetworkModel)
 
 Adds zonal and market-wide regulation requirements to the full network model:
 
-$(_latex(regulation_requirements!))
+$(_latex(con_regulation_requirements!))
 """
-function regulation_requirements!(fnm::FullNetworkModel)
+function con_regulation_requirements!(fnm::FullNetworkModel)
     model = fnm.model
     system = fnm.system
-    unit_codes = get_unit_codes(ThermalGen, system)
     n_periods = get_forecast_horizon(system)
     reserve_zones = get_reserve_zones(system)
     zone_gens = _generators_by_reserve_zone(system)
@@ -122,23 +121,22 @@ function regulation_requirements!(fnm::FullNetworkModel)
     return fnm
 end
 
-function _latex(::typeof(operating_reserve_requirements!))
+function _latex(::typeof(con_operating_reserve_requirements!))
     return """
         ``\\sum_{g \\in \\mathcal{G}_{z}} (r^{\\text{reg}}_{g, t} + r^{\\text{spin}}_{g, t} + r^{\\text{on-sup}}_{g, t} + r^{\\text{off-sup}}_{g, t}) \\geq R^{\\text{OR-req}}_{z}, \\forall z \\in \\mathcal{Z}, \\forall t \\in \\mathcal{T}``
         """
 end
 
 """
-    operating_reserve_requirements!(fnm::FullNetworkModel)
+    con_operating_reserve_requirements!(fnm::FullNetworkModel)
 
 Adds zonal and market-wide operating reserve requirements to the full network model:
 
-$(_latex(operating_reserve_requirements!))
+$(_latex(con_operating_reserve_requirements!))
 """
-function operating_reserve_requirements!(fnm::FullNetworkModel)
+function con_operating_reserve_requirements!(fnm::FullNetworkModel)
     model = fnm.model
     system = fnm.system
-    unit_codes = get_unit_codes(ThermalGen, system)
     n_periods = get_forecast_horizon(system)
     reserve_zones = get_reserve_zones(system)
     zone_gens = _generators_by_reserve_zone(system)
@@ -159,14 +157,14 @@ function operating_reserve_requirements!(fnm::FullNetworkModel)
     return fnm
 end
 
-function _latex(::typeof(_ancillary_ramp_rates!))
+function _latex(::typeof(_con_ancillary_ramp_rates!))
     return """
         ``r^{\\text{reg}}_{g, t} \\leq 5 RR_{g}, \\forall g \\in \\mathcal{G}, t \\in \\mathcal{T}`` \n
         ``r^{\\text{spin}}_{g, t} + r^{\\text{on-sup}}_{g, t} + r^{\\text{off-sup}}_{g, t} \\leq 10 RR_{g}, \\forall g \\in \\mathcal{G}, t \\in \\mathcal{T}``
         """
 end
 
-function _latex(::typeof(_generation_ramp_rates!))
+function _latex(::typeof(_con_generation_ramp_rates!))
     return """
         ``p_{g, t} - p_{g, t - 1} \\leq 60 RR_{g} u_{g, t - 1} + SU_{g} v_{g, t}, \\forall g \\in \\mathcal{G}, t \\in \\mathcal{T} \\setminus \\{1\\}`` \n
         ``p_{g, 1} - P^{0}_{g} \\leq 60 RR_{g} U^{0}_{g} + SU_{g} v_{g, 1}, \\forall g \\in \\mathcal{G}`` \n
@@ -175,43 +173,43 @@ function _latex(::typeof(_generation_ramp_rates!))
         """
 end
 
-function _latex(::typeof(ramp_rates!))
-    return join([_latex(_ancillary_ramp_rates!), _latex(_generation_ramp_rates!)], "\n")
+function _latex(::typeof(con_ramp_rates!))
+    return join(_latex.([_con_ancillary_ramp_rates!, _con_generation_ramp_rates!]), "\n")
 end
 
 """
-    ramp_rates!(fnm::FullNetworkModel)
+    con_ramp_rates!(fnm::FullNetworkModel)
 
 Adds ramp rate constraints to the full network model:
 
-$(_latex(ramp_rates!))
+$(_latex(con_ramp_rates!))
 
 The constraints are named `ramp_regulation`, `ramp_spin_sup`, `ramp_up`, `ramp_up_initial`,
-`ramp_down`, and `ramp_down_initial` respectively.
+`ramp_down`, and `ramp_down_initial`.
 """
-function ramp_rates!(fnm::FullNetworkModel)
-    _ancillary_ramp_rates!(fnm)
-    _generation_ramp_rates!(fnm)
+function con_ramp_rates!(fnm::FullNetworkModel)
+    _con_ancillary_ramp_rates!(fnm)
+    _con_generation_ramp_rates!(fnm)
     return fnm
 end
 
-function _latex(::typeof(energy_balance!))
+function _latex(::typeof(con_energy_balance!))
     return """
         ``\\sum_{g \\in \\mathcal{G}} p_{g, t} = \\sum_{f \\in \\mathcal{F}} D_{f, t}, \\forall t \\in \\mathcal{T}``
         """
 end
 
 """
-    energy_balance!(fnm::FullNetworkModel)
+    con_energy_balance!(fnm::FullNetworkModel)
 
 Adds the energy balance constraints to the full network model. The constraints ensure that
 the total generation in the system meets the demand in each time period, assuming no loss:
 
-$(_latex(energy_balance!))
+$(_latex(con_energy_balance!))
 
 The constraint is named `energy_balance`.
 """
-function energy_balance!(fnm::FullNetworkModel)
+function con_energy_balance!(fnm::FullNetworkModel)
     model = fnm.model
     system = fnm.system
     unit_codes = get_unit_codes(ThermalGen, system)
@@ -228,7 +226,7 @@ function energy_balance!(fnm::FullNetworkModel)
     return fnm
 end
 
-function _generation_limits!(model::Model, ::Val{true}, unit_codes, n_periods, Pmin, Pmax)
+function _con_generation_limits!(model::Model, ::Val{true}, unit_codes, n_periods, Pmin, Pmax)
     p = model[:p]
     u = model[:u]
     @constraint(
@@ -244,7 +242,7 @@ function _generation_limits!(model::Model, ::Val{true}, unit_codes, n_periods, P
     return model
 end
 
-function _generation_limits!(model::Model, ::Val{false}, unit_codes, n_periods, Pmin, Pmax)
+function _con_generation_limits!(model::Model, ::Val{false}, unit_codes, n_periods, Pmin, Pmax)
     p = model[:p]
     @constraint(
         model,
@@ -258,7 +256,7 @@ function _generation_limits!(model::Model, ::Val{false}, unit_codes, n_periods, 
     )
 end
 
-function _ancillary_max!(model::Model, unit_codes, n_periods, Pmax, Pregmax)
+function _con_ancillary_max!(model::Model, unit_codes, n_periods, Pmax, Pregmax)
     # Get variables for better readability
     p = model[:p]
     r_reg = model[:r_reg]
@@ -275,7 +273,7 @@ function _ancillary_max!(model::Model, unit_codes, n_periods, Pmax, Pregmax)
     return model
 end
 
-function _ancillary_min!(model::Model, unit_codes, n_periods, Pmin, Pregmin)
+function _con_ancillary_min!(model::Model, unit_codes, n_periods, Pmin, Pregmin)
     # Get variables for better readability
     p = model[:p]
     r_reg = model[:r_reg]
@@ -290,7 +288,7 @@ function _ancillary_min!(model::Model, unit_codes, n_periods, Pmin, Pregmin)
     return model
 end
 
-function _regulation_max!(model::Model, unit_codes, n_periods, Pregmin, Pregmax)
+function _con_regulation_max!(model::Model, unit_codes, n_periods, Pregmin, Pregmax)
     # Get variable for better readability
     r_reg = model[:r_reg]
     u_reg = model[:u_reg]
@@ -302,7 +300,7 @@ function _regulation_max!(model::Model, unit_codes, n_periods, Pregmin, Pregmax)
     return model
 end
 
-function _spin_and_sup_max!(model::Model, unit_codes, n_periods, Pmin, Pmax)
+function _con_spin_and_sup_max!(model::Model, unit_codes, n_periods, Pmin, Pmax)
     # Get variables for better readability
     r_spin = model[:r_spin]
     r_on_sup = model[:r_on_sup]
@@ -315,7 +313,7 @@ function _spin_and_sup_max!(model::Model, unit_codes, n_periods, Pmin, Pmax)
     return model
 end
 
-function _off_sup_max!(model::Model, unit_codes, n_periods, Pmin, Pmax)
+function _con_off_sup_max!(model::Model, unit_codes, n_periods, Pmin, Pmax)
     # Get variables for better readability
     r_off_sup = model[:r_off_sup]
     u = model[:u]
@@ -327,7 +325,7 @@ function _off_sup_max!(model::Model, unit_codes, n_periods, Pmin, Pmax)
     return model
 end
 
-function _zero_non_providers!(model::Model, system::System, unit_codes, n_periods)
+function _con_zero_non_providers!(model::Model, system::System, unit_codes, n_periods)
     # Units that provide each service
     reg_providers = get_regulation_providers(system)
     spin_providers = get_spinning_providers(system)
@@ -367,7 +365,7 @@ function _zero_non_providers!(model::Model, system::System, unit_codes, n_period
     return model
 end
 
-function _ancillary_ramp_rates!(fnm::FullNetworkModel)
+function _con_ancillary_ramp_rates!(fnm::FullNetworkModel)
     model = fnm.model
     system = fnm.system
     unit_codes = get_unit_codes(ThermalGen, system)
@@ -394,7 +392,7 @@ function _ancillary_ramp_rates!(fnm::FullNetworkModel)
     return fnm
 end
 
-function _generation_ramp_rates!(fnm::FullNetworkModel)
+function _con_generation_ramp_rates!(fnm::FullNetworkModel)
     model = fnm.model
     system = fnm.system
     unit_codes = get_unit_codes(ThermalGen, system)

@@ -35,20 +35,20 @@ end
     fnm = FullNetworkModel(TEST_SYSTEM, GLPK.Optimizer)
     n_periods = get_forecast_horizon(fnm.system)
     @testset "add_thermal_generation!" begin
-        add_thermal_generation!(fnm)
+        var_thermal_generation!(fnm)
         tests_thermal_variable(fnm, "p", n_periods)
         @test !has_variable(fnm.model, "u")
     end
     @testset "add_commitment!" begin
-        add_commitment!(fnm)
+        var_commitment!(fnm)
         tests_commitment(fnm, n_periods)
     end
     @testset "add_startup_shutdown!" begin
-        add_startup_shutdown!(fnm)
+        var_startup_shutdown!(fnm)
         tests_startup_shutdown(fnm, n_periods)
     end
     @testset "add_ancillary_services!" begin
-        add_ancillary_services!(fnm)
+        var_ancillary_services!(fnm)
         @testset for service in ("r_reg", "u_reg", "r_spin", "r_on_sup", "r_off_sup")
             tests_thermal_variable(fnm, service, n_periods)
         end

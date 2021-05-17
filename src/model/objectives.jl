@@ -1,17 +1,17 @@
 # Define functions so that `_latex` can be dispatched over them
-function _thermal_variable_cost_objective! end
-function _add_thermal_gen_blocks! end
-function ancillary_service_costs! end
-function thermal_noload_cost! end
-function thermal_startup_cost! end
+function _obj_thermal_variable_cost! end
+function _var_thermal_gen_blocks! end
+function obj_ancillary_costs! end
+function obj_thermal_noload_cost! end
+function obj_thermal_startup_cost! end
 
-function _latex(::typeof(_thermal_variable_cost_objective!))
+function _latex(::typeof(_obj_thermal_variable_cost!))
     return """
     ``\\sum_{t \\in \\mathcal{T}} \\sum_{g \\in \\mathcal{G}} \\sum_{q \\in \\mathcal{Q}_{g, t}} p^{\\text{aux}}_{g, t, q} \\Lambda^{\\text{offer}}_{g, t, q}``
     """
 end
 
-function _latex(::typeof(_add_thermal_gen_blocks!); commitment)
+function _latex(::typeof(_var_thermal_gen_blocks!); commitment)
     u_gt = commitment ? "u_{g, t}" : ""
     return """
         ``0 \\leq p^{\\text{aux}}_{g, t, q} \\leq \\bar{P}_{g, t, q} $u_gt, \\forall g \\in \\mathcal{G}, t \\in \\mathcal{T}, q \\in \\mathcal{Q}_{g, t}`` \n
@@ -20,7 +20,7 @@ function _latex(::typeof(_add_thermal_gen_blocks!); commitment)
 end
 
 """
-    thermal_variable_cost!(fnm::FullNetworkModel)
+    obj_thermal_variable_cost!(fnm::FullNetworkModel)
 
 Adds the variable cost related to thermal generators by using auxiliary generation variables
 that multiply the offer prices. The variables `p_aux` are indexed, respectively, by the unit
@@ -29,19 +29,19 @@ offer block number.
 
 Adds to the objective function:
 
-$(_latex(_thermal_variable_cost_objective!))
+$(_latex(_obj_thermal_variable_cost!))
 
 And adds the following constraints:
 
-$(_latex(_add_thermal_gen_blocks!; commitment=true))
+$(_latex(_var_thermal_gen_blocks!; commitment=true))
 
 if `fnm.model` has commitment, or
 
-$(_latex(_add_thermal_gen_blocks!; commitment=false))
+$(_latex(_var_thermal_gen_blocks!; commitment=false))
 
 if `fnm.model` does not have commitment.
 """
-function thermal_variable_cost!(fnm::FullNetworkModel)
+function obj_thermal_variable_cost!(fnm::FullNetworkModel)
     model = fnm.model
     system = fnm.system
     @assert has_variable(model, "p")
@@ -51,79 +51,79 @@ function thermal_variable_cost!(fnm::FullNetworkModel)
     # Get properties of the offer curves: prices, block MW limits, number of blocks
     Λ, p_aux_lims, n_blocks = _offer_curve_properties(offer_curves, n_periods)
     # Add variables and constraints for thermal generation blocks
-    _add_thermal_gen_blocks!(model, unit_codes, p_aux_lims, n_periods, n_blocks)
+    _var_thermal_gen_blocks!(model, unit_codes, p_aux_lims, n_periods, n_blocks)
     # Add thermal variable cost to objective
-    _thermal_variable_cost_objective!(model, unit_codes, n_periods, n_blocks, Λ)
+    _obj_thermal_variable_cost!(model, unit_codes, n_periods, n_blocks, Λ)
     return fnm
 end
 
-function _latex(::typeof(thermal_noload_cost!))
+function _latex(::typeof(obj_thermal_noload_cost!))
     return """
         ``\\sum_{t \\in \\mathcal{T}} \\sum_{g \\in \\mathcal{G}} C^{\\text{nl}}_{g, t} u_{g, t}``
         """
 end
 
 """
-    thermal_noload_cost!(fnm::FullNetworkModel)
+    obj_thermal_noload_cost!(fnm::FullNetworkModel)
 
 Adds the no-load cost of thermal generators to the model formulation:
 
-$(_latex(thermal_noload_cost!))
+$(_latex(obj_thermal_noload_cost!))
 """
-function thermal_noload_cost!(fnm::FullNetworkModel)
-    return _thermal_linear_cost!(fnm, :u, get_noload_cost)
+function obj_thermal_noload_cost!(fnm::FullNetworkModel)
+    return _obj_thermal_linear_cost!(fnm, :u, get_noload_cost)
 end
 
-function _latex(::typeof(thermal_startup_cost!))
+function _latex(::typeof(obj_thermal_startup_cost!))
     return """
         ``\\sum_{t \\in \\mathcal{T}} \\sum_{g \\in \\mathcal{G}} C^{\\text{st}}_{g, t} v_{g, t}``
         """
 end
 
 """
-    thermal_startup_cost!(fnm::FullNetworkModel)
+    obj_thermal_startup_cost!(fnm::FullNetworkModel)
 
 Adds the start-up cost of thermal generators to the model formulation:
 
-$(_latex(thermal_startup_cost!))
+$(_latex(obj_thermal_startup_cost!))
 """
-function thermal_startup_cost!(fnm::FullNetworkModel)
-    return _thermal_linear_cost!(fnm, :v, get_startup_cost)
+function obj_thermal_startup_cost!(fnm::FullNetworkModel)
+    return _obj_thermal_linear_cost!(fnm, :v, get_startup_cost)
 end
 
-function _latex(::typeof(ancillary_service_costs!))
+function _latex(::typeof(obj_ancillary_costs!))
     return """
         ``\\sum_{g \\in \\mathcal{G}} \\sum_{t \\in \\mathcal{T}} (C^{\\text{reg}}_{g, t} r^{\\text{reg}}_{g, t} + C^{\\text{spin}}_{g, t} r^{\\text{spin}}_{g, t} + C^{\\text{on-sup}}_{g, t} r^{\\text{on-sup}}_{g, t} + C^{\\text{off-sup}}_{g, t} r^{\\text{off-sup}}_{g, t})``
         """
 end
 
 """
-    ancillary_service_costs!(fnm::FullNetworkModel)
+    obj_ancillary_costs!(fnm::FullNetworkModel)
 
 Adds the ancillary service costs related to thermal generators, namely regulation, spinning,
 online supplemental, and offline supplemental reserves.
 
 Adds to the objective function:
 
-$(_latex(ancillary_service_costs!))
+$(_latex(obj_ancillary_costs!))
 """
-function ancillary_service_costs!(fnm::FullNetworkModel)
-    _thermal_linear_cost!(
+function obj_ancillary_costs!(fnm::FullNetworkModel)
+    _obj_thermal_linear_cost!(
         fnm, :r_reg, get_regulation_cost; unit_codes=get_regulation_providers(fnm.system)
     )
-    _thermal_linear_cost!(
+    _obj_thermal_linear_cost!(
         fnm, :r_spin, get_spinning_cost; unit_codes=get_spinning_providers(fnm.system)
     )
-    _thermal_linear_cost!(
+    _obj_thermal_linear_cost!(
         fnm, :r_on_sup, get_on_sup_cost; unit_codes=get_on_sup_providers(fnm.system)
     )
-    _thermal_linear_cost!(
+    _obj_thermal_linear_cost!(
         fnm, :r_off_sup, get_off_sup_cost; unit_codes=get_off_sup_providers(fnm.system)
     )
     return fnm
 end
 
-function _add_thermal_gen_blocks!(
+function _var_thermal_gen_blocks!(
     model::Model, unit_codes, p_aux_lims, n_periods, n_blocks
 )
     @variable(
@@ -155,7 +155,7 @@ function _add_thermal_gen_blocks!(
     return model
 end
 
-function _thermal_variable_cost_objective!(model::Model, unit_codes, n_periods, n_blocks, Λ)
+function _obj_thermal_variable_cost!(model::Model, unit_codes, n_periods, n_blocks, Λ)
     p_aux = model[:p_aux]
     variable_cost = AffExpr(0.0)
     for g in unit_codes, t in 1:n_periods, q in 1:n_blocks[g][t]

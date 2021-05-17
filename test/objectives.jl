@@ -61,20 +61,20 @@ end
         fnm = FullNetworkModel(TEST_SYSTEM, GLPK.Optimizer)
         @test objective_function(fnm.model) == AffExpr()
         @testset "Adding cost before thermal generation throws error" begin
-            @test_throws AssertionError thermal_variable_cost!(fnm)
+            @test_throws AssertionError obj_thermal_variable_cost!(fnm)
         end
         @testset "Economic dispatch (just thermal generation added)" begin
-            add_thermal_generation!(fnm)
-            thermal_variable_cost!(fnm)
+            var_thermal_generation!(fnm)
+            obj_thermal_variable_cost!(fnm)
             tests_thermal_variable_cost(fnm)
             @test sprint(show, constraint_by_name(fnm.model, "gen_block_limits[7,1,1]")) ==
                 "gen_block_limits[7,1,1] : p_aux[7,1,1] ≤ 0.5"
         end
         @testset "unit commitment (both thermal generation and commitment added)" begin
             fnm = FullNetworkModel(TEST_SYSTEM, GLPK.Optimizer)
-            add_thermal_generation!(fnm)
-            add_commitment!(fnm)
-            thermal_variable_cost!(fnm)
+            var_thermal_generation!(fnm)
+            var_commitment!(fnm)
+            obj_thermal_variable_cost!(fnm)
             tests_thermal_variable_cost(fnm)
             @test sprint(show, constraint_by_name(fnm.model, "gen_block_limits[7,1,1]")) ==
                 "gen_block_limits[7,1,1] : -0.5 u[7,1] + p_aux[7,1,1] ≤ 0.0"
@@ -82,25 +82,25 @@ end
     end
     @testset "ancillary_service_costs!" begin
         fnm = FullNetworkModel(TEST_SYSTEM, GLPK.Optimizer)
-        add_commitment!(fnm)
-        add_ancillary_services!(fnm)
-        ancillary_service_costs!(fnm)
+        var_commitment!(fnm)
+        var_ancillary_services!(fnm)
+        obj_ancillary_costs!(fnm)
         tests_ancillary_costs(fnm)
     end
     @testset "thermal_noload_cost!" begin
         fnm = FullNetworkModel(TEST_SYSTEM, GLPK.Optimizer)
-        add_thermal_generation!(fnm)
-        add_commitment!(fnm)
-        thermal_variable_cost!(fnm)
-        thermal_noload_cost!(fnm)
+        var_thermal_generation!(fnm)
+        var_commitment!(fnm)
+        obj_thermal_variable_cost!(fnm)
+        obj_thermal_noload_cost!(fnm)
         tests_thermal_noload_cost(fnm)
     end
     @testset "thermal_startup_cost!" begin
         fnm = FullNetworkModel(TEST_SYSTEM, GLPK.Optimizer)
-        add_commitment!(fnm)
-        add_startup_shutdown!(fnm)
-        thermal_noload_cost!(fnm)
-        thermal_startup_cost!(fnm)
+        var_commitment!(fnm)
+        var_startup_shutdown!(fnm)
+        obj_thermal_noload_cost!(fnm)
+        obj_thermal_startup_cost!(fnm)
         tests_thermal_startup_cost(fnm)
     end
 end
