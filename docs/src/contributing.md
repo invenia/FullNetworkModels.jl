@@ -38,9 +38,10 @@ Template functions, located in `src/templates/`, are simply collections of model
 
 ### ``\LaTeX`` functions
 
-LaTeX functions are used to provide clearer documentation of the template problem formulations and the expressions created by each model function.
-These functions simply write the LaTeX expressions that defined by their corresponding function, which can then be read in rich-text environment.
-To that end, each model function `foo` should have a corresponding Latex function that is defined as `_latex(::typeof(foo))`.
+``\LaTeX`` functions are used to provide clearer documentation of the template problem formulations and the expressions created by each model function.
+These functions simply write the ``\LaTeX`` expressions that defined by their corresponding function, which can then be read in rich-text environment.
+To that end, each model function `foo` should have a corresponding ``\LaTeX`` function that is defined as `_latex(::typeof(foo))`.
+See, for example, the `_latex` methods in the `src/model/` files.
 
 ## Tests
 
