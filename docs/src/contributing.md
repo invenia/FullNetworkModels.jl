@@ -30,7 +30,7 @@ This might happen because the variables that are being created only make sense w
 Model functions generally follow a simple recipe:
 
 1. Use accessor functions to retrieve the system data that is involved in the mathematical expressions to be added.
-2. 
+2. Write the JuMP expressions using the system data and add them to the model.
 
 ### Template functions
 
