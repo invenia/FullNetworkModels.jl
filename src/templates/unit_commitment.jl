@@ -7,27 +7,27 @@ returns a `FullNetworkModel` with a `model` with the following formulation:
 
 $(_write_formulation(
     objectives=[
-        _latex(_thermal_variable_cost_objective!),
-        _latex(thermal_noload_cost!),
-        _latex(thermal_startup_cost!),
-        _latex(ancillary_service_costs!),
+        _latex(_obj_thermal_variable_cost!),
+        _latex(obj_thermal_noload_cost!),
+        _latex(obj_thermal_startup_cost!),
+        _latex(obj_ancillary_costs!),
     ],
     constraints=[
-        _latex(_add_thermal_gen_blocks!; commitment=true),
-        _latex(generation_limits!; commitment=true),
-        _latex(_add_startup_shutdown_constraints!),
-        _latex(ancillary_service_limits!),
-        _latex(regulation_requirements!),
-        _latex(operating_reserve_requirements!),
-        _latex(_add_ancillary_services_constraints!),
-        _latex(ramp_rates!),
-        _latex(energy_balance!),
+        _latex(_var_thermal_gen_blocks!; commitment=true),
+        _latex(con_generation_limits!; commitment=true),
+        _latex(_con_startup_shutdown!),
+        _latex(con_ancillary_limits!),
+        _latex(con_regulation_requirements!),
+        _latex(con_operating_reserve_requirements!),
+        _latex(_con_ancillary_services!),
+        _latex(con_ramp_rates!),
+        _latex(con_energy_balance!),
     ],
     variables=[
-        _latex(add_thermal_generation!),
-        _latex(add_commitment!),
-        _latex(_add_startup_shutdown_variables!),
-        _latex(_add_ancillary_services_variables!),
+        _latex(var_thermal_generation!),
+        _latex(var_commitment!),
+        _latex(_var_startup_shutdown!),
+        _latex(_var_ancillary_services!),
     ]
 ))
 """
@@ -35,22 +35,22 @@ function unit_commitment(system::System, solver; relax_integrality=false)
     # Initialize FNM
     fnm = FullNetworkModel(system, solver)
     # Variables
-    add_thermal_generation!(fnm)
-    add_commitment!(fnm)
-    add_startup_shutdown!(fnm)
-    add_ancillary_services!(fnm)
+    var_thermal_generation!(fnm)
+    var_commitment!(fnm)
+    var_startup_shutdown!(fnm)
+    var_ancillary_services!(fnm)
     # Constraints
-    generation_limits!(fnm)
-    ancillary_service_limits!(fnm)
-    regulation_requirements!(fnm)
-    operating_reserve_requirements!(fnm)
-    ramp_rates!(fnm)
-    energy_balance!(fnm)
+    con_generation_limits!(fnm)
+    con_ancillary_limits!(fnm)
+    con_regulation_requirements!(fnm)
+    con_operating_reserve_requirements!(fnm)
+    con_ramp_rates!(fnm)
+    con_energy_balance!(fnm)
     # Objectives
-    thermal_variable_cost!(fnm)
-    thermal_noload_cost!(fnm)
-    thermal_startup_cost!(fnm)
-    ancillary_service_costs!(fnm)
+    obj_thermal_variable_cost!(fnm)
+    obj_thermal_noload_cost!(fnm)
+    obj_thermal_startup_cost!(fnm)
+    obj_ancillary_costs!(fnm)
     if relax_integrality
         JuMP.relax_integrality(fnm.model)
     end

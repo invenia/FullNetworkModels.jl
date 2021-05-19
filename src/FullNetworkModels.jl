@@ -62,24 +62,24 @@ export has_constraint
 export has_variable
 
 # Variable functions
-export add_ancillary_services!
-export add_commitment!
-export add_startup_shutdown!
-export add_thermal_generation!
+export var_ancillary_services!
+export var_commitment!
+export var_startup_shutdown!
+export var_thermal_generation!
 
 # Constraint functions
-export ancillary_service_limits!
-export energy_balance!
-export generation_limits!
-export operating_reserve_requirements!
-export ramp_rates!
-export regulation_requirements!
+export con_ancillary_limits!
+export con_energy_balance!
+export con_generation_limits!
+export con_operating_reserve_requirements!
+export con_ramp_rates!
+export con_regulation_requirements!
 
 # Objective functions
-export ancillary_service_costs!
-export thermal_noload_cost!
-export thermal_startup_cost!
-export thermal_variable_cost!
+export obj_ancillary_costs!
+export obj_thermal_noload_cost!
+export obj_thermal_startup_cost!
+export obj_thermal_variable_cost!
 
 # Templates
 export unit_commitment
