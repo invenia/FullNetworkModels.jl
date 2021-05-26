@@ -163,3 +163,12 @@ function _con_ancillary_services!(model::Model, unit_codes, n_periods)
     @constraint(model, [g in unit_codes, t in 1:n_periods], u_reg[g, t] <= u[g, t])
     return model
 end
+
+function var_virtual_bids!(fnm::FullNetworkModel)
+    inc_codes = get_bid_codes(Increment, fnm.system)
+    dec_codes = get_bid_codes(Decrement, fnm.system)
+    n_periods = get_forecast_horizon(fnm.system)
+    @variable(fnm.model, p_i[i in inc_codes, t in 1:n_periods] >= 0)
+    @variable(fnm.model, d_d[i in dec_codes, t in 1:n_periods] >= 0)
+    return fnm
+end

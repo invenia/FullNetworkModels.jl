@@ -106,3 +106,12 @@ function _get_service_providers(system::System, service_name::String)
     end
     return providers
 end
+
+"""
+    _get_parsed_names(component_type::DataType, system::System)
+
+Returns the codes of all components in `system` under `component_type` parsed as integers.
+"""
+function _get_parsed_names(component_type::DataType, system::System)
+    return parse.(Int, get_name.(get_components(component_type, system)))
+end

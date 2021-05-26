@@ -26,7 +26,16 @@ has_constraint(model::Model, con::String) = has_constraint(model, Symbol(con))
 Returns the unit codes of all generators in `system` under type `gentype`.
 """
 function get_unit_codes(gentype::Type{<:Generator}, system::System)
-    return parse.(Int, get_name.(get_components(gentype, system)))
+    return _get_parsed_names(gentype, system)
+end
+
+"""
+    get_bid_codes(bidtype::Type{<:Device}, system::System)
+
+Returns the bid identifiers in `system` that are of type `T`.
+"""
+function get_bid_codes(bidtype::Type{<:Device}, system::System)
+    return _get_parsed_names(bidtype, system)
 end
 
 """
@@ -171,7 +180,7 @@ as $(MARKET_WIDE_ZONE) in accordance with FullNetworkDataPrep.jl.
 """
 function get_reserve_zones(system::System)
     reserve_zones = map(get_components(Service, system)) do serv
-        serv.ext["reserve_zone"] 
+        serv.ext["reserve_zone"]
     end
     return unique(reserve_zones)
 end
