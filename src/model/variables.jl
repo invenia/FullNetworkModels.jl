@@ -169,6 +169,12 @@ function var_virtual_bids!(fnm::FullNetworkModel)
     dec_codes = get_bid_codes(Decrement, fnm.system)
     n_periods = get_forecast_horizon(fnm.system)
     @variable(fnm.model, p_i[i in inc_codes, t in 1:n_periods] >= 0)
-    @variable(fnm.model, d_d[i in dec_codes, t in 1:n_periods] >= 0)
+    @variable(fnm.model, d_d[d in dec_codes, t in 1:n_periods] >= 0)
     return fnm
+end
+
+function var_price_sensitive_demands!(fnm::FullNetworkModel)
+    bid_codes = get_bid_codes(PriceSensitiveDemand, fnm.system)
+    n_periods = get_forecast_horizon(fnm.system)
+    @variable(fnm.model, d_s[s in bid_codes, t in 1:n_periods] >= 0)
 end
