@@ -2,7 +2,7 @@
     fnm = FullNetworkModel(TEST_SYSTEM, GLPK.Optimizer)
 
     @testset "Prints" begin
-        @test sprint(show, fnm) == "FullNetworkModel\nModel formulation: 0 variables\nSystem: 29 components, 24 time periods\n"
+        @test sprint(show, fnm) == "FullNetworkModel\nModel formulation: 0 variables\nSystem: 32 components, 24 time periods\n"
     end
 
     @testset "Accessors" begin
