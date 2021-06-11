@@ -14,9 +14,30 @@ function basic_feasibility_checks(system::System)
     unit_codes = get_unit_codes(ThermalGen, system)
     Pmax = get_pmax(system)
     n_periods = get_forecast_horizon(system)
+    feasibility *= _total_demand_feasibility(system, n_periods, unit_codes, Pmax)
     feasibility *= _initial_ramp_feasibility(system, unit_codes, Pmax)
     feasibility *= _ancillary_requirement_feasibility(system, n_periods)
     return feasibility
+end
+
+"""
+    _total_demand_feasibility(system, n_periods, unit_codes, Pmax) -> Bool
+
+Verifies that the system is able to attend its demand in each hour by looking at the
+system-wide generation capacity.
+"""
+function _total_demand_feasibility(system, n_periods, unit_codes, Pmax)
+    loads = get_fixed_loads(system)
+    load_names = get_load_names(PowerLoad, system)
+    for t in 1:n_periods
+        gen_capacity = sum(Pmax[g][t] for g in unit_codes)
+        system_load = sum(loads[l][t] for l in load_names)
+        if gen_capacity < system_load
+            warn(LOGGER, "There's not enough generation to meet the system-wide demand; problem will be infeasible.")
+            return false
+        end
+    end
+    return true
 end
 
 """
@@ -43,16 +64,6 @@ function _initial_ramp_feasibility(system, unit_codes, Pmax)
         end
     end
     return true
-end
-
-"""
-    _total_demand_feasibility()
-
-Verifies that the system is able to attend its demand in each hour by looking at the
-system-wide generation capacity.
-"""
-function _total_demand_feasibility(system)
-    loads = get_fixed_loads(system)
 end
 
 """
