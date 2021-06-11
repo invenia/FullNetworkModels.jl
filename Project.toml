@@ -6,6 +6,7 @@ version = "2.0.0-DEV"
 [deps]
 Dates = "ade2ca70-3891-5945-98fb-dc099432e06a"
 JuMP = "4076af6c-e467-56ae-b986-b466b2749572"
+Memento = "f28f55f0-a522-5efc-85c2-fe41dfb9b2d9"
 PowerSystems = "bcd98974-b02a-5e2f-9ee0-a103f5c450dd"
 
 [compat]
@@ -13,6 +14,7 @@ ElectricityMarkets = "1.14"
 FullNetworkDataPrep = "0.11.1"
 GLPK = "0.14"
 JuMP = "0.21"
+Memento = "1.1"
 PowerSystems = "1.5"
 julia = "1.5"
 
