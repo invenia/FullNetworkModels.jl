@@ -2,7 +2,10 @@ module FullNetworkModels
 
 using Dates
 using JuMP
+using Memento
 using PowerSystems
+
+const LOGGER = getlogger(@__MODULE__)
 
 # We use -9999 as the code for the market-wide reserve zone in accordance with FNDataPrep
 const MARKET_WIDE_ZONE = -9999
