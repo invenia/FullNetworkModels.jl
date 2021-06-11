@@ -7,6 +7,8 @@ include:
 
 variables:
   platform: "x86_64"  # 64-bit
+  # Disable ARM job https://gitlab.invenia.ca/invenia/research/FullNetworkModels.jl/-/issues/23
+  audit: "false"
 
 # If you need to install system packages, such as `unzip`, you can do so as follows:
 #.test:
