@@ -18,6 +18,7 @@ include("utils/api_extensions.jl")
 include("utils/internal.jl")
 include("utils/write.jl")
 include("utils/accessors.jl")
+include("utils/feasibility_checks.jl")
 
 # Model functions
 include("model/constraints.jl")
@@ -91,5 +92,8 @@ export unit_commitment
 export optimize!
 export set_optimizer_attribute
 export set_optimizer_attributes
+
+# Miscellaneous utility functions
+export basic_feasibility_checks
 
 end
