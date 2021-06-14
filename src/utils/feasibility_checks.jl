@@ -53,7 +53,6 @@ function _initial_ramp_feasibility(system, unit_codes, Pmax)
     P0 = get_initial_generation(system)
     Pmin = get_pmin(system)
     RR = get_ramp_rates(system)
-    SU = get_startup_limits(system)
     Δt = _get_resolution_in_minutes(system)
     for g in unit_codes
         if U0[g] == 1
