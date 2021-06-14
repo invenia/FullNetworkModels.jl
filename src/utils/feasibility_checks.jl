@@ -29,13 +29,23 @@ system-wide generation capacity.
 function _total_demand_feasibility(system, n_periods, unit_codes, Pmax)
     loads = get_fixed_loads(system)
     load_names = get_load_names(PowerLoad, system)
+    gen_capacity = Vector{Float64}(undef, n_periods)
+    system_load = Vector{Float64}(undef, n_periods)
+    infeasible_periods = Int[]
     for t in 1:n_periods
-        gen_capacity = sum(Pmax[g][t] for g in unit_codes)
-        system_load = sum(loads[l][t] for l in load_names)
+        gen_capacity[t] = sum(Pmax[g][t] for g in unit_codes)
+        system_load[t] = sum(loads[l][t] for l in load_names)
         if gen_capacity < system_load
-            warn(LOGGER, "There's not enough generation to meet the system-wide demand; problem will be infeasible.")
-            return false
+            push!(infeasible_periods, t)
         end
+    end
+    if !isempty(infeasible_periods)
+        str = "There's not enough generation to meet the system-wide demand; problem will be infeasible."
+        for t in infeasible_periods
+            str *= "\n Time period: $t | Generation capacity: $(gen_capacity[t]) | System load: $(system_load[t])"
+        end
+        warn(LOGGER, str)
+        return false
     end
     return true
 end
