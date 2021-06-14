@@ -113,5 +113,5 @@ end
 Returns the time resolution of the time series in the system in minutes.
 """
 function _get_resolution_in_minutes(system::System)
-    return Minute(get_time_series_resolution(system)).value
+    return Dates.value(Minute(get_time_series_resolution(system)))
 end
