@@ -44,9 +44,10 @@ end
     _initial_ramp_feasibility(system, unit_codes, Pmax) -> Bool
 
 Verifies if the units that are initially online are able to go from their generation at t=0
-to a value within [Pmin, Pmax] at t=1. For example, if the generation at t=0 is 200 MW, the
-Pmax at t=1 is 100 MW, and the ramp rate is 1 MW/min, then there is not enough ramping
-capability for the generator to ramp down to its maximum allowed output at t=1.
+to a value within [Pmin, Pmax] at t=1. For example, in a problem with hourly resolution, if
+the generation at t=0 is 200 MW, the Pmax at t=1 is 100 MW, and the ramp rate is 1 MW/min,
+then there is not enough ramping capability for the generator to ramp down to its maximum
+allowed output at t=1.
 """
 function _initial_ramp_feasibility(system, unit_codes, Pmax)
     U0 = get_initial_commitment(system)
