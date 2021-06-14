@@ -89,14 +89,14 @@ function _ancillary_requirement_feasibility(system, n_periods)
     for t in 1:n_periods, zone in get_reserve_zones(system)
         # Get the units providing regulation within that zone
         reg_zone_units = intersect(zone_gens[zone], reg_units)
-        total_regmax = sum(regmax[g][1] for g in reg_zone_units)
+        total_regmax = sum(regmax[g][t] for g in reg_zone_units)
         if total_regmax < reg_reqs[zone]
             warn(LOGGER, "There's not enough regulation to attend zonal regulation requirements; problem will be infeasible.")
             return false
         end
         # Get the units providing OR services within that zone
         or_zone_units = intersect(zone_gens[zone], or_units)
-        total_regmax = sum(regmax[g][1] for g in or_zone_units)
+        total_regmax = sum(regmax[g][t] for g in or_zone_units)
         if total_regmax < or_reqs[zone]
             warn(LOGGER, "There's not enough regulation to attend zonal operating reserve requirements; problem will be infeasible.")
             return false
