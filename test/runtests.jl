@@ -12,6 +12,7 @@ const TEST_SYSTEM = fake_3bus_system(MISO)
 @testset "FullNetworkModels.jl" begin
     include("api.jl")
     include("constraints.jl")
+    include("feasibility_checks.jl")
     include("internal.jl")
     include("objectives.jl")
     include("variables.jl")
