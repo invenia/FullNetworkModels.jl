@@ -35,7 +35,7 @@ function _total_demand_feasibility(system, n_periods, unit_codes, Pmax)
     for t in 1:n_periods
         gen_capacity[t] = sum(Pmax[g][t] for g in unit_codes)
         system_load[t] = sum(loads[l][t] for l in load_names)
-        if gen_capacity < system_load
+        if gen_capacity[t] < system_load[t]
             push!(infeasible_periods, t)
         end
     end
