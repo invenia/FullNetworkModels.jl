@@ -178,7 +178,7 @@ function _latex(::typeof(con_ramp_rates!))
 end
 
 """
-    con_ramp_rates!(fnm::FullNetworkModel; soft=false, slack=1e3)
+    con_ramp_rates!(fnm::FullNetworkModel; soft=false, slack=1e4)
 
 Adds ramp rate constraints to the full network model. Kwargs can be used to set this
 constraint as a soft constraint; to that end, `soft` should be set to `true`, and if a
