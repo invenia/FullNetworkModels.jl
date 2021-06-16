@@ -191,7 +191,7 @@ The constraints are named `ramp_regulation`, `ramp_spin_sup`, `ramp_up`, `ramp_u
 """
 function con_ramp_rates!(fnm::FullNetworkModel; soft=false, slack=1e3)
     _con_ancillary_ramp_rates!(fnm)
-    _con_generation_ramp_rates!(fnm, soft, slack)
+    _con_generation_ramp_rates!(fnm, Val(soft), slack)
     return fnm
 end
 
@@ -394,7 +394,7 @@ function _con_ancillary_ramp_rates!(fnm::FullNetworkModel)
     return fnm
 end
 
-function _con_generation_ramp_rates!(fnm::FullNetworkModel, soft, slack)
+function _con_generation_ramp_rates!(fnm::FullNetworkModel, ::Val{false}, slack)
     model = fnm.model
     system = fnm.system
     unit_codes = get_unit_codes(ThermalGen, system)
@@ -407,34 +407,28 @@ function _con_generation_ramp_rates!(fnm::FullNetworkModel, soft, slack)
     u = model[:u]
     v = model[:v]
     w = model[:w]
-    for g in unit_codes
-        for t in n_periods
-            # Ramp up - generation can't go up more than the hourly (60 min) ramp capacity
-            expr_lhs = p[g, t] - p[g, t - 1]
-            expr_rhs = 60 * RR[g] * u[g, t - 1] + SU[g][t] * v[g, t]
-            @constraint(
-                model,
-                ramp_up[g, t],
-                expr_lhs <= expr_rhs
-            )
-            # Ramp down - generation can't go down more than the hourly (60 min) ramp
-            # capacity. We consider SU = SD.
-            @constraint(
-                model,
-                ramp_down[g, t],
-                p[g, t - 1] - p[g, t] <= 60 * RR[g] * u[g, t] + SU[g][t] * w[g, t]
-            )
-        end
-        @constraint(
-            model,
-            ramp_up_initial[g],
-            p[g, 1] - P0[g] <= 60 * RR[g] * U0[g] + SU[g][1] * v[g, 1]
-        )
-        @constraint(
-            model,
-            ramp_down_initial[g],
-            P0[g] - p[g, 1] <= 60 * RR[g] * u[g, 1] + SU[g][1] * w[g, 1]
-        )
-    end
+    # Ramp up - generation can't go up more than the hourly (60 min) ramp capacity
+    @constraint(
+        model,
+        ramp_up[g in unit_codes, t in 2:n_periods],
+        p[g, t] - p[g, t - 1] <= 60 * RR[g] * u[g, t - 1] + SU[g][t] * v[g, t]
+    )
+    @constraint(
+        model,
+        ramp_up_initial[g in unit_codes],
+        p[g, 1] - P0[g] <= 60 * RR[g] * U0[g] + SU[g][1] * v[g, 1]
+    )
+    # Ramp down - generation can't go down more than the hourly (60 min) ramp capacity
+    # We consider SU = SD
+    @constraint(
+        model,
+        ramp_down[g in unit_codes, t in 2:n_periods],
+        p[g, t - 1] - p[g, t] <= 60 * RR[g] * u[g, t] + SU[g][t] * w[g, t]
+    )
+    @constraint(
+        model,
+        ramp_down_initial[g in unit_codes],
+        P0[g] - p[g, 1] <= 60 * RR[g] * u[g, 1] + SU[g][1] * w[g, 1]
+    )
     return fnm
 end
