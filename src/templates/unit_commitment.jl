@@ -1,9 +1,11 @@
 """
-    unit_commitment(system::System, solver; relax_integrality=false) -> FullNetworkModel
+    unit_commitment(
+        system::System, solver; soft=false, relax_integrality=false
+    ) -> FullNetworkModel
 
-Defines the unit commitment default template; the keyword `relax_integrality` can be set to
-`true` to relax all binary variables. Receives a `system` from FullNetworkDataPrep and
-returns a `FullNetworkModel` with a `model` with the following formulation:
+Defines the unit commitment default template.
+Receives a `system` from FullNetworkDataPrep and returns a `FullNetworkModel` with a
+`model` with the following formulation:
 
 $(_write_formulation(
     objectives=[
@@ -30,8 +32,16 @@ $(_write_formulation(
         _latex(_var_ancillary_services!),
     ]
 ))
+
+Arguments:
+ - `system::System`: The PowerSystems system that provides the input data.
+ - `solver`: The solver of choice, e.g. `GLPK.Optimizer`.
+
+Keyword arguments:
+ - `soft=false`: If set to `true`, soft constraints will be used (e.g. ramps).
+ - `relax_integrality=false`: If set to `true`, binary variables will be relaxed.
 """
-function unit_commitment(system::System, solver; relax_integrality=false)
+function unit_commitment(system::System, solver; soft=false, relax_integrality=false)
     # Initialize FNM
     fnm = FullNetworkModel(system, solver)
     # Variables
@@ -44,7 +54,7 @@ function unit_commitment(system::System, solver; relax_integrality=false)
     con_ancillary_limits!(fnm)
     con_regulation_requirements!(fnm)
     con_operating_reserve_requirements!(fnm)
-    con_ramp_rates!(fnm)
+    con_ramp_rates!(fnm; soft=soft)
     con_energy_balance!(fnm)
     # Objectives
     obj_thermal_variable_cost!(fnm)
