@@ -178,20 +178,20 @@ function _latex(::typeof(con_ramp_rates!))
 end
 
 """
-    con_ramp_rates!(fnm::FullNetworkModel; soft=false, slack=1e4)
+    con_ramp_rates!(fnm::FullNetworkModel; slack=nothing)
 
-Adds ramp rate constraints to the full network model. Kwargs can be used to set these
-constraints as soft constraints; to that end, `soft` should be set to `true`, and if a
-specific slack penalty value is to be specified, then `slack` should define that value.
+Adds ramp rate constraints to the full network model. The warg `slack` can be used to set
+the generator ramp constraints as soft constraints; any value different than `nothing` will
+result in soft constraints with the slack penalty value specified in `slack`.
 
 $(_latex(con_ramp_rates!))
 
 The constraints are named `ramp_regulation`, `ramp_spin_sup`, `ramp_up`, `ramp_up_initial`,
 `ramp_down`, and `ramp_down_initial`.
 """
-function con_ramp_rates!(fnm::FullNetworkModel; soft=false, slack=1e4)
+function con_ramp_rates!(fnm::FullNetworkModel; slack=nothing)
     _con_ancillary_ramp_rates!(fnm)
-    _con_generation_ramp_rates!(fnm, soft, slack)
+    _con_generation_ramp_rates!(fnm, slack)
     return fnm
 end
 
@@ -394,7 +394,7 @@ function _con_ancillary_ramp_rates!(fnm::FullNetworkModel)
     return fnm
 end
 
-function _con_generation_ramp_rates!(fnm::FullNetworkModel, soft, slack)
+function _con_generation_ramp_rates!(fnm::FullNetworkModel, slack)
     model = fnm.model
     system = fnm.system
     unit_codes = get_unit_codes(ThermalGen, system)
@@ -433,7 +433,7 @@ function _con_generation_ramp_rates!(fnm::FullNetworkModel, soft, slack)
     )
 
     # If the constraints are supposed to be soft constraints, add slacks
-    if soft
+    if slack !== nothing
         @variable(model, s_ramp[g in unit_codes, t in 1:n_periods] >= 0)
         for g in unit_codes
             set_normalized_coefficient(ramp_up_initial[g], s_ramp[g, 1], -1.0)
