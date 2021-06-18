@@ -87,6 +87,7 @@ export obj_thermal_variable_cost!
 
 # Templates
 export unit_commitment
+export unit_commitment_soft_ramps
 
 # API extensions
 export optimize!

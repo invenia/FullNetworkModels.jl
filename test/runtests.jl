@@ -3,6 +3,7 @@ using ElectricityMarkets
 using FullNetworkDataPrep.TestUtils: fake_3bus_system
 using GLPK
 using FullNetworkModels
+using MathOptInterface: TerminationStatusCode
 using JuMP
 using PowerSystems
 using Test

@@ -22,7 +22,8 @@ julia = "1.5"
 ElectricityMarkets = "fc2b1cf9-69e4-584d-aa69-fb07a6454787"
 FullNetworkDataPrep = "a21943b2-60f3-11e9-2dbc-73f7bf1f23ac"
 GLPK = "60bf3e95-4087-53dc-ae20-288a0d20c6a6"
+MathOptInterface = "b8f27783-ece8-5eb3-8dc8-9495eed66fee"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 
 [targets]
-test = ["ElectricityMarkets", "FullNetworkDataPrep", "GLPK", "Test"]
+test = ["ElectricityMarkets", "FullNetworkDataPrep", "GLPK", "MathOptInterface", "Test"]
