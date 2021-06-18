@@ -178,18 +178,20 @@ function _latex(::typeof(con_ramp_rates!))
 end
 
 """
-    con_ramp_rates!(fnm::FullNetworkModel)
+    con_ramp_rates!(fnm::FullNetworkModel; slack=nothing)
 
-Adds ramp rate constraints to the full network model:
+Adds ramp rate constraints to the full network model. The kwarg `slack` can be used to set
+the generator ramp constraints as soft constraints; any value different than `nothing` will
+result in soft constraints with the slack penalty value specified in `slack`.
 
 $(_latex(con_ramp_rates!))
 
 The constraints are named `ramp_regulation`, `ramp_spin_sup`, `ramp_up`, `ramp_up_initial`,
 `ramp_down`, and `ramp_down_initial`.
 """
-function con_ramp_rates!(fnm::FullNetworkModel)
+function con_ramp_rates!(fnm::FullNetworkModel; slack=nothing)
     _con_ancillary_ramp_rates!(fnm)
-    _con_generation_ramp_rates!(fnm)
+    _con_generation_ramp_rates!(fnm, slack)
     return fnm
 end
 
@@ -392,7 +394,7 @@ function _con_ancillary_ramp_rates!(fnm::FullNetworkModel)
     return fnm
 end
 
-function _con_generation_ramp_rates!(fnm::FullNetworkModel)
+function _con_generation_ramp_rates!(fnm::FullNetworkModel, slack)
     model = fnm.model
     system = fnm.system
     unit_codes = get_unit_codes(ThermalGen, system)
@@ -405,6 +407,7 @@ function _con_generation_ramp_rates!(fnm::FullNetworkModel)
     u = model[:u]
     v = model[:v]
     w = model[:w]
+
     # Ramp up - generation can't go up more than the hourly (60 min) ramp capacity
     @constraint(
         model,
@@ -428,5 +431,24 @@ function _con_generation_ramp_rates!(fnm::FullNetworkModel)
         ramp_down_initial[g in unit_codes],
         P0[g] - p[g, 1] <= 60 * RR[g] * u[g, 1] + SU[g][1] * w[g, 1]
     )
+
+    # If the constraints are supposed to be soft constraints, add slacks
+    if slack !== nothing
+        @variable(model, s_ramp[g in unit_codes, t in 1:n_periods] >= 0)
+        for g in unit_codes
+            set_normalized_coefficient(ramp_up_initial[g], s_ramp[g, 1], -1.0)
+            set_normalized_coefficient(ramp_down_initial[g], s_ramp[g, 1], -1.0)
+            for t in 2:n_periods
+                set_normalized_coefficient(ramp_up[g, t], s_ramp[g, t], -1.0)
+                set_normalized_coefficient(ramp_down[g, t], s_ramp[g, t], -1.0)
+            end
+        end
+
+        # Add slack penalty to the objective
+        for g in unit_codes, t in 1:n_periods
+            set_objective_coefficient(model, s_ramp[g, t], slack)
+        end
+    end
+
     return fnm
 end

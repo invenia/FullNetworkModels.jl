@@ -54,7 +54,7 @@ function tests_operating_reserve_requirements(fnm)
     return nothing
 end
 
-function tests_ramp_rates(fnm)
+function tests_ramp_rates(fnm; slack=nothing)
     @test sprint(show, constraint_by_name(
         fnm.model, "ramp_regulation[3,1]"
     )) == "ramp_regulation[3,1] : r_reg[3,1] ≤ 1.25"
@@ -63,18 +63,33 @@ function tests_ramp_rates(fnm)
     )) == "ramp_spin_sup[3,1] : r_spin[3,1] + r_on_sup[3,1] + r_off_sup[3,1] ≤ 2.5"
     @test constraint_by_name(fnm.model, "ramp_up[3,1]") === nothing
     @test constraint_by_name(fnm.model, "ramp_down[3,1]") === nothing
-    @test sprint(show, constraint_by_name(
+    if slack !== nothing
+        @test sprint(show, constraint_by_name(
         fnm.model, "ramp_up[3,2]"
-    )) == "ramp_up[3,2] : -p[3,1] + p[3,2] - 15 u[3,1] - 0.5 v[3,2] ≤ 0.0"
-    @test sprint(show, constraint_by_name(
-        fnm.model, "ramp_down[3,2]"
-    )) == "ramp_down[3,2] : p[3,1] - p[3,2] - 15 u[3,2] - 0.5 w[3,2] ≤ 0.0"
-    @test sprint(show, constraint_by_name(
-        fnm.model, "ramp_up_initial[3]"
-    )) == "ramp_up_initial[3] : p[3,1] - 0.5 v[3,1] ≤ 16.0"
-    @test sprint(show, constraint_by_name(
-        fnm.model, "ramp_down_initial[3]"
-    )) == "ramp_down_initial[3] : -p[3,1] - 15 u[3,1] - 0.5 w[3,1] ≤ -1.0"
+        )) == "ramp_up[3,2] : -p[3,1] + p[3,2] - 15 u[3,1] - 0.5 v[3,2] - s_ramp[3,2] ≤ 0.0"
+        @test sprint(show, constraint_by_name(
+            fnm.model, "ramp_down[3,2]"
+        )) == "ramp_down[3,2] : p[3,1] - p[3,2] - 15 u[3,2] - 0.5 w[3,2] - s_ramp[3,2] ≤ 0.0"
+        @test sprint(show, constraint_by_name(
+            fnm.model, "ramp_up_initial[3]"
+        )) == "ramp_up_initial[3] : p[3,1] - 0.5 v[3,1] - s_ramp[3,1] ≤ 16.0"
+        @test sprint(show, constraint_by_name(
+            fnm.model, "ramp_down_initial[3]"
+        )) == "ramp_down_initial[3] : -p[3,1] - 15 u[3,1] - 0.5 w[3,1] - s_ramp[3,1] ≤ -1.0"
+    else
+        @test sprint(show, constraint_by_name(
+        fnm.model, "ramp_up[3,2]"
+        )) == "ramp_up[3,2] : -p[3,1] + p[3,2] - 15 u[3,1] - 0.5 v[3,2] ≤ 0.0"
+        @test sprint(show, constraint_by_name(
+            fnm.model, "ramp_down[3,2]"
+        )) == "ramp_down[3,2] : p[3,1] - p[3,2] - 15 u[3,2] - 0.5 w[3,2] ≤ 0.0"
+        @test sprint(show, constraint_by_name(
+            fnm.model, "ramp_up_initial[3]"
+        )) == "ramp_up_initial[3] : p[3,1] - 0.5 v[3,1] ≤ 16.0"
+        @test sprint(show, constraint_by_name(
+            fnm.model, "ramp_down_initial[3]"
+        )) == "ramp_down_initial[3] : -p[3,1] - 15 u[3,1] - 0.5 w[3,1] ≤ -1.0"
+    end
     return nothing
 end
 
@@ -125,6 +140,7 @@ end
         end
     end
     @testset "Ramp constraints" begin
+        # Basic tests for hard constraints
         fnm = FullNetworkModel(TEST_SYSTEM, GLPK.Optimizer)
         var_thermal_generation!(fnm)
         var_commitment!(fnm)
@@ -132,6 +148,31 @@ end
         var_ancillary_services!(fnm)
         con_ramp_rates!(fnm)
         tests_ramp_rates(fnm)
+
+        # Basic tests for soft constraints
+        fnm = FullNetworkModel(TEST_SYSTEM, GLPK.Optimizer)
+        var_thermal_generation!(fnm)
+        var_commitment!(fnm)
+        var_startup_shutdown!(fnm)
+        var_ancillary_services!(fnm)
+        con_ramp_rates!(fnm; slack=1e4)
+        tests_ramp_rates(fnm; slack=1e4)
+
+        # Modify system so that hard ramp constraints result in infeasibility
+        system_infeasible = deepcopy(TEST_SYSTEM)
+        gens = collect(get_components(ThermalGen, system_infeasible))
+        gens[1].active_power = 50.0
+        @test get_initial_generation(system_infeasible)[7] == 50.0
+
+        fnm = unit_commitment(system_infeasible, GLPK.Optimizer)
+        optimize!(fnm)
+        # Should be infeasible
+        @test termination_status(fnm.model) == TerminationStatusCode(2)
+
+        # Now do the same with soft ramp constraints – should be feasible
+        fnm = unit_commitment_soft_ramps(system_infeasible, GLPK.Optimizer)
+        optimize!(fnm)
+        @test termination_status(fnm.model) == TerminationStatusCode(1)
     end
     @testset "Energy balance constraints" begin
         @testset "con_energy_balance!" begin
