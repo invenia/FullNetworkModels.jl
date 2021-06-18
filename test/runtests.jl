@@ -7,6 +7,7 @@ using MathOptInterface: TerminationStatusCode
 using JuMP
 using PowerSystems
 using Test
+using TimeSeries
 
 const TEST_SYSTEM = fake_3bus_system(MISO)
 
