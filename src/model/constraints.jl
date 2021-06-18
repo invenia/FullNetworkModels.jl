@@ -180,7 +180,7 @@ end
 """
     con_ramp_rates!(fnm::FullNetworkModel; slack=nothing)
 
-Adds ramp rate constraints to the full network model. The warg `slack` can be used to set
+Adds ramp rate constraints to the full network model. The kwarg `slack` can be used to set
 the generator ramp constraints as soft constraints; any value different than `nothing` will
 result in soft constraints with the slack penalty value specified in `slack`.
 
