@@ -97,4 +97,9 @@ export set_optimizer_attributes
 # Miscellaneous utility functions
 export basic_feasibility_checks
 
+# API extensions
+export optimize!
+export set_optimizer_attribute
+export set_optimizer_attributes
+
 end
