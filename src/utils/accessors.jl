@@ -70,10 +70,11 @@ function get_fixed_loads(system::System)
     ts_dict = Dict{String, Vector{Float64}}()
     for load in get_components(PowerLoad, system)
         load_name = get_name(load)
-        active_power = get_max_active_power(load)
-        # Load forecasts are multiplicative, which means the forecast multiplies the base
-        # value stored in the field `max_active_power`.
-        ts_dict[load_name] = active_power .* get_time_series_values(SingleTimeSeries, load, "max_active_power")
+        active_power = get_active_power(load)
+        # In our convention load forecasts are multiplicative, which means the forecast
+        # multiplies the base value stored in the field `active_power`.
+        ts_dict[load_name] =
+            active_power .* get_time_series_values(SingleTimeSeries, load, "active_power")
     end
     return ts_dict
 end
@@ -171,7 +172,7 @@ as $(MARKET_WIDE_ZONE) in accordance with FullNetworkDataPrep.jl.
 """
 function get_reserve_zones(system::System)
     reserve_zones = map(get_components(Service, system)) do serv
-        serv.ext["reserve_zone"] 
+        serv.ext["reserve_zone"]
     end
     return unique(reserve_zones)
 end

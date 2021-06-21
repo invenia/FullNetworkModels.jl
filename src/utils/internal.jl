@@ -56,7 +56,7 @@ function _offer_curve_properties(offer_curves, n_periods)
 end
 
 """
-    _generators_by_reserve_zone(system::System, gentype) -> Dict
+    _generators_by_reserve_zone(system::System) -> Dict
 
 Returns the unit codes of the generators in each reserve zone.
 """
@@ -105,4 +105,13 @@ function _get_service_providers(system::System, service_name::String)
         end
     end
     return providers
+end
+
+"""
+    _get_resolution_in_minutes(system::System) -> Float64
+
+Returns the time resolution of the time series in the system in minutes.
+"""
+function _get_resolution_in_minutes(system::System)
+    return Dates.value(Minute(get_time_series_resolution(system)))
 end
