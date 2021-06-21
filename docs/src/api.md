@@ -46,6 +46,14 @@ Pages = ["utils/accessors.jl"]
 Private = false
 ```
 
+## Feasibility checks
+
+```@autodocs
+Modules = [FullNetworkModels]
+Pages = ["utils/feasibility_checks.jl"]
+Private = false
+```
+
 ## Internals
 
 These functions are not public API, they may change or be removed at any time.
