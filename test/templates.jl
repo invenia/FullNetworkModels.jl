@@ -16,7 +16,7 @@
         tests_ramp_rates(fnm)
         tests_energy_balance(fnm)
     end
-    @testset "unit_commitment_soft_ramps" begin
+    @testset "unit_commitment_soft_ramps and unit_commitment_no_ramps" begin
         # Modify system so that hard ramp constraints result in infeasibility
         system_infeasible = deepcopy(TEST_SYSTEM)
         gens = collect(get_components(ThermalGen, system_infeasible))
