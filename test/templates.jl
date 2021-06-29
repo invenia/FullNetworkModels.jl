@@ -48,10 +48,10 @@
         @test obj_no_ramps < obj_soft_ramps
 
         # Also explicitly check that `fnm_no_ramps` doesn't have any ramp constraints
-        @test !has_constraint(fnm_no_ramps, :ramp_up)
-        @test !has_constraint(fnm_no_ramps, :ramp_down)
-        @test !has_constraint(fnm_no_ramps, :ramp_up_initial)
-        @test !has_constraint(fnm_no_ramps, :ramp_regulation)
-        @test !has_constraint(fnm_no_ramps, :ramp_spin_sup)
+        @test !has_constraint(fnm_no_ramps.model, :ramp_up)
+        @test !has_constraint(fnm_no_ramps.model, :ramp_down)
+        @test !has_constraint(fnm_no_ramps.model, :ramp_up_initial)
+        @test !has_constraint(fnm_no_ramps.model, :ramp_regulation)
+        @test !has_constraint(fnm_no_ramps.model, :ramp_spin_sup)
     end
 end
