@@ -46,5 +46,12 @@
         @test termination_status(fnm_no_ramps.model) == TerminationStatusCode(1)
         obj_no_ramps = objective_value(fnm_no_ramps.model)
         @test obj_no_ramps < obj_soft_ramps
+
+        # Also explicitly check that `fnm_no_ramps` doesn't have any ramp constraints
+        @test !has_constraint(fnm_no_ramps, :ramp_up)
+        @test !has_constraint(fnm_no_ramps, :ramp_down)
+        @test !has_constraint(fnm_no_ramps, :ramp_up_initial)
+        @test !has_constraint(fnm_no_ramps, :ramp_regulation)
+        @test !has_constraint(fnm_no_ramps, :ramp_spin_sup)
     end
 end
