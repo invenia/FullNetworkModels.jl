@@ -29,7 +29,12 @@
         @test termination_status(fnm.model) == TerminationStatusCode(2)
 
         # Now do the same with soft ramp constraints – should be feasible
-        fnm_soft_ramps = unit_commitment_soft_ramps(system_infeasible, GLPK.Optimizer)
+        fnm_soft_ramps = unit_commitment_soft_ramps(
+            system_infeasible, GLPK.Optimizer; slack=1e3
+        )
+        # Basic ramp rate tests with correct slack
+        tests_ramp_rates(fnm_soft_ramps; slack=1e3)
+
         optimize!(fnm_soft_ramps)
         @test termination_status(fnm_soft_ramps.model) == TerminationStatusCode(1)
         obj_soft_ramps = objective_value(fnm_soft_ramps.model)
