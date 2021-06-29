@@ -139,10 +139,10 @@ end
 
 """
     unit_commitment_no_ramps(
-        system::System, solver; slack=1e4, relax_integrality=false
+        system::System, solver; relax_integrality=false
     ) -> FullNetworkModel
 
-Defines the unit commitment template with no generation ramp constraints.
+Defines the unit commitment template with no ramp constraints.
 Receives a `system` from FullNetworkDataPrep and returns a `FullNetworkModel` with a
 `model` with the following formulation:
 
@@ -176,11 +176,10 @@ Arguments:
  - `solver`: The solver of choice, e.g. `GLPK.Optimizer`.
 
 Keyword arguments:
- - `slack=1e4`: The slack penalty for the soft constraints.
  - `relax_integrality=false`: If set to `true`, binary variables will be relaxed.
 """
 function unit_commitment_soft_ramps(
-    system::System, solver; slack=1e4, relax_integrality=false
+    system::System, solver; relax_integrality=false
 )
     # Initialize FNM
     fnm = FullNetworkModel(system, solver)
