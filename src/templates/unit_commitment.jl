@@ -178,7 +178,7 @@ Arguments:
 Keyword arguments:
  - `relax_integrality=false`: If set to `true`, binary variables will be relaxed.
 """
-function unit_commitment_soft_ramps(
+function unit_commitment_no_ramps(
     system::System, solver; relax_integrality=false
 )
     # Initialize FNM

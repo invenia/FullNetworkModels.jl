@@ -157,22 +157,6 @@ end
         var_ancillary_services!(fnm)
         con_ramp_rates!(fnm; slack=1e4)
         tests_ramp_rates(fnm; slack=1e4)
-
-        # Modify system so that hard ramp constraints result in infeasibility
-        system_infeasible = deepcopy(TEST_SYSTEM)
-        gens = collect(get_components(ThermalGen, system_infeasible))
-        gens[1].active_power = 50.0
-        @test get_initial_generation(system_infeasible)[7] == 50.0
-
-        fnm = unit_commitment(system_infeasible, GLPK.Optimizer)
-        optimize!(fnm)
-        # Should be infeasible
-        @test termination_status(fnm.model) == TerminationStatusCode(2)
-
-        # Now do the same with soft ramp constraints – should be feasible
-        fnm = unit_commitment_soft_ramps(system_infeasible, GLPK.Optimizer)
-        optimize!(fnm)
-        @test termination_status(fnm.model) == TerminationStatusCode(1)
     end
     @testset "Energy balance constraints" begin
         @testset "con_energy_balance!" begin
