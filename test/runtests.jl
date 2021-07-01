@@ -6,6 +6,7 @@ using FullNetworkModels
 using MathOptInterface: TerminationStatusCode
 using JuMP
 using PowerSystems
+using Random
 using Test
 using TimeSeries
 

@@ -1,7 +1,7 @@
 name = "FullNetworkModels"
 uuid = "73927447-18cb-4351-9246-c402eb8d0c47"
 authors = ["Invenia Technical Computing Corporation"]
-version = "2.1.0"
+version = "2.1.1"
 
 [deps]
 Dates = "ade2ca70-3891-5945-98fb-dc099432e06a"
@@ -11,7 +11,7 @@ PowerSystems = "bcd98974-b02a-5e2f-9ee0-a103f5c450dd"
 
 [compat]
 ElectricityMarkets = "1.14"
-FullNetworkDataPrep = "0.11.1"
+FullNetworkDataPrep = "0.14.2"
 GLPK = "0.14"
 JuMP = "0.21"
 Memento = "1.1"
@@ -24,8 +24,9 @@ ElectricityMarkets = "fc2b1cf9-69e4-584d-aa69-fb07a6454787"
 FullNetworkDataPrep = "a21943b2-60f3-11e9-2dbc-73f7bf1f23ac"
 GLPK = "60bf3e95-4087-53dc-ae20-288a0d20c6a6"
 MathOptInterface = "b8f27783-ece8-5eb3-8dc8-9495eed66fee"
+Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 TimeSeries = "9e3dc215-6440-5c97-bce1-76c03772f85e"
 
 [targets]
-test = ["ElectricityMarkets", "FullNetworkDataPrep", "GLPK", "MathOptInterface", "Test", "TimeSeries"]
+test = ["ElectricityMarkets", "FullNetworkDataPrep", "GLPK", "MathOptInterface", "Test", "TimeSeries", "Random"]

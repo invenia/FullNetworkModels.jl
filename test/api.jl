@@ -25,6 +25,11 @@
         @test get_regulation_cost(system) == Dict(
             3 => fill(20_000, n_periods), 7 => fill(10_000, n_periods)
         )
+        rng = MersenneTwister(1)
+        stat_gen3 = bitrand(rng, n_periods)
+        @test get_commitment_status(system) == Dict(
+            3 => stat_gen3, 7 => [false; fill(true, n_periods - 1)]
+        )
         @test get_spinning_cost(system) == Dict(
             3 => fill(30_000, n_periods), 7 => fill(15_000, n_periods)
         )
