@@ -12,7 +12,7 @@ Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
 
 [compat]
 ElectricityMarkets = "1.14"
-FullNetworkDataPrep = "0.11.1"
+FullNetworkDataPrep = "0.14.2"
 GLPK = "0.14"
 JuMP = "0.21"
 Memento = "1.1"
