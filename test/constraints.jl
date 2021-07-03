@@ -1,11 +1,11 @@
-function tests_generation_limits(fnm)
+function tests_generation_limits_uc(fnm)
     @testset "Test if constraints were created with the correct indices" begin
-        @test has_constraint(fnm.model, "generation_min")
-        @test has_constraint(fnm.model, "generation_max")
-        @test issetequal(fnm.model[:generation_min].axes[1], (7, 3))
-        @test issetequal(fnm.model[:generation_min].axes[2], 1:24)
-        @test issetequal(fnm.model[:generation_max].axes[1], (7, 3))
-        @test issetequal(fnm.model[:generation_max].axes[2], 1:24)
+        @test has_constraint(fnm.model, "generation_min_uc")
+        @test has_constraint(fnm.model, "generation_max_uc")
+        @test issetequal(fnm.model[:generation_min_uc].axes[1], (7, 3))
+        @test issetequal(fnm.model[:generation_min_uc].axes[2], 1:24)
+        @test issetequal(fnm.model[:generation_max_uc].axes[1], (7, 3))
+        @test issetequal(fnm.model[:generation_max_uc].axes[2], 1:24)
     end
     return nothing
 end
@@ -113,13 +113,13 @@ end
         # Test for economic dispatch (just thermal generation added)
         var_thermal_generation!(fnm)
         con_generation_limits_uc!(fnm)
-        tests_generation_limits(fnm)
+        tests_generation_limits_uc(fnm)
         # Test for unit commitment (both thermal generation and commitment added)
         fnm = FullNetworkModel(TEST_SYSTEM, GLPK.Optimizer)
         var_thermal_generation!(fnm)
         var_commitment!(fnm)
         con_generation_limits_uc!(fnm)
-        tests_generation_limits(fnm)
+        tests_generation_limits_uc(fnm)
     end
     @testset "Ancillary service constraints" begin
         fnm = FullNetworkModel(TEST_SYSTEM, GLPK.Optimizer)
