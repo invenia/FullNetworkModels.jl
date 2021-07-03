@@ -1,14 +1,14 @@
 # Define functions so that `_latex` can be dispatched over them
 function con_ancillary_limits! end
 function con_energy_balance! end
-function con_generation_limits! end
+function con_generation_limits_uc end
 function con_operating_reserve_requirements! end
 function con_ramp_rates! end
 function con_regulation_requirements! end
 function _con_ancillary_ramp_rates! end
 function _con_generation_ramp_rates! end
 
-function _latex(::typeof(con_generation_limits!); commitment::Bool)
+function _latex(::typeof(con_generation_limits_uc); commitment::Bool)
     u_gt = commitment ? "u_{g, t}" : ""
     return """
         ``P^{\\min}_{g, t} $u_gt \\leq p_{g, t} \\leq P^{\\max}_{g, t} $u_gt, \\forall g \\in \\mathcal{G}, t \\in \\mathcal{T}``
@@ -16,25 +16,25 @@ function _latex(::typeof(con_generation_limits!); commitment::Bool)
 end
 
 """
-    con_generation_limits!(fnm::FullNetworkModel)
+    con_generation_limits_uc!(fnm::FullNetworkModel)
 
 Adds generation limit constraints to the full network model:
 
-$(_latex(con_generation_limits!; commitment=true))
+$(_latex(con_generation_limits_uc; commitment=true))
 
 if `fnm.model` has commitment, or
 
-$(_latex(con_generation_limits!; commitment=false))
+$(_latex(con_generation_limits_uc; commitment=false))
 
 if `fnm.model` does not have commitment.
 
 The constraints added are named `generation_min` and `generation_max`.
 """
-function con_generation_limits!(fnm::FullNetworkModel)
+function con_generation_limits_uc(fnm::FullNetworkModel)
     model = fnm.model
     system = fnm.system
     @assert has_variable(model, "p")
-    _con_generation_limits!(
+    _con_generation_limits_uc!(
         model,
         Val(has_variable(model, "u")),
         get_unit_codes(ThermalGen, system),
@@ -228,7 +228,7 @@ function con_energy_balance!(fnm::FullNetworkModel)
     return fnm
 end
 
-function _con_generation_limits!(model::Model, ::Val{true}, unit_codes, n_periods, Pmin, Pmax)
+function _con_generation_limits_uc!(model::Model, ::Val{true}, unit_codes, n_periods, Pmin, Pmax)
     p = model[:p]
     u = model[:u]
     @constraint(
@@ -244,7 +244,7 @@ function _con_generation_limits!(model::Model, ::Val{true}, unit_codes, n_period
     return model
 end
 
-function _con_generation_limits!(model::Model, ::Val{false}, unit_codes, n_periods, Pmin, Pmax)
+function _con_generation_limits_uc!(model::Model, ::Val{false}, unit_codes, n_periods, Pmin, Pmax)
     p = model[:p]
     @constraint(
         model,

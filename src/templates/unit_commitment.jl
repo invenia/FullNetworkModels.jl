@@ -16,7 +16,7 @@ $(_write_formulation(
     ],
     constraints=[
         _latex(_var_thermal_gen_blocks!; commitment=true),
-        _latex(con_generation_limits!; commitment=true),
+        _latex(con_generation_limits_uc; commitment=true),
         _latex(_con_startup_shutdown!),
         _latex(con_ancillary_limits!),
         _latex(con_regulation_requirements!),
@@ -49,7 +49,7 @@ function unit_commitment(system::System, solver; relax_integrality=false)
     var_startup_shutdown!(fnm)
     var_ancillary_services!(fnm)
     # Constraints
-    con_generation_limits!(fnm)
+    con_generation_limits_uc(fnm)
     con_ancillary_limits!(fnm)
     con_regulation_requirements!(fnm)
     con_operating_reserve_requirements!(fnm)
@@ -84,7 +84,7 @@ $(_write_formulation(
     ],
     constraints=[
         _latex(_var_thermal_gen_blocks!; commitment=true),
-        _latex(con_generation_limits!; commitment=true),
+        _latex(con_generation_limits_uc; commitment=true),
         _latex(_con_startup_shutdown!),
         _latex(con_ancillary_limits!),
         _latex(con_regulation_requirements!),
@@ -120,7 +120,7 @@ function unit_commitment_soft_ramps(
     var_startup_shutdown!(fnm)
     var_ancillary_services!(fnm)
     # Constraints
-    con_generation_limits!(fnm)
+    con_generation_limits_uc(fnm)
     con_ancillary_limits!(fnm)
     con_regulation_requirements!(fnm)
     con_operating_reserve_requirements!(fnm)
@@ -155,7 +155,7 @@ $(_write_formulation(
     ],
     constraints=[
         _latex(_var_thermal_gen_blocks!; commitment=true),
-        _latex(con_generation_limits!; commitment=true),
+        _latex(con_generation_limits_uc; commitment=true),
         _latex(_con_startup_shutdown!),
         _latex(con_ancillary_limits!),
         _latex(con_regulation_requirements!),
@@ -189,7 +189,7 @@ function unit_commitment_no_ramps(
     var_startup_shutdown!(fnm)
     var_ancillary_services!(fnm)
     # Constraints
-    con_generation_limits!(fnm)
+    con_generation_limits_uc(fnm)
     con_ancillary_limits!(fnm)
     con_regulation_requirements!(fnm)
     con_operating_reserve_requirements!(fnm)
