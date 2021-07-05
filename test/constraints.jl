@@ -1,11 +1,11 @@
 function tests_generation_limits(fnm)
     @testset "Test if constraints were created with the correct indices" begin
-        @test has_constraint(fnm.model, "generation_min_commitment")
-        @test has_constraint(fnm.model, "generation_max_commitment")
-        @test issetequal(fnm.model[:generation_min_commitment].axes[1], (7, 3))
-        @test issetequal(fnm.model[:generation_min_commitment].axes[2], 1:24)
-        @test issetequal(fnm.model[:generation_max_commitment].axes[1], (7, 3))
-        @test issetequal(fnm.model[:generation_max_commitment].axes[2], 1:24)
+        @test has_constraint(fnm.model, "generation_min")
+        @test has_constraint(fnm.model, "generation_max")
+        @test issetequal(fnm.model[:generation_min].axes[1], (7, 3))
+        @test issetequal(fnm.model[:generation_min].axes[2], 1:24)
+        @test issetequal(fnm.model[:generation_max].axes[1], (7, 3))
+        @test issetequal(fnm.model[:generation_max].axes[2], 1:24)
     end
     return nothing
 end

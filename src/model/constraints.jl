@@ -28,7 +28,7 @@ $(_latex(con_generation_limits!; commitment=false))
 
 if `fnm.model` does not have commitment.
 
-The constraints added are named `generation_min_commitment` and `generation_max_commitment`.
+The constraints added are named `generation_min` and `generation_max`.
 """
 function con_generation_limits!(fnm::FullNetworkModel)
     model = fnm.model
@@ -233,12 +233,12 @@ function _con_generation_limits_commitment!(model::Model, ::Val{true}, unit_code
     u = model[:u]
     @constraint(
         model,
-        generation_min_commitment[g in unit_codes, t in 1:n_periods],
+        generation_min[g in unit_codes, t in 1:n_periods],
         Pmin[g][t] * u[g, t] <= p[g, t]
     )
     @constraint(
         model,
-        generation_max_commitment[g in unit_codes, t in 1:n_periods],
+        generation_max[g in unit_codes, t in 1:n_periods],
         p[g, t] <= Pmax[g][t] * u[g, t]
     )
     return model
@@ -248,12 +248,12 @@ function _con_generation_limits_commitment!(model::Model, ::Val{false}, unit_cod
     p = model[:p]
     @constraint(
         model,
-        generation_min_commitment[g in unit_codes, t in 1:n_periods],
+        generation_min[g in unit_codes, t in 1:n_periods],
         Pmin[g][t] <= p[g, t]
     )
     @constraint(
         model,
-        generation_max_commitment[g in unit_codes, t in 1:n_periods],
+        generation_max[g in unit_codes, t in 1:n_periods],
         p[g, t] <= Pmax[g][t]
     )
 end
