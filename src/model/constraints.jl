@@ -34,7 +34,7 @@ function con_generation_limits!(fnm::FullNetworkModel)
     model = fnm.model
     system = fnm.system
     @assert has_variable(model, "p")
-    _con_generation_limits!(
+    _con_generation_limits_commitment!(
         model,
         Val(has_variable(model, "u")),
         get_unit_codes(ThermalGen, system),
@@ -228,7 +228,7 @@ function con_energy_balance!(fnm::FullNetworkModel)
     return fnm
 end
 
-function _con_generation_limits!(model::Model, ::Val{true}, unit_codes, n_periods, Pmin, Pmax)
+function _con_generation_limits_commitment!(model::Model, ::Val{true}, unit_codes, n_periods, Pmin, Pmax)
     p = model[:p]
     u = model[:u]
     @constraint(
@@ -244,7 +244,7 @@ function _con_generation_limits!(model::Model, ::Val{true}, unit_codes, n_period
     return model
 end
 
-function _con_generation_limits!(model::Model, ::Val{false}, unit_codes, n_periods, Pmin, Pmax)
+function _con_generation_limits_commitment!(model::Model, ::Val{false}, unit_codes, n_periods, Pmin, Pmax)
     p = model[:p]
     @constraint(
         model,
