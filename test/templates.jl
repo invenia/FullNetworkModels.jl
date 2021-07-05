@@ -5,7 +5,7 @@
         tests_thermal_variable(fnm, "p", n_periods)
         tests_commitment(fnm, n_periods)
         tests_startup_shutdown(fnm, n_periods)
-        tests_generation_limits_uc(fnm)
+        tests_generation_limits(fnm)
         tests_thermal_variable_cost(fnm)
         tests_thermal_noload_cost(fnm)
         tests_thermal_startup_cost(fnm)

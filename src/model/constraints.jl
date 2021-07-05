@@ -1,14 +1,14 @@
 # Define functions so that `_latex` can be dispatched over them
 function con_ancillary_limits! end
 function con_energy_balance! end
-function con_generation_limits_uc! end
+function con_generation_limits! end
 function con_operating_reserve_requirements! end
 function con_ramp_rates! end
 function con_regulation_requirements! end
 function _con_ancillary_ramp_rates! end
 function _con_generation_ramp_rates! end
 
-function _latex(::typeof(con_generation_limits_uc!); commitment::Bool)
+function _latex(::typeof(con_generation_limits!); commitment::Bool)
     u_gt = commitment ? "u_{g, t}" : ""
     return """
         ``P^{\\min}_{g, t} $u_gt \\leq p_{g, t} \\leq P^{\\max}_{g, t} $u_gt, \\forall g \\in \\mathcal{G}, t \\in \\mathcal{T}``
@@ -16,25 +16,25 @@ function _latex(::typeof(con_generation_limits_uc!); commitment::Bool)
 end
 
 """
-    con_generation_limits_uc!(fnm::FullNetworkModel)
+    con_generation_limits!(fnm::FullNetworkModel)
 
 Adds generation limit constraints to the full network model:
 
-$(_latex(con_generation_limits_uc!; commitment=true))
+$(_latex(con_generation_limits!; commitment=true))
 
 if `fnm.model` has commitment, or
 
-$(_latex(con_generation_limits_uc!; commitment=false))
+$(_latex(con_generation_limits!; commitment=false))
 
 if `fnm.model` does not have commitment.
 
-The constraints added are named `generation_min_uc` and `generation_max_uc`.
+The constraints added are named `generation_min_commitment` and `generation_max_commitment`.
 """
-function con_generation_limits_uc!(fnm::FullNetworkModel)
+function con_generation_limits!(fnm::FullNetworkModel)
     model = fnm.model
     system = fnm.system
     @assert has_variable(model, "p")
-    _con_generation_limits_uc!(
+    _con_generation_limits_commitment!(
         model,
         Val(has_variable(model, "u")),
         get_unit_codes(ThermalGen, system),
@@ -228,32 +228,32 @@ function con_energy_balance!(fnm::FullNetworkModel)
     return fnm
 end
 
-function _con_generation_limits_uc!(model::Model, ::Val{true}, unit_codes, n_periods, Pmin, Pmax)
+function _con_generation_limits_commitment!(model::Model, ::Val{true}, unit_codes, n_periods, Pmin, Pmax)
     p = model[:p]
     u = model[:u]
     @constraint(
         model,
-        generation_min_uc[g in unit_codes, t in 1:n_periods],
+        generation_min_commitment[g in unit_codes, t in 1:n_periods],
         Pmin[g][t] * u[g, t] <= p[g, t]
     )
     @constraint(
         model,
-        generation_max_uc[g in unit_codes, t in 1:n_periods],
+        generation_max_commitment[g in unit_codes, t in 1:n_periods],
         p[g, t] <= Pmax[g][t] * u[g, t]
     )
     return model
 end
 
-function _con_generation_limits_uc!(model::Model, ::Val{false}, unit_codes, n_periods, Pmin, Pmax)
+function _con_generation_limits_commitment!(model::Model, ::Val{false}, unit_codes, n_periods, Pmin, Pmax)
     p = model[:p]
     @constraint(
         model,
-        generation_min_uc[g in unit_codes, t in 1:n_periods],
+        generation_min_commitment[g in unit_codes, t in 1:n_periods],
         Pmin[g][t] <= p[g, t]
     )
     @constraint(
         model,
-        generation_max_uc[g in unit_codes, t in 1:n_periods],
+        generation_max_commitment[g in unit_codes, t in 1:n_periods],
         p[g, t] <= Pmax[g][t]
     )
 end
