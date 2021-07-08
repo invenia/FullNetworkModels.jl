@@ -106,23 +106,20 @@ function tests_energy_balance(fnm)
 end
 
 @testset "Constraints" begin
-    @testset "$study con_generation_limits!" for (test_system, study) in
-        ((TEST_SYSTEM, "DA"), (TEST_SYSTEM_RT, "RT"))
+    @testset "con_generation_limits!" begin
         # Test if trying to add constraints without having variables throws error
-        fnm = FullNetworkModel(test_system, GLPK.Optimizer)
+        fnm = FullNetworkModel(TEST_SYSTEM, GLPK.Optimizer)
         @test_throws AssertionError con_generation_limits!(fnm)
         # Test for economic dispatch (just thermal generation added)
         var_thermal_generation!(fnm)
         con_generation_limits!(fnm)
         tests_generation_limits(fnm)
-        if study == "DA"
-            # Test for unit commitment (both thermal generation and commitment added)
-            fnm = FullNetworkModel(TEST_SYSTEM, GLPK.Optimizer)
-            var_thermal_generation!(fnm)
-            var_commitment!(fnm)
-            con_generation_limits!(fnm)
-            tests_generation_limits(fnm)
-        end
+        # Test for unit commitment (both thermal generation and commitment added)
+        fnm = FullNetworkModel(TEST_SYSTEM, GLPK.Optimizer)
+        var_thermal_generation!(fnm)
+        var_commitment!(fnm)
+        con_generation_limits!(fnm)
+        tests_generation_limits(fnm)
     end
     @testset "Ancillary service constraints" begin
         fnm = FullNetworkModel(TEST_SYSTEM, GLPK.Optimizer)
