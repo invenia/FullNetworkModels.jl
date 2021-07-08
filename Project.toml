@@ -11,7 +11,7 @@ PowerSystems = "bcd98974-b02a-5e2f-9ee0-a103f5c450dd"
 
 [compat]
 ElectricityMarkets = "1.14"
-FullNetworkDataPrep = "0.14.2"
+FullNetworkDataPrep = "0.14.4"
 GLPK = "0.14"
 JuMP = "0.21"
 Memento = "1.1"
