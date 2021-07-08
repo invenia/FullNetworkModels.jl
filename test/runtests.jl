@@ -11,7 +11,7 @@ using Test
 using TimeSeries
 
 const TEST_SYSTEM = fake_3bus_system(MISO)
-const TEST_SYSTEM_RT = fake_3bus_system(MISO; n_periods=24, commitment_forecasts=true)
+const TEST_SYSTEM_RT = fake_3bus_system(MISO; commitment_forecasts=true)
 
 @testset "FullNetworkModels.jl" begin
     include("api.jl")
