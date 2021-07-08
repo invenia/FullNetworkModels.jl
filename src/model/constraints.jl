@@ -27,15 +27,15 @@ end
 
 Adds generation limit constraints to the full network model:
 
-$(_latex(con_generation_limits!; commitment=true))
+$(_latex(_con_generation_limits_commitment!; commitment=true))
 
 if `fnm.model` has commitment, or
 
-$(_latex(con_generation_limits!; commitment=false))
+$(_latex(_con_generation_limits_commitment!; commitment=false))
 
 if `fnm.model` does not have commitment.
 
-$(_latex(con_generation_limits!))
+$(_latex(_con_generation_limits_dispatch!))
 
 if `fnm.model` has commitment as a forecast named "status".
 
