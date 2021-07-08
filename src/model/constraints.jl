@@ -285,17 +285,18 @@ function _con_generation_limits_commitment!(model::Model, ::Val{false}, unit_cod
     )
 end
 
-function _con_generation_limits_dispatch!(model::Model, U, unit_codes, n_periods, Pmin, Pmax)
+function _con_generation_limits_dispatch!(model::Model, ::Val{true}, unit_codes, n_periods, Pmin, Pmax)
     p = model[:p]
+    U = 1 #U[g][t]
     @constraint(
         model,
         generation_min[g in unit_codes, t in 1:n_periods],
-        Pmin[g][t] * U[g][t] <= p[g, t]
+        Pmin[g][t] * U <= p[g, t]
     )
     @constraint(
         model,
         generation_max[g in unit_codes, t in 1:n_periods],
-        p[g, t] <= Pmax[g][t] * U[g][t]
+        p[g, t] <= Pmax[g][t] * U
     )
     return model
 end
