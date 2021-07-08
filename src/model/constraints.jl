@@ -1,18 +1,24 @@
 # Define functions so that `_latex` can be dispatched over them
 function con_ancillary_limits! end
 function con_energy_balance! end
-function con_generation_limits! end
+function _con_generation_limits_commitment! end
+function _con_generation_limits_dispatch! end
 function con_operating_reserve_requirements! end
 function con_ramp_rates! end
 function con_regulation_requirements! end
 function _con_ancillary_ramp_rates! end
 function _con_generation_ramp_rates! end
 
-function _latex(::typeof(con_generation_limits!); commitment::Bool, study::String = "commitment")
+function _latex(::typeof(_con_generation_limits_commitment!); commitment::Bool)
     u_gt = commitment ? "u_{g, t}" : ""
-    study == "dispatch" && u_gt = "U_{g, t}"
     return """
         ``P^{\\min}_{g, t} $u_gt \\leq p_{g, t} \\leq P^{\\max}_{g, t} $u_gt, \\forall g \\in \\mathcal{G}, t \\in \\mathcal{T}``
+        """
+end
+
+function _latex(::typeof(_con_generation_limits_dispatch!))
+    return """
+        ``P^{\\min}_{g, t} U_{g, t} \\leq p_{g, t} \\leq P^{\\max}_{g, t} U_{g, t}, \\forall g \\in \\mathcal{G}, t \\in \\mathcal{T}``
         """
 end
 
@@ -29,10 +35,9 @@ $(_latex(con_generation_limits!; commitment=false))
 
 if `fnm.model` does not have commitment.
 
+$(_latex(con_generation_limits!))
 
-$(_latex(con_generation_limits!; study = "dispatch"))
-
-if `fnm.model` has commitment as a Parameter (Economic Dispatch).
+if `fnm.model` has commitment as a forecast named "status".
 
 
 The constraints added are named `generation_min` and `generation_max`.
@@ -41,15 +46,15 @@ function con_generation_limits!(fnm::FullNetworkModel)
     model = fnm.model
     system = fnm.system
     @assert has_variable(model, "p")
-    gens = collect(get_components(ThermalStandard, system))
-    is_u_param = all(
-        in(get_time_series_values(SingleTimeSeries, gens[1], "status")).([0, 1])
-    )
-    if is_u_param
+    unit_codes = get_unit_codes(ThermalGen, system)
+    # Verify if a generator has commitment forecasts (all generators should have the same forecasts)
+    gen = get_component(ThermalGen, system, first(unit_codes))
+    has_commitment_forecast = "status" in get_time_series_names(SingleTimeSeries, gen)
+    if has_commitment_forecast
         _con_generation_limits_dispatch!(
             model,
-            Val(has_variable(model, "u")),
-            get_unit_codes(ThermalGen, system),
+            Val(has_variable(model, "u")), #U[g][t],
+            unit_codes,
             get_forecast_horizon(system),
             get_pmin(system),
             get_pmax(system),
@@ -58,7 +63,7 @@ function con_generation_limits!(fnm::FullNetworkModel)
         _con_generation_limits_commitment!(
             model,
             Val(has_variable(model, "u")),
-            get_unit_codes(ThermalGen, system),
+            unit_codes,
             get_forecast_horizon(system),
             get_pmin(system),
             get_pmax(system),
@@ -285,12 +290,12 @@ function _con_generation_limits_dispatch!(model::Model, U, unit_codes, n_periods
     @constraint(
         model,
         generation_min[g in unit_codes, t in 1:n_periods],
-        Pmin[g][t] * U[g, t] <= p[g, t]
+        Pmin[g][t] * U[g][t] <= p[g, t]
     )
     @constraint(
         model,
         generation_max[g in unit_codes, t in 1:n_periods],
-        p[g, t] <= Pmax[g][t] * U[g, t]
+        p[g, t] <= Pmax[g][t] * U[g][t]
     )
     return model
 end
