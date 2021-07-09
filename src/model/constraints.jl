@@ -37,7 +37,7 @@ if `fnm.model` does not have commitment.
 
 $(_latex(_con_generation_limits_dispatch!))
 
-if `fnm.model` has commitment as a forecast named "status".
+if `fnm.system` has commitment as a forecast named "status".
 
 
 The constraints added are named `generation_min` and `generation_max`.
