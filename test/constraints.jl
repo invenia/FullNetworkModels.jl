@@ -114,6 +114,11 @@ end
         var_thermal_generation!(fnm)
         con_generation_limits!(fnm)
         tests_generation_limits(fnm)
+        # Test for economic dispatch with gen generator status as a parameter
+        fnm = FullNetworkModel(TEST_SYSTEM_RT, GLPK.Optimizer)
+        var_thermal_generation!(fnm)
+        con_generation_limits!(fnm)
+        tests_generation_limits(fnm)
         # Test for unit commitment (both thermal generation and commitment added)
         fnm = FullNetworkModel(TEST_SYSTEM, GLPK.Optimizer)
         var_thermal_generation!(fnm)
