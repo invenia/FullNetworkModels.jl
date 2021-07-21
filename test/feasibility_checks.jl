@@ -13,7 +13,7 @@
     ta = TimeArray(datetimes, fill(1e4, n_periods))
     add_time_series!(high_demand_system, load1, SingleTimeSeries("active_power", ta))
     transform_single_time_series!(high_demand_system, n_periods, Hour(1))
-    @test get_fixed_loads(high_demand_system)["Load1"] == fill(1e4, n_periods)
+    @test get_fixed_loads(high_demand_system)["Load1_2"] == fill(1e4, n_periods)
     @test !basic_feasibility_checks(high_demand_system)
 
     # System with infeasible ramp

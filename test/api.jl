@@ -12,7 +12,7 @@
 
         n_periods = get_forecast_horizon(system)
         @test issetequal(get_unit_codes(ThermalGen, system), (7, 3))
-        @test issetequal(get_load_names(PowerLoad, system), ("Load1", "Load2"))
+        @test issetequal(get_load_names(PowerLoad, system), ("Load1_2", "Load2_3"))
         @test get_pmin(system) == Dict(
             3 => fill(0.5, n_periods), 7 => fill(0.5, n_periods)
         )
