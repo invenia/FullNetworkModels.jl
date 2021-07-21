@@ -2,7 +2,10 @@ module FullNetworkModels
 
 using Dates
 using JuMP
+using Memento
 using PowerSystems
+
+const LOGGER = getlogger(@__MODULE__)
 
 # We use -9999 as the code for the market-wide reserve zone in accordance with FNDataPrep
 const MARKET_WIDE_ZONE = -9999
@@ -15,6 +18,7 @@ include("utils/api_extensions.jl")
 include("utils/internal.jl")
 include("utils/write.jl")
 include("utils/accessors.jl")
+include("utils/feasibility_checks.jl")
 
 # Model functions
 include("model/constraints.jl")
@@ -51,6 +55,7 @@ export get_ramp_rates
 export get_regmax
 export get_regmin
 export get_regulation_cost
+export get_commitment_status
 export get_regulation_providers
 export get_regulation_requirements
 export get_reserve_zones
@@ -67,7 +72,7 @@ export var_ancillary_services!
 export var_commitment!
 export var_startup_shutdown!
 export var_thermal_generation!
-export var_virtual_bids!
+export var_bids!
 
 # Constraint functions
 export con_ancillary_limits!
@@ -85,6 +90,16 @@ export obj_thermal_variable_cost!
 
 # Templates
 export unit_commitment
+export unit_commitment_soft_ramps
+export unit_commitment_no_ramps
+
+# API extensions
+export optimize!
+export set_optimizer_attribute
+export set_optimizer_attributes
+
+# Miscellaneous utility functions
+export basic_feasibility_checks
 
 # API extensions
 export optimize!

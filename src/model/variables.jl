@@ -164,17 +164,23 @@ function _con_ancillary_services!(model::Model, unit_codes, n_periods)
     return model
 end
 
-function var_virtual_bids!(fnm::FullNetworkModel)
+"""
+    var_bids!(fnm::FullNetworkModel)
+
+Adds the virtual and price-sensitive demand bid variables indexed, respectively, by the bid
+names and time periods.
+
+$(_latex(var_bids!))
+
+The created variables are named `p_i`, `d_d`, `d_s`.
+"""
+function var_bids!(fnm::FullNetworkModel)
     inc_codes = get_bid_codes(Increment, fnm.system)
     dec_codes = get_bid_codes(Decrement, fnm.system)
+    psd_codes = get_bid_codes(PriceSensitiveDemand, fnm.system)
     n_periods = get_forecast_horizon(fnm.system)
     @variable(fnm.model, p_i[i in inc_codes, t in 1:n_periods] >= 0)
     @variable(fnm.model, d_d[d in dec_codes, t in 1:n_periods] >= 0)
-    return fnm
-end
-
-function var_price_sensitive_demands!(fnm::FullNetworkModel)
-    bid_codes = get_bid_codes(PriceSensitiveDemand, fnm.system)
-    n_periods = get_forecast_horizon(fnm.system)
     @variable(fnm.model, d_s[s in bid_codes, t in 1:n_periods] >= 0)
+    return fnm
 end

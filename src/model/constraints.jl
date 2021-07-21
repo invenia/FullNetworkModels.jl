@@ -1,17 +1,24 @@
 # Define functions so that `_latex` can be dispatched over them
 function con_ancillary_limits! end
 function con_energy_balance! end
-function con_generation_limits! end
+function _con_generation_limits_commitment! end
+function _con_generation_limits_dispatch! end
 function con_operating_reserve_requirements! end
 function con_ramp_rates! end
 function con_regulation_requirements! end
 function _con_ancillary_ramp_rates! end
 function _con_generation_ramp_rates! end
 
-function _latex(::typeof(con_generation_limits!); commitment::Bool)
+function _latex(::typeof(_con_generation_limits_commitment!); commitment::Bool)
     u_gt = commitment ? "u_{g, t}" : ""
     return """
         ``P^{\\min}_{g, t} $u_gt \\leq p_{g, t} \\leq P^{\\max}_{g, t} $u_gt, \\forall g \\in \\mathcal{G}, t \\in \\mathcal{T}``
+        """
+end
+
+function _latex(::typeof(_con_generation_limits_dispatch!))
+    return """
+        ``P^{\\min}_{g, t} U_{g, t} \\leq p_{g, t} \\leq P^{\\max}_{g, t} U_{g, t}, \\forall g \\in \\mathcal{G}, t \\in \\mathcal{T}``
         """
 end
 
@@ -20,13 +27,18 @@ end
 
 Adds generation limit constraints to the full network model:
 
-$(_latex(con_generation_limits!; commitment=true))
+$(_latex(_con_generation_limits_commitment!; commitment=true))
 
 if `fnm.model` has commitment, or
 
-$(_latex(con_generation_limits!; commitment=false))
+$(_latex(_con_generation_limits_commitment!; commitment=false))
 
 if `fnm.model` does not have commitment.
+
+$(_latex(_con_generation_limits_dispatch!))
+
+if `fnm.system` has commitment as a forecast named "status".
+
 
 The constraints added are named `generation_min` and `generation_max`.
 """
@@ -34,14 +46,29 @@ function con_generation_limits!(fnm::FullNetworkModel)
     model = fnm.model
     system = fnm.system
     @assert has_variable(model, "p")
-    _con_generation_limits!(
-        model,
-        Val(has_variable(model, "u")),
-        get_unit_codes(ThermalGen, system),
-        get_forecast_horizon(system),
-        get_pmin(system),
-        get_pmax(system),
-    )
+    unit_codes = get_unit_codes(ThermalGen, system)
+    # Verify if a generator has commitment forecasts (all generators should have the same forecasts)
+    gen = get_component(ThermalGen, system, string(first(unit_codes)))
+    has_commitment_forecast = "status" in get_time_series_names(SingleTimeSeries, gen)
+    if has_commitment_forecast
+        _con_generation_limits_dispatch!(
+            model,
+            get_commitment_status(system),
+            unit_codes,
+            get_forecast_horizon(system),
+            get_pmin(system),
+            get_pmax(system),
+        )
+    else
+        _con_generation_limits_commitment!(
+            model,
+            Val(has_variable(model, "u")),
+            unit_codes,
+            get_forecast_horizon(system),
+            get_pmin(system),
+            get_pmax(system),
+        )
+    end
     return fnm
 end
 
@@ -166,10 +193,10 @@ end
 
 function _latex(::typeof(_con_generation_ramp_rates!))
     return """
-        ``p_{g, t} - p_{g, t - 1} \\leq 60 RR_{g} u_{g, t - 1} + SU_{g} v_{g, t}, \\forall g \\in \\mathcal{G}, t \\in \\mathcal{T} \\setminus \\{1\\}`` \n
-        ``p_{g, 1} - P^{0}_{g} \\leq 60 RR_{g} U^{0}_{g} + SU_{g} v_{g, 1}, \\forall g \\in \\mathcal{G}`` \n
-        ``p_{g, t - 1} - p_{g, t} \\leq 60 RR_{g} u_{g, t} + SD_{g} w_{g, t}, \\forall g \\in \\mathcal{G}, t \\in \\mathcal{T} \\setminus \\{1\\}`` \n
-        ``P^{0}_{g} - p_{g, 1} \\leq 60 RR_{g} u_{g, 1} + SD_{g} w_{g, 1}, \\forall g \\in \\mathcal{G}``
+        ``p_{g, t} - p_{g, t - 1} \\leq \\Delta t RR_{g} u_{g, t - 1} + SU_{g} v_{g, t}, \\forall g \\in \\mathcal{G}, t \\in \\mathcal{T} \\setminus \\{1\\}`` \n
+        ``p_{g, 1} - P^{0}_{g} \\leq \\Delta t RR_{g} U^{0}_{g} + SU_{g} v_{g, 1}, \\forall g \\in \\mathcal{G}`` \n
+        ``p_{g, t - 1} - p_{g, t} \\leq \\Delta t RR_{g} u_{g, t} + SD_{g} w_{g, t}, \\forall g \\in \\mathcal{G}, t \\in \\mathcal{T} \\setminus \\{1\\}`` \n
+        ``P^{0}_{g} - p_{g, 1} \\leq \\Delta t RR_{g} u_{g, 1} + SD_{g} w_{g, 1}, \\forall g \\in \\mathcal{G}``
         """
 end
 
@@ -178,18 +205,20 @@ function _latex(::typeof(con_ramp_rates!))
 end
 
 """
-    con_ramp_rates!(fnm::FullNetworkModel)
+    con_ramp_rates!(fnm::FullNetworkModel; slack=nothing)
 
-Adds ramp rate constraints to the full network model:
+Adds ramp rate constraints to the full network model. The kwarg `slack` can be used to set
+the generator ramp constraints as soft constraints; any value different than `nothing` will
+result in soft constraints with the slack penalty value specified in `slack`.
 
 $(_latex(con_ramp_rates!))
 
 The constraints are named `ramp_regulation`, `ramp_spin_sup`, `ramp_up`, `ramp_up_initial`,
 `ramp_down`, and `ramp_down_initial`.
 """
-function con_ramp_rates!(fnm::FullNetworkModel)
+function con_ramp_rates!(fnm::FullNetworkModel; slack=nothing)
     _con_ancillary_ramp_rates!(fnm)
-    _con_generation_ramp_rates!(fnm)
+    _con_generation_ramp_rates!(fnm, slack)
     return fnm
 end
 
@@ -226,7 +255,7 @@ function con_energy_balance!(fnm::FullNetworkModel)
     return fnm
 end
 
-function _con_generation_limits!(model::Model, ::Val{true}, unit_codes, n_periods, Pmin, Pmax)
+function _con_generation_limits_commitment!(model::Model, ::Val{true}, unit_codes, n_periods, Pmin, Pmax)
     p = model[:p]
     u = model[:u]
     @constraint(
@@ -242,7 +271,7 @@ function _con_generation_limits!(model::Model, ::Val{true}, unit_codes, n_period
     return model
 end
 
-function _con_generation_limits!(model::Model, ::Val{false}, unit_codes, n_periods, Pmin, Pmax)
+function _con_generation_limits_commitment!(model::Model, ::Val{false}, unit_codes, n_periods, Pmin, Pmax)
     p = model[:p]
     @constraint(
         model,
@@ -254,6 +283,21 @@ function _con_generation_limits!(model::Model, ::Val{false}, unit_codes, n_perio
         generation_max[g in unit_codes, t in 1:n_periods],
         p[g, t] <= Pmax[g][t]
     )
+end
+
+function _con_generation_limits_dispatch!(model::Model, U, unit_codes, n_periods, Pmin, Pmax)
+    p = model[:p]
+    @constraint(
+        model,
+        generation_min[g in unit_codes, t in 1:n_periods],
+        Pmin[g][t] * U[g][t] <= p[g, t]
+    )
+    @constraint(
+        model,
+        generation_max[g in unit_codes, t in 1:n_periods],
+        p[g, t] <= Pmax[g][t] * U[g][t]
+    )
+    return model
 end
 
 function _con_ancillary_max!(model::Model, unit_codes, n_periods, Pmax, Pregmax)
@@ -392,7 +436,7 @@ function _con_ancillary_ramp_rates!(fnm::FullNetworkModel)
     return fnm
 end
 
-function _con_generation_ramp_rates!(fnm::FullNetworkModel)
+function _con_generation_ramp_rates!(fnm::FullNetworkModel, slack)
     model = fnm.model
     system = fnm.system
     unit_codes = get_unit_codes(ThermalGen, system)
@@ -401,32 +445,52 @@ function _con_generation_ramp_rates!(fnm::FullNetworkModel)
     SU = get_startup_limits(system)
     P0 = get_initial_generation(system)
     U0 = get_initial_commitment(system)
+    Δt = _get_resolution_in_minutes(system)
     p = model[:p]
     u = model[:u]
     v = model[:v]
     w = model[:w]
-    # Ramp up - generation can't go up more than the hourly (60 min) ramp capacity
+    # Ramp up - generation can't go up more than the ramp capacity (defined in pu/min)
     @constraint(
         model,
         ramp_up[g in unit_codes, t in 2:n_periods],
-        p[g, t] - p[g, t - 1] <= 60 * RR[g] * u[g, t - 1] + SU[g][t] * v[g, t]
+        p[g, t] - p[g, t - 1] <= Δt * RR[g] * u[g, t - 1] + SU[g][t] * v[g, t]
     )
     @constraint(
         model,
         ramp_up_initial[g in unit_codes],
-        p[g, 1] - P0[g] <= 60 * RR[g] * U0[g] + SU[g][1] * v[g, 1]
+        p[g, 1] - P0[g] <= Δt * RR[g] * U0[g] + SU[g][1] * v[g, 1]
     )
-    # Ramp down - generation can't go down more than the hourly (60 min) ramp capacity
+    # Ramp down - generation can't go down more than ramp capacity (defined in pu/min)
     # We consider SU = SD
     @constraint(
         model,
         ramp_down[g in unit_codes, t in 2:n_periods],
-        p[g, t - 1] - p[g, t] <= 60 * RR[g] * u[g, t] + SU[g][t] * w[g, t]
+        p[g, t - 1] - p[g, t] <= Δt * RR[g] * u[g, t] + SU[g][t] * w[g, t]
     )
     @constraint(
         model,
         ramp_down_initial[g in unit_codes],
-        P0[g] - p[g, 1] <= 60 * RR[g] * u[g, 1] + SU[g][1] * w[g, 1]
+        P0[g] - p[g, 1] <= Δt * RR[g] * u[g, 1] + SU[g][1] * w[g, 1]
     )
+
+    # If the constraints are supposed to be soft constraints, add slacks
+    if slack !== nothing
+        @variable(model, s_ramp[g in unit_codes, t in 1:n_periods] >= 0)
+        for g in unit_codes
+            set_normalized_coefficient(ramp_up_initial[g], s_ramp[g, 1], -1.0)
+            set_normalized_coefficient(ramp_down_initial[g], s_ramp[g, 1], -1.0)
+            for t in 2:n_periods
+                set_normalized_coefficient(ramp_up[g, t], s_ramp[g, t], -1.0)
+                set_normalized_coefficient(ramp_down[g, t], s_ramp[g, t], -1.0)
+            end
+        end
+
+        # Add slack penalty to the objective
+        for g in unit_codes, t in 1:n_periods
+            set_objective_coefficient(model, s_ramp[g, t], slack)
+        end
+    end
+
     return fnm
 end

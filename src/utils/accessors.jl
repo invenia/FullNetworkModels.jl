@@ -26,16 +26,16 @@ has_constraint(model::Model, con::String) = has_constraint(model, Symbol(con))
 Returns the unit codes of all generators in `system` under type `gentype`.
 """
 function get_unit_codes(gentype::Type{<:Generator}, system::System)
-    return _get_parsed_names(gentype, system)
+    return parse.(Int, get_name.(get_components(gentype, system)))
 end
 
 """
-    get_bid_codes(bidtype::Type{<:Device}, system::System)
+    get_bid_names(bidtype::Type{<:Device}, system::System)
 
-Returns the bid identifiers in `system` that are of type `T`.
+Returns the names of the bids in `system` that are of type `bidtype`.
 """
-function get_bid_codes(bidtype::Type{<:Device}, system::System)
-    return _get_parsed_names(bidtype, system)
+function get_bid_names(bidtype::Type{<:Device}, system::System)
+    return get_name.(get_components(bidtype, system))
 end
 
 """
@@ -79,10 +79,11 @@ function get_fixed_loads(system::System)
     ts_dict = Dict{String, Vector{Float64}}()
     for load in get_components(PowerLoad, system)
         load_name = get_name(load)
-        active_power = get_max_active_power(load)
-        # Load forecasts are multiplicative, which means the forecast multiplies the base
-        # value stored in the field `max_active_power`.
-        ts_dict[load_name] = active_power .* get_time_series_values(SingleTimeSeries, load, "max_active_power")
+        active_power = get_active_power(load)
+        # In our convention load forecasts are multiplicative, which means the forecast
+        # multiplies the base value stored in the field `active_power`.
+        ts_dict[load_name] =
+            active_power .* get_time_series_values(SingleTimeSeries, load, "active_power")
     end
     return ts_dict
 end
@@ -122,6 +123,15 @@ Returns the costs of regulation offered by the generators in `system`.
 """
 function get_regulation_cost(system::System)
     return get_generator_time_series(system, "regulation"; suffix=true)
+end
+
+"""
+    get_commitment_status(system::System) -> Dict
+
+Returns the commitment status of the Thermal generators in `system`.
+"""
+function get_commitment_status(system::System)
+    return get_generator_time_series(system, "status"; suffix=false)
 end
 
 """
@@ -337,8 +347,8 @@ end
     get_startup_limits(system::System) -> Dict
 
 Returns a dictionary with the start-up limits of each unit in `system`. The start-up limits
-are defined as equal to Pmin following the convention of PowerSimulations.jl. Since we don't
+are defined as equal to Regmin to avoid infeasibilities. Since we don't
 currently differentiate between ramp up and down, this can also be used to obtain the
 shutdown limits, which are identical under this assumption.
 """
-get_startup_limits(system::System) = get_pmin(system)
+get_startup_limits(system::System) = get_regmin(system)

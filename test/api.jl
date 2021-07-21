@@ -1,12 +1,15 @@
 @testset "API functions" begin
     fnm = FullNetworkModel(TEST_SYSTEM, GLPK.Optimizer)
+    fnm_rt = FullNetworkModel(TEST_SYSTEM_RT, GLPK.Optimizer)
 
     @testset "Prints" begin
-        @test sprint(show, fnm) == "FullNetworkModel\nModel formulation: 0 variables\nSystem: 29 components, 24 time periods\n"
+        @test sprint(show, fnm) == "FullNetworkModel\nModel formulation: 0 variables\nSystem: 32 components, 24 time periods\n"
     end
 
     @testset "Accessors" begin
         system = fnm.system
+        system_rt = fnm_rt.system
+
         n_periods = get_forecast_horizon(system)
         @test issetequal(get_unit_codes(ThermalGen, system), (7, 3))
         @test issetequal(get_load_names(PowerLoad, system), ("Load1", "Load2"))
@@ -24,6 +27,11 @@
         )
         @test get_regulation_cost(system) == Dict(
             3 => fill(20_000, n_periods), 7 => fill(10_000, n_periods)
+        )
+        rng = MersenneTwister(1)
+        stat_gen3 = bitrand(rng, n_periods)
+        @test get_commitment_status(system_rt) == Dict(
+            3 => stat_gen3, 7 => [false; fill(true, n_periods - 1)]
         )
         @test get_spinning_cost(system) == Dict(
             3 => fill(30_000, n_periods), 7 => fill(15_000, n_periods)
