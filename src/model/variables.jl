@@ -1,6 +1,7 @@
 # Define functions so that `_latex` can be dispatched over them
-function var_thermal_generation! end
+function var_bids! end
 function var_commitment! end
+function var_thermal_generation! end
 function _var_startup_shutdown! end
 function _con_startup_shutdown! end
 function _var_ancillary_services! end
@@ -164,6 +165,14 @@ function _con_ancillary_services!(model::Model, unit_codes, n_periods)
     return model
 end
 
+function _latex(::typeof(var_bids!))
+    return """
+    ``inc_{g, t} \\geq 0, \\forall i \\in \\mathcal{I}, t \\in \\mathcal{T}``
+    ``dec_{g, t} \\geq 0, \\forall d \\in \\mathcal{D}, t \\in \\mathcal{T}``
+    ``psd_{g, t} \\geq 0, \\forall s \\in \\mathcal{S}, t \\in \\mathcal{T}``
+    """
+end
+
 """
     var_bids!(fnm::FullNetworkModel)
 
@@ -172,15 +181,15 @@ names and time periods.
 
 $(_latex(var_bids!))
 
-The created variables are named `p_i`, `d_d`, `d_s`.
+The created variables are named `inc`, `dec`, `psd`.
 """
 function var_bids!(fnm::FullNetworkModel)
-    inc_codes = get_bid_codes(Increment, fnm.system)
-    dec_codes = get_bid_codes(Decrement, fnm.system)
-    psd_codes = get_bid_codes(PriceSensitiveDemand, fnm.system)
+    inc_names = get_bid_names(Increment, fnm.system)
+    dec_names = get_bid_names(Decrement, fnm.system)
+    psd_names = get_bid_names(PriceSensitiveDemand, fnm.system)
     n_periods = get_forecast_horizon(fnm.system)
-    @variable(fnm.model, p_i[i in inc_codes, t in 1:n_periods] >= 0)
-    @variable(fnm.model, d_d[d in dec_codes, t in 1:n_periods] >= 0)
-    @variable(fnm.model, d_s[s in bid_codes, t in 1:n_periods] >= 0)
+    @variable(fnm.model, inc[i in inc_names, t in 1:n_periods] >= 0)
+    @variable(fnm.model, dec[d in dec_names, t in 1:n_periods] >= 0)
+    @variable(fnm.model, psd[s in psd_names, t in 1:n_periods] >= 0)
     return fnm
 end

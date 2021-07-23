@@ -32,7 +32,7 @@ include("templates/unit_commitment.jl")
 export FullNetworkModel
 
 # Accessor functions
-export get_bid_codes
+export get_bid_names
 export get_fixed_loads
 export get_generator_time_series
 export get_initial_commitment
@@ -69,10 +69,10 @@ export has_variable
 
 # Variable functions
 export var_ancillary_services!
+export var_bids!
 export var_commitment!
 export var_startup_shutdown!
 export var_thermal_generation!
-export var_bids!
 
 # Constraint functions
 export con_ancillary_limits!

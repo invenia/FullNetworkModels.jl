@@ -164,3 +164,36 @@ function _obj_thermal_variable_cost!(model::Model, unit_codes, n_periods, n_bloc
     _add_to_objective!(model, variable_cost)
     return model
 end
+
+"""
+    obj_bids!(fnm::FullNetworkModel)
+
+Adds the bid curves related to virtual supply and demand bids as well as price-sensitive
+demand bids. Uses auxiliary variables that multiply the bid prices. The variables `*_aux`
+are indexed, respectively, by the bid names in `system`, by the time periods considered,
+and by the bid block number.
+
+Adds to the objective function:
+
+$(_latex(TODO))
+
+And adds the following constraints:
+
+$(_latex(TODO))
+"""
+function obj_bids!(fnm::FullNetworkModel)
+    model = fnm.model
+    system = fnm.system
+    # INCs are added as a positive value in the objective; DECs and PSDs are negative.
+    inc_names = get_bid_names(Increment, system)
+    dec_psd_names = get_bid_names(Union{Decrement, PriceSensitiveDemand}, system)
+    n_periods = get_forecast_horizon(system)
+    offer_curves = get_offer_curves(system)
+    # Get properties of the offer curves: prices, block MW limits, number of blocks
+    Λ, p_aux_lims, n_blocks = _offer_curve_properties(offer_curves, n_periods)
+    # Add variables and constraints for thermal generation blocks
+    _var_thermal_gen_blocks!(model, unit_codes, p_aux_lims, n_periods, n_blocks)
+    # Add thermal variable cost to objective
+    _obj_thermal_variable_cost!(model, unit_codes, n_periods, n_blocks, Λ)
+    return fnm
+end
