@@ -49,7 +49,7 @@ function obj_thermal_variable_cost!(fnm::FullNetworkModel)
     n_periods = get_forecast_horizon(system)
     offer_curves = get_offer_curves(system)
     # Get properties of the offer curves: prices, block MW limits, number of blocks
-    Λ, p_aux_lims, n_blocks = _offer_curve_properties(offer_curves, n_periods)
+    Λ, p_aux_lims, n_blocks = _curve_properties(offer_curves, n_periods)
     # Add variables and constraints for thermal generation blocks
     _var_thermal_gen_blocks!(model, unit_codes, p_aux_lims, n_periods, n_blocks)
     # Add thermal variable cost to objective
@@ -184,16 +184,41 @@ $(_latex(TODO))
 function obj_bids!(fnm::FullNetworkModel)
     model = fnm.model
     system = fnm.system
-    # INCs are added as a positive value in the objective; DECs and PSDs are negative.
-    inc_names = get_bid_names(Increment, system)
-    dec_psd_names = get_bid_names(Union{Decrement, PriceSensitiveDemand}, system)
     n_periods = get_forecast_horizon(system)
-    offer_curves = get_offer_curves(system)
-    # Get properties of the offer curves: prices, block MW limits, number of blocks
-    Λ, p_aux_lims, n_blocks = _offer_curve_properties(offer_curves, n_periods)
-    # Add variables and constraints for thermal generation blocks
-    _var_thermal_gen_blocks!(model, unit_codes, p_aux_lims, n_periods, n_blocks)
-    # Add thermal variable cost to objective
-    _obj_thermal_variable_cost!(model, unit_codes, n_periods, n_blocks, Λ)
+    for (bidtype, v_name) in (
+        (Increment, "inc"), (Decrement, "dec"), (PriceSensitiveDemand, "psd")
+    )
+        bid_names = get_bid_names(bidtype, system)
+        bids = get_bid_curves(bidtype, system)
+        # Get properties of the bid curves: prices, block MW limits, number of blocks
+        Λ, block_lims, n_blocks = _curve_properties(bids, n_periods; blocks=true)
+        # Add variables and constraints for bid blocks and cost to objective function
+        _var_bid_blocks!(model, bid_names, block_lims, n_periods, n_blocks, v_name)
+        _obj_thermal_variable_cost!(model, unit_codes, n_periods, n_blocks, Λ)
+    end
     return fnm
+end
+
+function _var_bid_blocks!(model::Model, bid_names, block_lims, n_periods, n_blocks, v_name)
+    # Define variable / constraint names – this function is used for all bid types
+    v = Symbol(v_name)
+    v_aux = Symbol(v_name, "_aux")
+    def = Symbol(v, "_definition")
+    lims = Symbol(v, "_block_limits")
+
+    @eval @variable(
+        model,
+        $v_aux[b in bid_names, t in 1:n_periods, q in 1:n_blocks[g][t]] >= 0
+    )
+    @eval @constraint(
+        model,
+        $def[b in bid_names, t in 1:n_periods],
+        $v[g, t] == sum($v_aux[b, t, q] for q in 1:n_blocks[b][t])
+    )
+    @eval @constraint(
+        model,
+        $lims[b in bid_names, t in 1:n_periods, q in 1:n_blocks[g][t]],
+        $v_aux[g, t, q] <= block_lims[g][t][q]
+    )
+    return model
 end
