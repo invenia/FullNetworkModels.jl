@@ -4,6 +4,7 @@ using Dates
 using JuMP
 using Memento
 using PowerSystems
+using PowerSystemsExtras
 
 const LOGGER = getlogger(@__MODULE__)
 
