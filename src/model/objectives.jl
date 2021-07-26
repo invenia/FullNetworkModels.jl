@@ -1,5 +1,7 @@
 # Define functions so that `_latex` can be dispatched over them
+function _obj_bid_variable_cost! end
 function _obj_thermal_variable_cost! end
+function _var_bid_blocks! end
 function _var_thermal_gen_blocks! end
 function obj_ancillary_costs! end
 function obj_thermal_noload_cost! end
@@ -156,13 +158,29 @@ function _var_thermal_gen_blocks!(
 end
 
 function _obj_thermal_variable_cost!(model::Model, unit_codes, n_periods, n_blocks, Λ)
-    p_aux = model[:p_aux]
-    variable_cost = AffExpr(0.0)
-    for g in unit_codes, t in 1:n_periods, q in 1:n_blocks[g][t]
-        variable_cost += p_aux[g, t, q] * Λ[g][t][q]
-    end
-    _add_to_objective!(model, variable_cost)
+    thermal_cost = _variable_cost(model, unit_codes, n_periods, n_blocks, Λ, :p, 1)
+    _add_to_objective!(model, thermal_cost)
     return model
+end
+
+function _latex(::typeof(_obj_bid_variable_cost!))
+    return """
+    ``\\sum_{t \\in \\mathcal{T}} \\sum_{i \\in \\mathcal{I}} \\sum_{q \\in \\mathcal{Q}_{i, t}} inc^{\\text{aux}}_{i, t, q} \\Lambda^{\\text{inc}}_{i, t, q}
+    - \\sum_{t \\in \\mathcal{T}} \\sum_{d \\in \\mathcal{D}} \\sum_{q \\in \\mathcal{Q}_{d, t}} dec^{\\text{aux}}_{d, t, q} \\Lambda^{\\text{dec}}_{d, t, q}
+    - \\sum_{t \\in \\mathcal{T}} \\sum_{s \\in \\mathcal{S}} \\sum_{q \\in \\mathcal{Q}_{s, t}} psd^{\\text{aux}}_{s, t, q} \\Lambda^{\\text{psd}}_{s, t, q}``
+    """
+end
+
+function _latex(::typeof(_var_thermal_gen_blocks!); commitment)
+    u_gt = commitment ? "u_{g, t}" : ""
+    return """
+        ``0 \\leq inc^{\\text{aux}}_{i, t, q} \\leq \\bar{P}^{\\text{inc}}_{i, t, q}, \\forall i \\in \\mathcal{I}, t \\in \\mathcal{T}, q \\in \\mathcal{Q}_{i, t}`` \n
+        ``inc_{i, t} = \\sum_{q \\in \\mathcal{Q}_{i, t}} inc^{\\text{aux}}_{i, t, q}, \\forall i \\in \\mathcal{I}, t \\in \\mathcal{T}``
+        ``0 \\leq dec^{\\text{aux}}_{d, t, q} \\leq \\bar{D}^{\\text{dec}}_{d, t, q}, \\forall d \\in \\mathcal{D}, t \\in \\mathcal{T}, q \\in \\mathcal{Q}_{d, t}`` \n
+        ``dec_{d, t} = \\sum_{q \\in \\mathcal{Q}_{d, t}} dec^{\\text{aux}}_{d, t, q}, \\forall d \\in \\mathcal{D}, t \\in \\mathcal{T}``
+        ``0 \\leq psd^{\\text{aux}}_{s, t, q} \\leq \\bar{D}^{\\text{psd}}_{s, t, q}, \\forall s \\in \\mathcal{S}, t \\in \\mathcal{T}, q \\in \\mathcal{Q}_{s, t}`` \n
+        ``psd_{i, t} = \\sum_{q \\in \\mathcal{Q}_{s, t}} psd^{\\text{aux}}_{s, t, q}, \\forall s \\in \\mathcal{S}, t \\in \\mathcal{T}``
+        """
 end
 
 """
@@ -175,36 +193,34 @@ and by the bid block number.
 
 Adds to the objective function:
 
-$(_latex(TODO))
+$(_latex(_obj_bid_variable_cost!))
 
 And adds the following constraints:
 
-$(_latex(TODO))
+$(_latex(_var_bid_blocks!))
 """
-function obj_bids!(fnm::FullNetworkModel)
+function obj_bids!(fnm::FusllNetworkModel)
     model = fnm.model
     system = fnm.system
     n_periods = get_forecast_horizon(system)
-    for (bidtype, v_name) in (
-        (Increment, "inc"), (Decrement, "dec"), (PriceSensitiveDemand, "psd")
-    )
+    for (bidtype, v) in ((Increment, :inc), (Decrement, :dec), (PriceSensitiveDemand, :psd))
         bid_names = get_bid_names(bidtype, system)
         bids = get_bid_curves(bidtype, system)
         # Get properties of the bid curves: prices, block MW limits, number of blocks
         Λ, block_lims, n_blocks = _curve_properties(bids, n_periods; blocks=true)
         # Add variables and constraints for bid blocks and cost to objective function
-        _var_bid_blocks!(model, bid_names, block_lims, n_periods, n_blocks, v_name)
-        _obj_thermal_variable_cost!(model, unit_codes, n_periods, n_blocks, Λ)
+        _var_bid_blocks!(model, bid_names, block_lims, n_periods, n_blocks, v)
+        sense = bidtype == Increment ? 1 : -1
+        _obj_bid_variable_cost!(model, bid_names, n_periods, n_blocks, Λ, v, sense)
     end
     return fnm
 end
 
-function _var_bid_blocks!(model::Model, bid_names, block_lims, n_periods, n_blocks, v_name)
+function _var_bid_blocks!(model::Model, bid_names, block_lims, n_periods, n_blocks, v)
     # Define variable / constraint names – this function is used for all bid types
-    v = Symbol(v_name)
-    v_aux = Symbol(v_name, "_aux")
-    def = Symbol(v, "_definition")
-    lims = Symbol(v, "_block_limits")
+    v_aux = Symbol(v, :_aux)
+    def = Symbol(v, :_definition)
+    lims = Symbol(v, :_block_limits)
 
     @eval @variable(
         model,
@@ -213,12 +229,18 @@ function _var_bid_blocks!(model::Model, bid_names, block_lims, n_periods, n_bloc
     @eval @constraint(
         model,
         $def[b in bid_names, t in 1:n_periods],
-        $v[g, t] == sum($v_aux[b, t, q] for q in 1:n_blocks[b][t])
+        $v[b, t] == sum($v_aux[b, t, q] for q in 1:n_blocks[b][t])
     )
     @eval @constraint(
         model,
-        $lims[b in bid_names, t in 1:n_periods, q in 1:n_blocks[g][t]],
-        $v_aux[g, t, q] <= block_lims[g][t][q]
+        $lims[b in bid_names, t in 1:n_periods, q in 1:n_blocks[b][t]],
+        $v_aux[b, t, q] <= block_lims[b][t][q]
     )
+    return model
+end
+
+function _obj_bid_variable_cost!(model::Model, bid_names, n_periods, n_blocks, Λ, v, sense)
+    bid_cost = _variable_cost(model, bid_names, n_periods, n_blocks, Λ, v, sense)
+    _add_to_objective!(model, bid_cost)
     return model
 end

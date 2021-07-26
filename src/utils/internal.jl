@@ -11,6 +11,32 @@ function _add_to_objective!(model::Model, expr)
 end
 
 """
+    _variable_cost(model::Model, names, n_periods, n_blocks, Λ, v, sense) -> AffExpr
+
+Defines the expression of a variable cost to be added in the objective function.
+
+Arguments:
+ - `model::Model`: the JuMP model that contains the variables to be used.
+ - `names`: the unit codes, bid names, or similar that act as indices.
+ - `n_periods`: the number of time periods considered.
+ - `Λ`: The offer/bid prices per block.
+ - `v`: The name of the variable to be considered in the cost, e.g. `:p` for generation.
+ - `sense`: constant multiplying the variable cost; should be 1 or -1 (i.e. if it's a
+   positive or negative expression).
+"""
+function _variable_cost(model::Model, names, n_periods, n_blocks, Λ, v, sense)
+    v_aux = model[Symbol(v, :_aux)]
+    variable_cost = AffExpr(0.0)
+    for n in names, t in 1:n_periods, q in 1:n_blocks[n][t]
+        # Faster version of `variable_cost += Λ[n][t][q] * v_aux[n, t, q]`
+        add_to_expression!(variable_cost, Λ[n][t][q], v_aux[n, t, q])
+    end
+    # Apply sense to expression
+    variable_cost *= sense
+    return variable_cost
+end
+
+"""
     _obj_thermal_linear_cost(fnm::FullNetworkModel, var::Symbol, f)
 
 Adds a linear cost (cost * variable) to the objective, where the cost is fetched by function
