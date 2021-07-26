@@ -35,7 +35,7 @@ end
 Returns the names of the bids in `system` that are of type `bidtype`.
 """
 function get_bid_names(bidtype::Type{<:Device}, system::System)
-    return get_name.(get_components(bidtype, system))
+    return map(get_name, get_components(bidtype, system))
 end
 
 """

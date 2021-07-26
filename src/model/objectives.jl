@@ -209,7 +209,7 @@ function obj_bids!(fnm::FullNetworkModel)
         Λ, block_lims, n_blocks = _curve_properties(bids, n_periods; blocks=true)
         # Add variables and constraints for bid blocks and cost to objective function
         _var_bid_blocks!(model, bid_names, block_lims, n_periods, n_blocks, v)
-        sense = bidtype == Increment ? 1 : -1
+        sense = bidtype === Increment ? 1 : -1
         _obj_bid_variable_cost!(model, bid_names, n_periods, n_blocks, Λ, v, sense)
     end
     return fnm
