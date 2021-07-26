@@ -80,7 +80,7 @@ function _curve_properties(curves, n_periods; blocks=false)
         # Change curve MW values to block MW limits - e.g. if the MW values are
         # (50, 100, 200), the corresponding MW limits of each block are (50, 50, 100).
         for g in keys(n_blocks), t in 1:n_periods, q in n_blocks[g][t]:-1:2
-            limits[g][t][q] -= limits[g][t][q - 1]
+            @inbounds limits[g][t][q] -= limits[g][t][q - 1]
         end
     end
     return prices, limits, n_blocks
