@@ -104,6 +104,18 @@ end
         tests_thermal_startup_cost(fnm)
     end
     @testset "obj_bids!" begin
-
+        system = fake_3bus_system(MISO, DA; n_periods=2)
+        fnm = FullNetworkModel(system, GLPK.Optimizer)
+        var_bids!(fnm)
+        obj_bids!(fnm)
+        # Check if objective function accurately reflects the bids in the system
+        # All bids have just one block equal to ()
+        inc_name, dec_name, psd_name = ("111_1", "222_1", "333_1")
+        inc_aux, dec_aux, psd_aux = fnm.model[:inc_aux], fnm.model[:dec_aux], fnm.model[:psd_aux]
+        @test objective_function(fnm.model) == 100 * (
+            inc_aux[inc_name, 1, 1] + inc_aux[inc_name, 2, 1]
+            - dec_aux[dec_name, 1, 1] - dec_aux[dec_name, 2, 1]
+            - psd_aux[psd_name, 1, 1] - psd_aux[psd_name, 2, 1]
+        )
     end
 end

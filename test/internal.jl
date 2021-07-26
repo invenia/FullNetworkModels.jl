@@ -26,10 +26,13 @@
             fnm.model, unit_codes, n_periods, n_blocks, Λ, :p, 1
         )
         p_aux = fnm.model[:p_aux]
+        # Generators 3 and 7 have offer curves with prices and [600, 800, 825]
+        # [400, 600, 625], respectively.
+        # https://gitlab.invenia.ca/invenia/research/FullNetworkDataPrep.jl/-/blob/master/src/testutils.jl#L122
         @test thermal_cost ==
-            400 * p_aux[7, 1, 1] + 600 * p_aux[7, 1, 2] + 625 * p_aux[7, 1, 3] +
-            400 * p_aux[7, 2, 1] + 600 * p_aux[7, 2, 2] + 625 * p_aux[7, 2, 3] +
             600 * p_aux[3, 1, 1] + 800 * p_aux[3, 1, 2] + 825 * p_aux[3, 1, 3] +
-            600 * p_aux[3, 2, 1] + 800 * p_aux[3, 2, 2] + 825 * p_aux[3, 2, 3]
+            600 * p_aux[3, 2, 1] + 800 * p_aux[3, 2, 2] + 825 * p_aux[3, 2, 3] +
+            400 * p_aux[7, 1, 1] + 600 * p_aux[7, 1, 2] + 625 * p_aux[7, 1, 3] +
+            400 * p_aux[7, 2, 1] + 600 * p_aux[7, 2, 2] + 625 * p_aux[7, 2, 3]
     end
 end

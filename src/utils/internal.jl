@@ -67,9 +67,10 @@ The kwarg `blocks` indicates if the curve is just a series of blocks, meaning th
 represent the size of the blocks instead of the cumulative MW value in the curve.
 """
 function _curve_properties(curves, n_periods; blocks=false)
-    prices = Dict{Int, Vector{Vector{Float64}}}()
-    limits = Dict{Int, Vector{Vector{Float64}}}()
-    n_blocks = Dict{Int, Vector{Int}}()
+    T = keytype(curves)
+    prices = Dict{T, Vector{Vector{Float64}}}()
+    limits = Dict{T, Vector{Vector{Float64}}}()
+    n_blocks = Dict{T, Vector{Int}}()
     for (g, curve) in curves
         prices[g] = [first.(curve[i]) for i in 1:n_periods]
         limits[g] = [last.(curve[i]) for i in 1:n_periods]

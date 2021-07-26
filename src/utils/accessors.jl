@@ -354,14 +354,14 @@ shutdown limits, which are identical under this assumption.
 get_startup_limits(system::System) = get_regmin(system)
 
 """
-    get_bid_curves(bidtype::Type{<:Device}, system::System) -> Dict
+    get_bid_curves(bidtype::Type{<:Device}, system::System) -> Dict{String, Vector}
 
 Returns a dictionary with the bid curves time series stored in `system` for devices of type
 `bidtype`. The keys of the dictionary are the bid names.
 """
 function get_bid_curves(bidtype::Type{<:Device}, system::System)
     bid_names = get_bid_names(bidtype, system)
-    ts_dict = Dict{Int, Vector}()
+    ts_dict = Dict{String, Vector{Vector{Tuple{Float64, Float64}}}}()
     for bid_name in bid_names
         bid = get_component(bidtype, system, bid_name)
         ts_dict[bid_name] = get_time_series_values(SingleTimeSeries, bid, "bid_curve")

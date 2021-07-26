@@ -221,19 +221,23 @@ function _var_bid_blocks!(model::Model, bid_names, block_lims, n_periods, n_bloc
     def = Symbol(v, :_definition)
     lims = Symbol(v, :_block_limits)
 
-    @eval @variable(
+    model[v_aux] = @variable(
         model,
-        $v_aux[b in bid_names, t in 1:n_periods, q in 1:n_blocks[g][t]] >= 0
+        [b in bid_names, t in 1:n_periods, q in 1:n_blocks[b][t]],
+        lower_bound = 0,
+        base_name = "$v_aux"
     )
-    @eval @constraint(
+    model[def] = @constraint(
         model,
-        $def[b in bid_names, t in 1:n_periods],
-        $v[b, t] == sum($v_aux[b, t, q] for q in 1:n_blocks[b][t])
+        [b in bid_names, t in 1:n_periods],
+        model[v][b, t] == sum(model[v_aux][b, t, q] for q in 1:n_blocks[b][t]),
+        base_name = "$def"
     )
-    @eval @constraint(
+    model[lims] = @constraint(
         model,
-        $lims[b in bid_names, t in 1:n_periods, q in 1:n_blocks[b][t]],
-        $v_aux[b, t, q] <= block_lims[b][t][q]
+        [b in bid_names, t in 1:n_periods, q in 1:n_blocks[b][t]],
+        model[v_aux][b, t, q] <= block_lims[b][t][q],
+        base_name = "$lims"
     )
     return model
 end
