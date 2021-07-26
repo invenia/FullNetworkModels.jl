@@ -33,6 +33,7 @@ export FullNetworkModel
 
 # Accessor functions
 export get_bid_names
+export get_bid_curves
 export get_fixed_loads
 export get_generator_time_series
 export get_initial_commitment
@@ -84,6 +85,7 @@ export con_regulation_requirements!
 
 # Objective functions
 export obj_ancillary_costs!
+export obj_bids!
 export obj_thermal_noload_cost!
 export obj_thermal_startup_cost!
 export obj_thermal_variable_cost!

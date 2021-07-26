@@ -171,16 +171,15 @@ function _latex(::typeof(_obj_bid_variable_cost!))
     """
 end
 
-function _latex(::typeof(_var_thermal_gen_blocks!); commitment)
-    u_gt = commitment ? "u_{g, t}" : ""
+function _latex(::typeof(_var_bid_blocks!))
     return """
-        ``0 \\leq inc^{\\text{aux}}_{i, t, q} \\leq \\bar{P}^{\\text{inc}}_{i, t, q}, \\forall i \\in \\mathcal{I}, t \\in \\mathcal{T}, q \\in \\mathcal{Q}_{i, t}`` \n
-        ``inc_{i, t} = \\sum_{q \\in \\mathcal{Q}_{i, t}} inc^{\\text{aux}}_{i, t, q}, \\forall i \\in \\mathcal{I}, t \\in \\mathcal{T}``
-        ``0 \\leq dec^{\\text{aux}}_{d, t, q} \\leq \\bar{D}^{\\text{dec}}_{d, t, q}, \\forall d \\in \\mathcal{D}, t \\in \\mathcal{T}, q \\in \\mathcal{Q}_{d, t}`` \n
-        ``dec_{d, t} = \\sum_{q \\in \\mathcal{Q}_{d, t}} dec^{\\text{aux}}_{d, t, q}, \\forall d \\in \\mathcal{D}, t \\in \\mathcal{T}``
-        ``0 \\leq psd^{\\text{aux}}_{s, t, q} \\leq \\bar{D}^{\\text{psd}}_{s, t, q}, \\forall s \\in \\mathcal{S}, t \\in \\mathcal{T}, q \\in \\mathcal{Q}_{s, t}`` \n
-        ``psd_{i, t} = \\sum_{q \\in \\mathcal{Q}_{s, t}} psd^{\\text{aux}}_{s, t, q}, \\forall s \\in \\mathcal{S}, t \\in \\mathcal{T}``
-        """
+    ``0 \\leq inc^{\\text{aux}}_{i, t, q} \\leq \\bar{P}^{\\text{inc}}_{i, t, q}, \\forall i \\in \\mathcal{I}, t \\in \\mathcal{T}, q \\in \\mathcal{Q}_{i, t}`` \n
+    ``inc_{i, t} = \\sum_{q \\in \\mathcal{Q}_{i, t}} inc^{\\text{aux}}_{i, t, q}, \\forall i \\in \\mathcal{I}, t \\in \\mathcal{T}``
+    ``0 \\leq dec^{\\text{aux}}_{d, t, q} \\leq \\bar{D}^{\\text{dec}}_{d, t, q}, \\forall d \\in \\mathcal{D}, t \\in \\mathcal{T}, q \\in \\mathcal{Q}_{d, t}`` \n
+    ``dec_{d, t} = \\sum_{q \\in \\mathcal{Q}_{d, t}} dec^{\\text{aux}}_{d, t, q}, \\forall d \\in \\mathcal{D}, t \\in \\mathcal{T}``
+    ``0 \\leq psd^{\\text{aux}}_{s, t, q} \\leq \\bar{D}^{\\text{psd}}_{s, t, q}, \\forall s \\in \\mathcal{S}, t \\in \\mathcal{T}, q \\in \\mathcal{Q}_{s, t}`` \n
+    ``psd_{i, t} = \\sum_{q \\in \\mathcal{Q}_{s, t}} psd^{\\text{aux}}_{s, t, q}, \\forall s \\in \\mathcal{S}, t \\in \\mathcal{T}``
+    """
 end
 
 """
