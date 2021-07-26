@@ -57,7 +57,7 @@ function tests_ancillary_costs(fnm)
 end
 
 @testset "Objectives" begin
-    @testset "thermal_variable_cost!" begin
+    @testset "obj_thermal_variable_cost!" begin
         fnm = FullNetworkModel(TEST_SYSTEM, GLPK.Optimizer)
         @test objective_function(fnm.model) == AffExpr()
         @testset "Adding cost before thermal generation throws error" begin
@@ -80,14 +80,14 @@ end
                 "gen_block_limits[7,1,1] : -0.5 u[7,1] + p_aux[7,1,1] ≤ 0.0"
         end
     end
-    @testset "ancillary_service_costs!" begin
+    @testset "obj_ancillary_costs!" begin
         fnm = FullNetworkModel(TEST_SYSTEM, GLPK.Optimizer)
         var_commitment!(fnm)
         var_ancillary_services!(fnm)
         obj_ancillary_costs!(fnm)
         tests_ancillary_costs(fnm)
     end
-    @testset "thermal_noload_cost!" begin
+    @testset "obj_thermal_noload_cost!" begin
         fnm = FullNetworkModel(TEST_SYSTEM, GLPK.Optimizer)
         var_thermal_generation!(fnm)
         var_commitment!(fnm)
@@ -95,12 +95,15 @@ end
         obj_thermal_noload_cost!(fnm)
         tests_thermal_noload_cost(fnm)
     end
-    @testset "thermal_startup_cost!" begin
+    @testset "obj_thermal_startup_cost!" begin
         fnm = FullNetworkModel(TEST_SYSTEM, GLPK.Optimizer)
         var_commitment!(fnm)
         var_startup_shutdown!(fnm)
         obj_thermal_noload_cost!(fnm)
         obj_thermal_startup_cost!(fnm)
         tests_thermal_startup_cost(fnm)
+    end
+    @testset "obj_bids!" begin
+
     end
 end

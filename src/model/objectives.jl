@@ -198,7 +198,7 @@ And adds the following constraints:
 
 $(_latex(_var_bid_blocks!))
 """
-function obj_bids!(fnm::FusllNetworkModel)
+function obj_bids!(fnm::FullNetworkModel)
     model = fnm.model
     system = fnm.system
     n_periods = get_forecast_horizon(system)
