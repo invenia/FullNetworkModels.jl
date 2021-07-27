@@ -23,14 +23,14 @@
         gens[1].active_power = 50.0
         @test get_initial_generation(system_infeasible)[7] == 50.0
 
-        fnm = unit_commitment(system_infeasible, GLPK.Optimizer)
+        fnm = unit_commitment(system_infeasible, GLPK.Optimizer; relax_integrality=true)
         optimize!(fnm)
         # Should be infeasible
         @test termination_status(fnm.model) == TerminationStatusCode(2)
 
         # Now do the same with soft ramp constraints – should be feasible
         fnm_soft_ramps = unit_commitment_soft_ramps(
-            system_infeasible, GLPK.Optimizer; slack=1e3
+            system_infeasible, GLPK.Optimizer; slack=1e3, relax_integrality=true
         )
         # Basic ramp rate tests with correct slack
         tests_ramp_rates(fnm_soft_ramps; slack=1e3)
@@ -41,7 +41,9 @@
 
         # Now do the same for no ramp constraints - should be feasible and have a lower
         # objective value (since there's no penalty for violating soft constraints)
-        fnm_no_ramps = unit_commitment_no_ramps(system_infeasible, GLPK.Optimizer)
+        fnm_no_ramps = unit_commitment_no_ramps(
+            system_infeasible, GLPK.Optimizer; relax_integrality=true
+        )
         optimize!(fnm_no_ramps)
         @test termination_status(fnm_no_ramps.model) == TerminationStatusCode(1)
         obj_no_ramps = objective_value(fnm_no_ramps.model)
@@ -53,5 +55,14 @@
         @test !has_constraint(fnm_no_ramps.model, :ramp_up_initial)
         @test !has_constraint(fnm_no_ramps.model, :ramp_regulation)
         @test !has_constraint(fnm_no_ramps.model, :ramp_spin_sup)
+
+        @testset "bid results" begin
+            # The MEC for the system is $6.25 and the bids are all $1/MW.
+            # This means INC should be cleared but DEC and PSD should not, since INCs should
+            # clear when below MEC and DECs/PSDs should clear when above MEC.
+            @test all(==(0.01), value.(fnm_no_ramps.model[:inc]))
+            @test all(==(0.0), value.(fnm_no_ramps.model[:dec]))
+            @test all(==(0.0), value.(fnm_no_ramps.model[:psd]))
+        end
     end
 end
