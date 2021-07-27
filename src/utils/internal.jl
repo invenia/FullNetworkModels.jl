@@ -31,8 +31,8 @@ function _variable_cost(model::Model, names, n_periods, n_blocks, Λ, v, sense)
         # Faster version of `variable_cost += Λ[n][t][q] * v_aux[n, t, q]`
         add_to_expression!(variable_cost, Λ[n][t][q], v_aux[n, t, q])
     end
-    # Apply sense to expression
-    variable_cost *= sense
+    # Apply sense to expression - same as `variable_cost *= sense`
+    map_coefficients_inplace!(x -> sense * x, variable_cost)
     return variable_cost
 end
 
