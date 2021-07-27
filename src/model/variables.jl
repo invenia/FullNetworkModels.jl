@@ -167,8 +167,8 @@ end
 
 function _latex(::typeof(var_bids!))
     return """
-    ``inc_{g, t} \\geq 0, \\forall i \\in \\mathcal{I}, t \\in \\mathcal{T}``
-    ``dec_{g, t} \\geq 0, \\forall d \\in \\mathcal{D}, t \\in \\mathcal{T}``
+    ``inc_{g, t} \\geq 0, \\forall i \\in \\mathcal{I}, t \\in \\mathcal{T}`` \n
+    ``dec_{g, t} \\geq 0, \\forall d \\in \\mathcal{D}, t \\in \\mathcal{T}`` \n
     ``psd_{g, t} \\geq 0, \\forall s \\in \\mathcal{S}, t \\in \\mathcal{T}``
     """
 end

@@ -100,7 +100,7 @@ function tests_energy_balance(fnm)
     @testset "Constraints were correctly defined" for t in 1:n_periods
         system_load = sum(D[f][t] for f in load_names)
         @test sprint(show, constraint_by_name(fnm.model, "energy_balance[$t]")) ==
-            "energy_balance[$t] : p[7,$t] + p[3,$t] = $(system_load)"
+            "energy_balance[$t] : p[7,$t] + p[3,$t] + inc[111_1,$t] - dec[222_1,$t] - psd[333_1,$t] = $(system_load)"
     end
     return nothing
 end
@@ -167,6 +167,7 @@ end
         @testset "con_energy_balance!" begin
             fnm = FullNetworkModel(TEST_SYSTEM, GLPK.Optimizer)
             var_thermal_generation!(fnm)
+            var_bids!(fnm)
             con_energy_balance!(fnm)
             tests_energy_balance(fnm)
         end
