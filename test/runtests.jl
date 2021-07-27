@@ -7,10 +7,12 @@ using FullNetworkModels
 using MathOptInterface: TerminationStatusCode
 using JuMP
 using PowerSystems
+using PowerSystemsExtras
 using Random
 using Test
 using TimeSeries
 
+const FNM = FullNetworkModels
 const TEST_SYSTEM = fake_3bus_system(MISO, DA)
 const TEST_SYSTEM_RT = fake_3bus_system(MISO, DA; commitment_forecasts=true)
 

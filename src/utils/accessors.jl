@@ -30,6 +30,15 @@ function get_unit_codes(gentype::Type{<:Generator}, system::System)
 end
 
 """
+    get_bid_names(bidtype::Type{<:Device}, system::System)
+
+Returns the names of the bids in `system` that are of type `bidtype`.
+"""
+function get_bid_names(bidtype::Type{<:Device}, system::System)
+    return map(get_name, get_components(bidtype, system))
+end
+
+"""
     get_load_names(loadtype::Type{<:StaticLoad}, system::System) -> Vector{String}
 
 Returns the names of all loads in `system` under type `loadtype`.
@@ -343,3 +352,19 @@ currently differentiate between ramp up and down, this can also be used to obtai
 shutdown limits, which are identical under this assumption.
 """
 get_startup_limits(system::System) = get_regmin(system)
+
+"""
+    get_bid_curves(bidtype::Type{<:Device}, system::System) -> Dict{String, Vector}
+
+Returns a dictionary with the bid curves time series stored in `system` for devices of type
+`bidtype`. The keys of the dictionary are the bid names.
+"""
+function get_bid_curves(bidtype::Type{<:Device}, system::System)
+    bid_names = get_bid_names(bidtype, system)
+    ts_dict = Dict{String, Vector{Vector{Tuple{Float64, Float64}}}}()
+    for bid_name in bid_names
+        bid = get_component(bidtype, system, bid_name)
+        ts_dict[bid_name] = get_time_series_values(SingleTimeSeries, bid, "bid_curve")
+    end
+    return ts_dict
+end

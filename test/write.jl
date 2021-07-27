@@ -1,14 +1,14 @@
 @testset "Formulation writing" begin
     @testset "_extract_expression" begin
         expr = "``x = 1``\n"
-        @test FullNetworkModels._extract_expression(expr) == "x = 1"
+        @test FNM._extract_expression(expr) == "x = 1"
     end
     @testset "_write_objective" begin
         exprs = ["``a``", "``- 2b``", "c^2"]
-        @test FullNetworkModels._write_objective(exprs) == "``\\min a - 2b + c^2``"
+        @test FNM._write_objective(exprs) == "``\\min a - 2b + c^2``"
     end
     @testset "_write_formulation" begin
-        @test FullNetworkModels._write_formulation(
+        @test FNM._write_formulation(
             objectives=["``a``", "``- 2b``", "c^2"],
             constraints=["``x = 1``"],
             variables=["``x >= 0``", "``y \\in \\{0, 1\\}``"],

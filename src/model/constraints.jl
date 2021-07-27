@@ -224,7 +224,8 @@ end
 
 function _latex(::typeof(con_energy_balance!))
     return """
-        ``\\sum_{g \\in \\mathcal{G}} p_{g, t} = \\sum_{f \\in \\mathcal{F}} D_{f, t}, \\forall t \\in \\mathcal{T}``
+        ``\\sum_{g \\in \\mathcal{G}} p_{g, t} + \\sum_{i \\in \\mathcal{I}} inc_{i, t} =
+        \\sum_{f \\in \\mathcal{F}} D_{f, t} + \\sum_{d \\in \\mathcal{D}} dec_{d, t} + \\sum_{s \\in \\mathcal{S}} psd_{s, t}, \\forall t \\in \\mathcal{T}``
         """
 end
 
@@ -243,14 +244,22 @@ function con_energy_balance!(fnm::FullNetworkModel)
     system = fnm.system
     unit_codes = get_unit_codes(ThermalGen, system)
     load_names = get_load_names(PowerLoad, system)
+    inc_names = get_bid_names(Increment, system)
+    dec_names = get_bid_names(Decrement, system)
+    psd_names = get_bid_names(PriceSensitiveDemand, system)
     n_periods = get_forecast_horizon(system)
     D = get_fixed_loads(system)
     # Get variables for better readability
     p = model[:p]
+    inc = model[:inc]
+    dec = model[:dec]
+    psd = model[:psd]
     @constraint(
         model,
         energy_balance[t in 1:n_periods],
-        sum(p[g, t] for g in unit_codes) == sum(D[f][t] for f in load_names)
+        sum(p[g, t] for g in unit_codes) + sum(inc[i, t] for i in inc_names) ==
+            sum(D[f][t] for f in load_names) + sum(dec[d, t] for d in dec_names) +
+            sum(psd[s, t] for s in psd_names)
     )
     return fnm
 end

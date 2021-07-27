@@ -36,8 +36,8 @@ function tests_regulation_requirements(fnm)
     @test sprint(show, constraint_by_name(fnm.model, "regulation_requirements[2,1]")) ==
         "regulation_requirements[2,1] : r_reg[7,1] ≥ 0.4"
     @test sprint(show, constraint_by_name(
-        fnm.model, "regulation_requirements[$(FullNetworkModels.MARKET_WIDE_ZONE),1]"
-    )) == "regulation_requirements[$(FullNetworkModels.MARKET_WIDE_ZONE),1] : r_reg[7,1] + r_reg[3,1] ≥ 0.8"
+        fnm.model, "regulation_requirements[$(FNM.MARKET_WIDE_ZONE),1]"
+    )) == "regulation_requirements[$(FNM.MARKET_WIDE_ZONE),1] : r_reg[7,1] + r_reg[3,1] ≥ 0.8"
     return nothing
 end
 
@@ -49,8 +49,8 @@ function tests_operating_reserve_requirements(fnm)
         fnm.model, "operating_reserve_requirements[2,1]"
     )) == "operating_reserve_requirements[2,1] : r_reg[7,1] + r_spin[7,1] + r_on_sup[7,1] + r_off_sup[7,1] ≥ 0.5"
     @test sprint(show, constraint_by_name(
-        fnm.model, "operating_reserve_requirements[$(FullNetworkModels.MARKET_WIDE_ZONE),1]"
-    )) == "operating_reserve_requirements[$(FullNetworkModels.MARKET_WIDE_ZONE),1] : r_reg[7,1] + r_reg[3,1] + r_spin[7,1] + r_spin[3,1] + r_on_sup[7,1] + r_on_sup[3,1] + r_off_sup[7,1] + r_off_sup[3,1] ≥ 1.2"
+        fnm.model, "operating_reserve_requirements[$(FNM.MARKET_WIDE_ZONE),1]"
+    )) == "operating_reserve_requirements[$(FNM.MARKET_WIDE_ZONE),1] : r_reg[7,1] + r_reg[3,1] + r_spin[7,1] + r_spin[3,1] + r_on_sup[7,1] + r_on_sup[3,1] + r_off_sup[7,1] + r_off_sup[3,1] ≥ 1.2"
     return nothing
 end
 
@@ -100,7 +100,7 @@ function tests_energy_balance(fnm)
     @testset "Constraints were correctly defined" for t in 1:n_periods
         system_load = sum(D[f][t] for f in load_names)
         @test sprint(show, constraint_by_name(fnm.model, "energy_balance[$t]")) ==
-            "energy_balance[$t] : p[7,$t] + p[3,$t] = $(system_load)"
+            "energy_balance[$t] : p[7,$t] + p[3,$t] + inc[111_1,$t] - dec[222_1,$t] - psd[333_1,$t] = $(system_load)"
     end
     return nothing
 end
@@ -167,6 +167,7 @@ end
         @testset "con_energy_balance!" begin
             fnm = FullNetworkModel(TEST_SYSTEM, GLPK.Optimizer)
             var_thermal_generation!(fnm)
+            var_bids!(fnm)
             con_energy_balance!(fnm)
             tests_energy_balance(fnm)
         end

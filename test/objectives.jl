@@ -57,7 +57,7 @@ function tests_ancillary_costs(fnm)
 end
 
 @testset "Objectives" begin
-    @testset "thermal_variable_cost!" begin
+    @testset "obj_thermal_variable_cost!" begin
         fnm = FullNetworkModel(TEST_SYSTEM, GLPK.Optimizer)
         @test objective_function(fnm.model) == AffExpr()
         @testset "Adding cost before thermal generation throws error" begin
@@ -80,14 +80,14 @@ end
                 "gen_block_limits[7,1,1] : -0.5 u[7,1] + p_aux[7,1,1] ≤ 0.0"
         end
     end
-    @testset "ancillary_service_costs!" begin
+    @testset "obj_ancillary_costs!" begin
         fnm = FullNetworkModel(TEST_SYSTEM, GLPK.Optimizer)
         var_commitment!(fnm)
         var_ancillary_services!(fnm)
         obj_ancillary_costs!(fnm)
         tests_ancillary_costs(fnm)
     end
-    @testset "thermal_noload_cost!" begin
+    @testset "obj_thermal_noload_cost!" begin
         fnm = FullNetworkModel(TEST_SYSTEM, GLPK.Optimizer)
         var_thermal_generation!(fnm)
         var_commitment!(fnm)
@@ -95,12 +95,28 @@ end
         obj_thermal_noload_cost!(fnm)
         tests_thermal_noload_cost(fnm)
     end
-    @testset "thermal_startup_cost!" begin
+    @testset "obj_thermal_startup_cost!" begin
         fnm = FullNetworkModel(TEST_SYSTEM, GLPK.Optimizer)
         var_commitment!(fnm)
         var_startup_shutdown!(fnm)
         obj_thermal_noload_cost!(fnm)
         obj_thermal_startup_cost!(fnm)
         tests_thermal_startup_cost(fnm)
+    end
+    @testset "obj_bids!" begin
+        system = fake_3bus_system(MISO, DA; n_periods=2)
+        fnm = FullNetworkModel(system, GLPK.Optimizer)
+        var_bids!(fnm)
+        obj_bids!(fnm)
+        # Check if objective function accurately reflects the bids in the system
+        # All bids have just one block equal to $100/pu
+        # https://gitlab.invenia.ca/invenia/research/FullNetworkDataPrep.jl/-/blob/16f570e9116d86a2ce65e2e08aa702cefa268cc5/src/testutils.jl#L162
+        inc_name, dec_name, psd_name = ("111_1", "222_1", "333_1")
+        inc_aux, dec_aux, psd_aux = fnm.model[:inc_aux], fnm.model[:dec_aux], fnm.model[:psd_aux]
+        @test objective_function(fnm.model) == 100 * (
+            inc_aux[inc_name, 1, 1] + inc_aux[inc_name, 2, 1]
+            - dec_aux[dec_name, 1, 1] - dec_aux[dec_name, 2, 1]
+            - psd_aux[psd_name, 1, 1] - psd_aux[psd_name, 2, 1]
+        )
     end
 end

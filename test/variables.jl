@@ -31,26 +31,43 @@ function tests_startup_shutdown(fnm, n_periods)
     return nothing
 end
 
+function tests_bid_variables(fnm, label, bidtype, n_periods)
+    @testset "Variables named `$label` were created with the correct indices" begin
+        @test has_variable(fnm.model, label)
+        @test issetequal(
+            fnm.model[Symbol(label)].axes[1], get_bid_names(bidtype, fnm.system)
+        )
+        @test issetequal(fnm.model[Symbol(label)].axes[2], 1:n_periods)
+    end
+    return nothing
+end
+
 @testset "Variables" begin
     fnm = FullNetworkModel(TEST_SYSTEM, GLPK.Optimizer)
     n_periods = get_forecast_horizon(fnm.system)
-    @testset "add_thermal_generation!" begin
+    @testset "var_thermal_generation!" begin
         var_thermal_generation!(fnm)
         tests_thermal_variable(fnm, "p", n_periods)
         @test !has_variable(fnm.model, "u")
     end
-    @testset "add_commitment!" begin
+    @testset "var_commitment!" begin
         var_commitment!(fnm)
         tests_commitment(fnm, n_periods)
     end
-    @testset "add_startup_shutdown!" begin
+    @testset "var_startup_shutdown!" begin
         var_startup_shutdown!(fnm)
         tests_startup_shutdown(fnm, n_periods)
     end
-    @testset "add_ancillary_services!" begin
+    @testset "var_ancillary_services!" begin
         var_ancillary_services!(fnm)
         @testset for service in ("r_reg", "u_reg", "r_spin", "r_on_sup", "r_off_sup")
             tests_thermal_variable(fnm, service, n_periods)
         end
+    end
+    @testset "var_bids!" begin
+        var_bids!(fnm)
+        tests_bid_variables(fnm, "inc", Increment, n_periods)
+        tests_bid_variables(fnm, "dec", Decrement, n_periods)
+        tests_bid_variables(fnm, "psd", PriceSensitiveDemand, n_periods)
     end
 end

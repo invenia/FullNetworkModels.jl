@@ -53,13 +53,13 @@
             3 => fill(300.0, n_periods), 7 => fill(150.0, n_periods)
         )
         @test get_regulation_requirements(system) == Dict(
-            1 => 0.3, 2 => 0.4, FullNetworkModels.MARKET_WIDE_ZONE => 0.8
+            1 => 0.3, 2 => 0.4, FNM.MARKET_WIDE_ZONE => 0.8
         )
         @test get_operating_reserve_requirements(system) == Dict(
-            1 => 0.4, 2 => 0.5, FullNetworkModels.MARKET_WIDE_ZONE => 1.2
+            1 => 0.4, 2 => 0.5, FNM.MARKET_WIDE_ZONE => 1.2
         )
         @test issetequal(
-            get_reserve_zones(system), (1, 2, FullNetworkModels.MARKET_WIDE_ZONE)
+            get_reserve_zones(system), (1, 2, FNM.MARKET_WIDE_ZONE)
         )
         @test get_initial_generation(system) == Dict(3 => 1.0, 7 => 1.0)
         @test get_initial_commitment(system) == Dict(3 => 1.0, 7 => 1.0)
