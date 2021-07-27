@@ -221,6 +221,8 @@ function _var_bid_blocks!(model::Model, bid_names, block_lims, n_periods, n_bloc
     def = Symbol(v, :_definition)
     lims = Symbol(v, :_block_limits)
 
+    # We need to use `model[x] = @...` when defining expressions programmatically,
+    # otherwise `model[:x]` is undefined.
     model[v_aux] = @variable(
         model,
         [b in bid_names, t in 1:n_periods, q in 1:n_blocks[b][t]],
