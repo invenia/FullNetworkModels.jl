@@ -29,8 +29,11 @@ include("model/variables.jl")
 # Templates
 include("templates/unit_commitment.jl")
 
-# Type
+# Types
 export FullNetworkModel
+export UCED
+export UC
+export ED
 
 # Accessor functions
 export get_bid_names

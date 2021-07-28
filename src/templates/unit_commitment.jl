@@ -45,7 +45,7 @@ Keyword arguments:
 """
 function unit_commitment(system::System, solver; relax_integrality=false)
     # Initialize FNM
-    fnm = FullNetworkModel(system, solver)
+    fnm = FullNetworkModel{UC}(system, solver)
     # Variables
     var_thermal_generation!(fnm)
     var_commitment!(fnm)
@@ -53,7 +53,7 @@ function unit_commitment(system::System, solver; relax_integrality=false)
     var_ancillary_services!(fnm)
     var_bids!(fnm)
     # Constraints
-    con_generation_limits!(fnm, UC)
+    con_generation_limits!(fnm)
     con_ancillary_limits!(fnm)
     con_regulation_requirements!(fnm)
     con_operating_reserve_requirements!(fnm)
@@ -93,7 +93,7 @@ function unit_commitment_soft_ramps(
     system::System, solver; slack=1e4, relax_integrality=false
 )
     # Initialize FNM
-    fnm = FullNetworkModel(system, solver)
+    fnm = FullNetworkModel{UC}(system, solver)
     # Variables
     var_thermal_generation!(fnm)
     var_commitment!(fnm)
@@ -101,7 +101,7 @@ function unit_commitment_soft_ramps(
     var_ancillary_services!(fnm)
     var_bids!(fnm)
     # Constraints
-    con_generation_limits!(fnm, UC)
+    con_generation_limits!(fnm)
     con_ancillary_limits!(fnm)
     con_regulation_requirements!(fnm)
     con_operating_reserve_requirements!(fnm)
@@ -140,7 +140,7 @@ function unit_commitment_no_ramps(
     system::System, solver; relax_integrality=false
 )
     # Initialize FNM
-    fnm = FullNetworkModel(system, solver)
+    fnm = FullNetworkModel{UC}(system, solver)
     # Variables
     var_thermal_generation!(fnm)
     var_commitment!(fnm)
@@ -148,7 +148,7 @@ function unit_commitment_no_ramps(
     var_ancillary_services!(fnm)
     var_bids!(fnm)
     # Constraints
-    con_generation_limits!(fnm, UC)
+    con_generation_limits!(fnm)
     con_ancillary_limits!(fnm)
     con_regulation_requirements!(fnm)
     con_operating_reserve_requirements!(fnm)

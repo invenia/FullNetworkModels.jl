@@ -23,7 +23,7 @@ function _latex(::typeof(_con_generation_limits_ed!))
 end
 
 """
-    con_generation_limits!(fnm::FullNetworkModel, ::Type{UC})
+    con_generation_limits!(fnm::FullNetworkModel{UC})
 
 Add generation limit constraints to the full network model:
 
@@ -31,7 +31,7 @@ $(_latex(_con_generation_limits_uc!))
 
 The constraints added are named `generation_min` and `generation_max`.
 """
-function con_generation_limits!(fnm::FullNetworkModel, ::Type{<:UC})
+function con_generation_limits!(fnm::FullNetworkModel{<:UC})
     model = fnm.model
     system = fnm.system
 
@@ -56,7 +56,7 @@ function con_generation_limits!(fnm::FullNetworkModel, ::Type{<:UC})
 end
 
 """
-    con_generation_limits!(fnm::FullNetworkModel, ::Type{ED})
+    con_generation_limits!(fnm::FullNetworkModel{ED})
 
 Add generation limit constraints to the full network model:
 
@@ -64,7 +64,7 @@ $(_latex(_con_generation_limits_ed!))
 
 The constraints added are named `generation_min` and `generation_max`.
 """
-function con_generation_limits!(fnm::FullNetworkModel, ::Type{<:ED})
+function con_generation_limits!(fnm::FullNetworkModel{<:ED})
     model = fnm.model
     system = fnm.system
 

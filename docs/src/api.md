@@ -2,6 +2,9 @@
 
 ```@docs
 FullNetworkModel
+UCED
+UC
+ED
 ```
 
 ## Templates
