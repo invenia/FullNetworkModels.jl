@@ -17,7 +17,7 @@ $(_write_formulation(
     ],
     constraints=[
         _latex(_var_thermal_gen_blocks!; commitment=true),
-        _latex(_con_generation_limits_commitment!; commitment=true),
+        _latex(_con_generation_limits_uc!),
         _latex(_con_startup_shutdown!),
         _latex(con_ancillary_limits_commitment!),
         _latex(con_regulation_requirements!),
@@ -53,7 +53,7 @@ function unit_commitment(system::System, solver; relax_integrality=false)
     var_ancillary_services!(fnm)
     var_bids!(fnm)
     # Constraints
-    con_generation_limits!(fnm)
+    con_generation_limits!(fnm, UC)
     con_ancillary_limits!(fnm)
     con_regulation_requirements!(fnm)
     con_operating_reserve_requirements!(fnm)
@@ -101,7 +101,7 @@ function unit_commitment_soft_ramps(
     var_ancillary_services!(fnm)
     var_bids!(fnm)
     # Constraints
-    con_generation_limits!(fnm)
+    con_generation_limits!(fnm, UC)
     con_ancillary_limits!(fnm)
     con_regulation_requirements!(fnm)
     con_operating_reserve_requirements!(fnm)
@@ -148,7 +148,7 @@ function unit_commitment_no_ramps(
     var_ancillary_services!(fnm)
     var_bids!(fnm)
     # Constraints
-    con_generation_limits!(fnm)
+    con_generation_limits!(fnm, UC)
     con_ancillary_limits!(fnm)
     con_regulation_requirements!(fnm)
     con_operating_reserve_requirements!(fnm)
