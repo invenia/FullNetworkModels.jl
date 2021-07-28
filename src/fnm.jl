@@ -23,3 +23,24 @@ function Base.show(io::IO, fnm::FullNetworkModel)
     println(io, "System: $(length(get_components(Component, fnm.system))) components, $(get_forecast_horizon(fnm.system)) time periods")
     return nothing
 end
+
+"""
+    UCED
+
+Abstract type describing unit commitment and economic dispatch.
+"""
+abstract type UCED end
+
+"""
+    UC
+
+Abstract type describing unit commitment.
+"""
+abstract type UC <: UCED end
+
+"""
+    ED
+
+Abstract type describing economic dispatch.
+"""
+abstract type ED <: UCED end
