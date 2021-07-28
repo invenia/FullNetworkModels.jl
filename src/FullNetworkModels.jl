@@ -58,6 +58,7 @@ export get_regmax
 export get_regmin
 export get_regulation_cost
 export get_commitment_status
+export get_commitment_reg_status
 export get_regulation_providers
 export get_regulation_requirements
 export get_reserve_zones
