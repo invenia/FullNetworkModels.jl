@@ -403,7 +403,7 @@ function _con_ancillary_min_dispatch!(model::Model, unit_codes, n_periods, Pmin,
     return model
 end
 
-function _con_regulation_max!(model::Model, unit_codes, n_periods, Pregmin, Pregmax)
+function _con_regulation_max_commitment!(model::Model, unit_codes, n_periods, Pregmin, Pregmax)
     # Get variable for better readability
     r_reg = model[:r_reg]
     u_reg = model[:u_reg]
@@ -501,7 +501,7 @@ function _con_zero_non_providers_commitment!(model::Model, system::System, unit_
     return model
 end
 
-function _con_zero_non_providers_dispatch!(model::Model, system::System, unit_codes, n_periods, U_reg)
+function _con_zero_non_providers_dispatch!(model::Model, system::System, unit_codes, n_periods)
     # Units that provide each service
     reg_providers = get_regulation_providers(system)
     spin_providers = get_spinning_providers(system)
@@ -516,11 +516,6 @@ function _con_zero_non_providers_dispatch!(model::Model, system::System, unit_co
         model,
         zero_reg[g in setdiff(unit_codes, reg_providers), t in 1:n_periods],
         r_reg[g, t] == 0
-    )
-    @constraint(
-        model,
-        zero_u_reg[g in setdiff(unit_codes, reg_providers), t in 1:n_periods],
-        U_reg[g][t] == 0
     )
     @constraint(
         model,

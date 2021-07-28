@@ -10,7 +10,7 @@ function tests_generation_limits(fnm)
     return nothing
 end
 
-function tests_ancillary_limits(fnm)
+function tests_ancillary_limits_commitment(fnm)
     @test sprint(show, constraint_by_name(fnm.model, "ancillary_max[7,1]")) ==
         "ancillary_max[7,1] : p[7,1] - 8 u[7,1] + r_reg[7,1] + 0.5 u_reg[7,1] + r_spin[7,1] + r_on_sup[7,1] ≤ 0.0"
     @test sprint(show, constraint_by_name(fnm.model, "ancillary_min[7,1]")) ==
@@ -25,6 +25,24 @@ function tests_ancillary_limits(fnm)
     unit_codes = get_unit_codes(ThermalGen, fnm.system)
     n_periods = get_forecast_horizon(fnm.system)
     for str in ("reg", "u_reg", "spin", "on_sup", "off_sup"), g in unit_codes, t in 1:n_periods
+        @test constraint_by_name(fnm.model, "zero_$str[$g,$t]") === nothing
+    end
+    return nothing
+end
+
+function tests_ancillary_limits_dispatch(fnm)
+    @test sprint(show, constraint_by_name(fnm.model, "ancillary_max[7,1]")) ==
+        "ancillary_max[7,1] : p[7,1] + r_reg[7,1] + r_spin[7,1] + r_on_sup[7,1] ≤ 0.0"
+    @test sprint(show, constraint_by_name(fnm.model, "ancillary_min[7,1]")) ==
+        "ancillary_min[7,1] : p[7,1] - r_reg[7,1] ≥ 0.0"
+    @test sprint(show, constraint_by_name(fnm.model, "spin_and_sup_max[7,1]")) ==
+        "spin_and_sup_max[7,1] : r_spin[7,1] + r_on_sup[7,1] ≤ 0.0"
+    @test sprint(show, constraint_by_name(fnm.model, "off_sup_max[7,1]")) ==
+        "off_sup_max[7,1] : r_off_sup[7,1] ≤ 7.5"
+    # Units in test system provide regulation, spinning, and on/off supplemental
+    unit_codes = get_unit_codes(ThermalGen, fnm.system)
+    n_periods = get_forecast_horizon(fnm.system)
+    for str in ("reg", "spin", "on_sup", "off_sup"), g in unit_codes, t in 1:n_periods
         @test constraint_by_name(fnm.model, "zero_$str[$g,$t]") === nothing
     end
     return nothing
@@ -126,14 +144,14 @@ end
         con_generation_limits!(fnm)
         tests_generation_limits(fnm)
     end
-    @testset "Ancillary service constraints" begin
+    @testset "Ancillary service constraints Commitment" begin
         fnm = FullNetworkModel(TEST_SYSTEM, GLPK.Optimizer)
         var_thermal_generation!(fnm)
         var_commitment!(fnm)
         var_ancillary_services!(fnm)
         @testset "con_ancillary_limits!" begin
             con_ancillary_limits!(fnm)
-            tests_ancillary_limits(fnm)
+            tests_ancillary_limits_commitment(fnm)
         end
         @testset "con_regulation_requirements!" begin
             con_regulation_requirements!(fnm)
@@ -143,6 +161,17 @@ end
             con_operating_reserve_requirements!(fnm)
             tests_operating_reserve_requirements(fnm)
         end
+    end
+    @testset "Ancillary service constraints Dispatch" begin
+        fnm = FullNetworkModel(TEST_SYSTEM_RT, GLPK.Optimizer)
+        var_thermal_generation!(fnm)
+        var_commitment!(fnm)
+        var_ancillary_services!(fnm)
+        @testset "con_ancillary_limits!" begin
+            con_ancillary_limits!(fnm)
+            tests_ancillary_limits_dispatch(fnm)
+        end
+        #TODO: RT con_regulation_requirements! and con_operating_reserve_requirements
     end
     @testset "Ramp constraints" begin
         # Basic tests for hard constraints
