@@ -148,6 +148,17 @@ function _get_resolution_in_minutes(system::System)
 end
 
 """
+    _time_series_values(device, label::AbstractString,, datetimes::Vector{DateTime}) -> Vector
+
+Returns the values in `device` of the time series named `label` for the time periods in
+`datetimes`.
+"""
+function _time_series_values(device, label::AbstractString, datetimes::Vector{DateTime})
+    ta = get_time_series_array(SingleTimeSeries, device, label)
+    return values(ta[datetimes])
+end
+
+"""
     _generator_time_series_values(
         gen, label::AbstractString, datetimes::Vector{DateTime}, suffix::Bool
     ) -> Vector
@@ -162,8 +173,18 @@ function _generator_time_series_values(
     full_label = suffix ? label * "_$(gen.ext["reserve_zone"])" : label
     # Insert values only if the unit actually has that time series
     if full_label in get_time_series_names(SingleTimeSeries, gen)
-        ta = get_time_series_array(SingleTimeSeries, gen, full_label)
-        return values(ta[datetimes])
+        return _time_series_values(gen, full_label, datetimes)
     end
     return nothing
+end
+
+"""
+    _load_time_series_values(load, datetimes::Vector{DateTime}) -> Vector
+
+Returns the values in `load` of the "active_power" time series for the time periods in
+`datetimes`, multiplied by the base `active_power` field value.
+"""
+function _load_time_series_values(load, datetimes::Vector{DateTime})
+    active_power = get_active_power(load)
+    return active_power .* _time_series_values(load, "active_power", datetimes)
 end
