@@ -126,8 +126,6 @@ function con_ancillary_limits!(fnm::FullNetworkModel{<:UC})
     Pregmin = get_regmin(system)
 
     model = fnm.model
-    @assert has_variable(model, "p")
-    @assert has_variable(model, "u")
     _con_ancillary_max_commitment!(model, unit_codes, n_periods, Pmax, Pregmax)
     _con_ancillary_min_commitment!(model, unit_codes, n_periods, Pmin, Pregmin)
     _con_regulation_max_commitment!(model, unit_codes, n_periods, Pregmin, Pregmax)
@@ -160,8 +158,6 @@ function con_ancillary_limits!(fnm::FullNetworkModel{<:ED})
     U_reg = get_commitment_reg_status(system)
 
     model = fnm.model
-    @assert has_variable(model, "p")
-    @assert has_variable(model, "u")
     _con_ancillary_max_dispatch!(model, unit_codes, n_periods, Pmax, Pregmax, U, U_reg)
     _con_ancillary_min_dispatch!(model, unit_codes, n_periods, Pmin, Pregmin, U, U_reg)
     _con_spin_and_sup_max_dispatch!(model, unit_codes, n_periods, Pmin, Pmax, U)
