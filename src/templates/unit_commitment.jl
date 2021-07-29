@@ -19,7 +19,7 @@ $(_write_formulation(
         _latex(_var_thermal_gen_blocks!; commitment=true),
         _latex(_con_generation_limits_commitment!; commitment=true),
         _latex(_con_startup_shutdown!),
-        _latex(con_ancillary_limits!),
+        _latex(con_ancillary_limits_commitment!),
         _latex(con_regulation_requirements!),
         _latex(con_operating_reserve_requirements!),
         _latex(_con_ancillary_services!),

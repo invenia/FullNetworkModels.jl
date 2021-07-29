@@ -135,6 +135,15 @@ function get_commitment_status(system::System)
 end
 
 """
+    get_commitment_reg_status(system::System) -> Dict
+
+Returns the commitment regulation status of the Thermal generators in `system`.
+"""
+function get_commitment_reg_status(system::System)
+    return get_generator_time_series(system, "status_reg"; suffix=false)
+end
+
+"""
     get_spinning_cost(system::System) -> Dict
 
 Returns the costs of spinning reserve offered by the generators in `system`.
