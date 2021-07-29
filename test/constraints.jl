@@ -125,27 +125,22 @@ end
 
 @testset "Constraints" begin
     @testset "con_generation_limits!" begin
-        # Test if trying to add constraints without having variables throws error
-        fnm = FullNetworkModel(TEST_SYSTEM, GLPK.Optimizer)
-        @test_throws AssertionError con_generation_limits!(fnm)
-        # Test for economic dispatch (just thermal generation added)
-        var_thermal_generation!(fnm)
-        con_generation_limits!(fnm)
-        tests_generation_limits(fnm)
-        # Test for economic dispatch with gen generator status as a parameter
-        fnm = FullNetworkModel(TEST_SYSTEM_RT, GLPK.Optimizer)
-        var_thermal_generation!(fnm)
-        con_generation_limits!(fnm)
-        tests_generation_limits(fnm)
-        # Test for unit commitment (both thermal generation and commitment added)
-        fnm = FullNetworkModel(TEST_SYSTEM, GLPK.Optimizer)
-        var_thermal_generation!(fnm)
-        var_commitment!(fnm)
-        con_generation_limits!(fnm)
-        tests_generation_limits(fnm)
+        @testset "ED with gen generator status as a parameter" begin
+            fnm = FullNetworkModel{ED}(TEST_SYSTEM_RT, GLPK.Optimizer)
+            var_thermal_generation!(fnm)
+            con_generation_limits!(fnm)
+            tests_generation_limits(fnm)
+        end
+        @testset "UC with both thermal generation and commitment added" begin
+            fnm = FullNetworkModel{UC}(TEST_SYSTEM, GLPK.Optimizer)
+            var_thermal_generation!(fnm)
+            var_commitment!(fnm)
+            con_generation_limits!(fnm)
+            tests_generation_limits(fnm)
+        end
     end
-    @testset "Ancillary service constraints Commitment" begin
-        fnm = FullNetworkModel(TEST_SYSTEM, GLPK.Optimizer)
+    @testset "Ancillary service constraints UC" begin
+        fnm = FullNetworkModel{UC}(TEST_SYSTEM, GLPK.Optimizer)
         var_thermal_generation!(fnm)
         var_commitment!(fnm)
         var_ancillary_services!(fnm)
@@ -162,8 +157,8 @@ end
             tests_operating_reserve_requirements(fnm)
         end
     end
-    @testset "Ancillary service constraints Dispatch" begin
-        fnm = FullNetworkModel(TEST_SYSTEM_RT, GLPK.Optimizer)
+    @testset "Ancillary service constraints ED" begin
+        fnm = FullNetworkModel{ED}(TEST_SYSTEM_RT, GLPK.Optimizer)
         var_thermal_generation!(fnm)
         var_commitment!(fnm)
         var_ancillary_services!(fnm)
@@ -173,9 +168,9 @@ end
         end
         #TODO: RT con_regulation_requirements! and con_operating_reserve_requirements
     end
-    @testset "Ramp constraints" begin
+    @testset "Ramp constraints $T" for T in (UC, ED)
         # Basic tests for hard constraints
-        fnm = FullNetworkModel(TEST_SYSTEM, GLPK.Optimizer)
+        fnm = FullNetworkModel{T}(TEST_SYSTEM, GLPK.Optimizer)
         var_thermal_generation!(fnm)
         var_commitment!(fnm)
         var_startup_shutdown!(fnm)
@@ -183,18 +178,19 @@ end
         con_ramp_rates!(fnm)
         tests_ramp_rates(fnm)
 
-        # Basic tests for soft constraints
-        fnm = FullNetworkModel(TEST_SYSTEM, GLPK.Optimizer)
-        var_thermal_generation!(fnm)
-        var_commitment!(fnm)
-        var_startup_shutdown!(fnm)
-        var_ancillary_services!(fnm)
-        con_ramp_rates!(fnm; slack=1e4)
-        tests_ramp_rates(fnm; slack=1e4)
+        @testset "soft constraints" begin
+            fnm = FullNetworkModel{T}(TEST_SYSTEM, GLPK.Optimizer)
+            var_thermal_generation!(fnm)
+            var_commitment!(fnm)
+            var_startup_shutdown!(fnm)
+            var_ancillary_services!(fnm)
+            con_ramp_rates!(fnm; slack=1e4)
+            tests_ramp_rates(fnm; slack=1e4)
+        end
     end
-    @testset "Energy balance constraints" begin
+    @testset "Energy balance constraints $T" for T in (UC, ED)
         @testset "con_energy_balance!" begin
-            fnm = FullNetworkModel(TEST_SYSTEM, GLPK.Optimizer)
+            fnm = FullNetworkModel{T}(TEST_SYSTEM, GLPK.Optimizer)
             var_thermal_generation!(fnm)
             var_bids!(fnm)
             con_energy_balance!(fnm)

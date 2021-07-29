@@ -1,9 +1,9 @@
 @testset "API functions" begin
-    fnm = FullNetworkModel(TEST_SYSTEM, GLPK.Optimizer)
-    fnm_rt = FullNetworkModel(TEST_SYSTEM_RT, GLPK.Optimizer)
+    fnm = FullNetworkModel{UC}(TEST_SYSTEM, GLPK.Optimizer)
+    fnm_rt = FullNetworkModel{ED}(TEST_SYSTEM_RT, GLPK.Optimizer)
 
     @testset "Prints" begin
-        @test sprint(show, fnm) == "FullNetworkModel\nModel formulation: 0 variables\nSystem: 32 components, 24 time periods\n"
+        @test sprint(show, fnm) == "FullNetworkModel{UC}\nModel formulation: 0 variables\nSystem: 32 components, 24 time periods\n"
     end
 
     @testset "Accessors" begin

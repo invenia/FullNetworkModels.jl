@@ -43,7 +43,7 @@ function tests_bid_variables(fnm, label, bidtype, n_periods)
 end
 
 @testset "Variables" begin
-    fnm = FullNetworkModel(TEST_SYSTEM, GLPK.Optimizer)
+    fnm = FullNetworkModel{UC}(TEST_SYSTEM, GLPK.Optimizer)
     n_periods = get_forecast_horizon(fnm.system)
     @testset "var_thermal_generation!" begin
         var_thermal_generation!(fnm)
