@@ -33,8 +33,8 @@ function _total_demand_feasibility(system, n_periods, unit_codes, Pmax)
     system_load = Vector{Float64}(undef, n_periods)
     infeasible_periods = Int[]
     for t in 1:n_periods
-        gen_capacity[t] = sum(Pmax[g][t] for g in unit_codes)
-        system_load[t] = sum(loads[l][t] for l in load_names)
+        gen_capacity[t] = sum(Pmax[g, t] for g in unit_codes)
+        system_load[t] = sum(loads[l, t] for l in load_names)
         if gen_capacity[t] < system_load[t]
             push!(infeasible_periods, t)
         end
@@ -67,7 +67,7 @@ function _initial_ramp_feasibility(system, unit_codes, Pmax)
     Δt = _get_resolution_in_minutes(system)
     for g in unit_codes
         if U0[g] == 1
-            if P0[g] > Pmax[g][1] + Δt * RR[g] || P0[g] < Pmin[g][1] - Δt * RR[g]
+            if P0[g] > Pmax[g, 1] + Δt * RR[g] || P0[g] < Pmin[g, 1] - Δt * RR[g]
                 warn(LOGGER, "Initial ramp constraints are being violated. Problem will be infeasible if hard constraints for ramps are used.")
                 return false
             end
@@ -100,14 +100,14 @@ function _ancillary_requirement_feasibility(system, n_periods)
     for t in 1:n_periods, zone in get_reserve_zones(system)
         # Get the units providing regulation within that zone
         reg_zone_units = intersect(zone_gens[zone], reg_units)
-        total_regmax = sum(regmax[g][t] for g in reg_zone_units)
+        total_regmax = sum(regmax[g, t] for g in reg_zone_units)
         if total_regmax < reg_reqs[zone]
             warn(LOGGER, "There's not enough regulation to attend zonal regulation requirements; problem will be infeasible.")
             return false
         end
         # Get the units providing OR services within that zone
         or_zone_units = intersect(zone_gens[zone], or_units)
-        total_regmax = sum(regmax[g][t] for g in or_zone_units)
+        total_regmax = sum(regmax[g, t] for g in or_zone_units)
         if total_regmax < or_reqs[zone]
             warn(LOGGER, "There's not enough regulation to attend zonal operating reserve requirements; problem will be infeasible.")
             return false

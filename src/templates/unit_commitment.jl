@@ -1,6 +1,7 @@
 """
     unit_commitment(
-        system::System, solver; relax_integrality=false
+        system::System, solver;
+        datetimes=get_forecast_timestamps(system), relax_integrality=false
     ) -> FullNetworkModel
 
 Defines the unit commitment default template.
@@ -41,11 +42,15 @@ Arguments:
  - `solver`: The solver of choice, e.g. `GLPK.Optimizer`.
 
 Keyword arguments:
+ - `datetimes=get_forecast_timestamps(system)`: The time periods considered in the model.
  - `relax_integrality=false`: If set to `true`, binary variables will be relaxed.
 """
-function unit_commitment(system::System, solver; relax_integrality=false)
+function unit_commitment(
+    system::System, solver;
+    datetimes=get_forecast_timestamps(system), relax_integrality=false
+)
     # Initialize FNM
-    fnm = FullNetworkModel(system, solver)
+    fnm = FullNetworkModel(system, solver, datetimes)
     # Variables
     var_thermal_generation!(fnm)
     var_commitment!(fnm)
@@ -73,7 +78,8 @@ end
 
 """
     unit_commitment_soft_ramps(
-        system::System, solver; slack=1e4, relax_integrality=false
+        system::System, solver;
+        datetimes=get_forecast_timestamps(system), slack=1e4, relax_integrality=false
     ) -> FullNetworkModel
 
 Defines the unit commitment template with soft generation ramp constraints.
@@ -86,14 +92,16 @@ Arguments:
  - `solver`: The solver of choice, e.g. `GLPK.Optimizer`.
 
 Keyword arguments:
+ - `datetimes=get_forecast_timestamps(system)`: The time periods considered in the model.
  - `slack=1e4`: The slack penalty for the soft constraints.
  - `relax_integrality=false`: If set to `true`, binary variables will be relaxed.
 """
 function unit_commitment_soft_ramps(
-    system::System, solver; slack=1e4, relax_integrality=false
+    system::System, solver;
+    datetimes=get_forecast_timestamps(system), slack=1e4, relax_integrality=false
 )
     # Initialize FNM
-    fnm = FullNetworkModel(system, solver)
+    fnm = FullNetworkModel(system, solver, datetimes)
     # Variables
     var_thermal_generation!(fnm)
     var_commitment!(fnm)
@@ -121,7 +129,8 @@ end
 
 """
     unit_commitment_no_ramps(
-        system::System, solver; relax_integrality=false
+        system::System, solver;
+        datetimes=get_forecast_timestamps(system), relax_integrality=false
     ) -> FullNetworkModel
 
 Defines the unit commitment template with no ramp constraints.
@@ -134,13 +143,15 @@ Arguments:
  - `solver`: The solver of choice, e.g. `GLPK.Optimizer`.
 
 Keyword arguments:
+ - `datetimes=get_forecast_timestamps(system)`: The time periods considered in the model.
  - `relax_integrality=false`: If set to `true`, binary variables will be relaxed.
 """
 function unit_commitment_no_ramps(
-    system::System, solver; relax_integrality=false
+    system::System, solver;
+    datetimes=get_forecast_timestamps(system), relax_integrality=false
 )
     # Initialize FNM
-    fnm = FullNetworkModel(system, solver)
+    fnm = FullNetworkModel(system, solver, datetimes)
     # Variables
     var_thermal_generation!(fnm)
     var_commitment!(fnm)

@@ -2,10 +2,10 @@
     FullNetworkModel
 
 Structure containing all the information on the full network model. Contains the JuMP
-`model` and the PowerSystems `system`.
+`model` and the PowerSystems `system` data for the period contemplated in `datetimes`.
 
-A FullNetworkModel can be initialized using `FullNetworkModel(system::System, solver)`,
-which creates an empty JuMP model related to `system` using the desired `solver`.
+Can be initialized using `FullNetworkModel(system::System, solver, datetimes)`, which
+creates an empty JuMP model related to `system` using the desired `solver`.
 """
 struct FullNetworkModel
     model::Model

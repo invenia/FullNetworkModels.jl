@@ -130,28 +130,28 @@ function _var_thermal_gen_blocks!(
 )
     @variable(
         model,
-        p_aux[g in unit_codes, t in 1:n_periods, q in 1:n_blocks[g][t]] >= 0
+        p_aux[g in unit_codes, t in 1:n_periods, q in 1:n_blocks[g, t]] >= 0
     )
     # Add constraints linking `p` to `p_aux`
     p = model[:p]
     @constraint(
         model,
         generation_definition[g in unit_codes, t in 1:n_periods],
-        p[g, t] == sum(p_aux[g, t, q] for q in 1:n_blocks[g][t])
+        p[g, t] == sum(p_aux[g, t, q] for q in 1:n_blocks[g, t])
     )
     # Add upper bounds to `p_aux` - formulation changes a bit if there is commitment or not
     if has_variable(model, "u")
         u = model[:u]
         @constraint(
             model,
-            gen_block_limits[g in unit_codes, t in 1:n_periods, q in 1:n_blocks[g][t]],
-            p_aux[g, t, q] <= p_aux_lims[g][t][q] * u[g, t]
+            gen_block_limits[g in unit_codes, t in 1:n_periods, q in 1:n_blocks[g, t]],
+            p_aux[g, t, q] <= p_aux_lims[g, t, q] * u[g, t]
         )
     else
         @constraint(
             model,
-            gen_block_limits[g in unit_codes, t in 1:n_periods, q in 1:n_blocks[g][t]],
-            p_aux[g, t, q] <= p_aux_lims[g][t][q]
+            gen_block_limits[g in unit_codes, t in 1:n_periods, q in 1:n_blocks[g, t]],
+            p_aux[g, t, q] <= p_aux_lims[g, t, q]
         )
     end
     return model
@@ -225,20 +225,20 @@ function _var_bid_blocks!(model::Model, bid_names, block_lims, n_periods, n_bloc
     # otherwise `model[:x]` is undefined.
     model[v_aux] = @variable(
         model,
-        [b in bid_names, t in 1:n_periods, q in 1:n_blocks[b][t]],
+        [b in bid_names, t in 1:n_periods, q in 1:n_blocks[b, t]],
         lower_bound = 0,
         base_name = "$v_aux"
     )
     model[def] = @constraint(
         model,
         [b in bid_names, t in 1:n_periods],
-        model[v][b, t] == sum(model[v_aux][b, t, q] for q in 1:n_blocks[b][t]),
+        model[v][b, t] == sum(model[v_aux][b, t, q] for q in 1:n_blocks[b, t]),
         base_name = "$def"
     )
     model[lims] = @constraint(
         model,
-        [b in bid_names, t in 1:n_periods, q in 1:n_blocks[b][t]],
-        model[v_aux][b, t, q] <= block_lims[b][t][q],
+        [b in bid_names, t in 1:n_periods, q in 1:n_blocks[b, t]],
+        model[v_aux][b, t, q] <= block_lims[b, t, q],
         base_name = "$lims"
     )
     return model

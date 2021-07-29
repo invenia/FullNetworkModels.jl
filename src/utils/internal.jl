@@ -27,9 +27,9 @@ Arguments:
 function _variable_cost(model::Model, names, n_periods, n_blocks, Λ, v, sense)
     v_aux = model[Symbol(v, :_aux)]
     variable_cost = AffExpr(0.0)
-    for n in names, t in 1:n_periods, q in 1:n_blocks[n][t]
-        # Faster version of `variable_cost += Λ[n][t][q] * v_aux[n, t, q]`
-        add_to_expression!(variable_cost, Λ[n][t][q], v_aux[n, t, q])
+    for n in names, t in 1:n_periods, q in 1:n_blocks[n, t]
+        # Faster version of `variable_cost += Λ[n, t, q] * v_aux[n, t, q]`
+        add_to_expression!(variable_cost, Λ[n, t, q], v_aux[n, t, q])
     end
     # Apply sense to expression - same as `variable_cost *= sense`
     map_coefficients_inplace!(x -> sense * x, variable_cost)
@@ -52,7 +52,7 @@ function _obj_thermal_linear_cost!(
     n_periods = get_forecast_horizon(system)
     cost = f(system)
     x = model[var]
-    obj_cost = sum(cost[g][t] * x[g, t] for g in unit_codes, t in 1:n_periods)
+    obj_cost = sum(cost[g, t] * x[g, t] for g in unit_codes, t in 1:n_periods)
     _add_to_objective!(model, obj_cost)
     return fnm
 end
@@ -66,21 +66,16 @@ either the unit codes or bid names as keys, for offer and bid curves respectivel
 The kwarg `blocks` indicates if the curve is just a series of blocks, meaning the MW values
 represent the size of the blocks instead of the cumulative MW value in the curve.
 """
-function _curve_properties(curves, n_periods; blocks=false)
-    T = keytype(curves)
-    prices = Dict{T, Vector{Vector{Float64}}}()
-    limits = Dict{T, Vector{Vector{Float64}}}()
-    n_blocks = Dict{T, Vector{Int}}()
-    for (g, curve) in curves
-        prices[g] = [first.(curve[i]) for i in 1:n_periods]
-        limits[g] = [last.(curve[i]) for i in 1:n_periods]
-        n_blocks[g] = length.(limits[g])
-    end
+function _curve_properties(curves; blocks=false)
+    names, datetimes = axes(curves)
+    prices = map(x -> first.(x), curves)
+    limits = map(x -> last.(x), curves)
+    n_blocks = map(length, limits)
     if !blocks
         # Change curve MW values to block MW limits - e.g. if the MW values are
         # (50, 100, 200), the corresponding MW limits of each block are (50, 50, 100).
-        for g in keys(n_blocks), t in 1:n_periods, q in n_blocks[g][t]:-1:2
-            @inbounds limits[g][t][q] -= limits[g][t][q - 1]
+        for lim in limits, q in length(lim):-1:2
+            @inbounds lim[q] -= lim[q - 1]
         end
     end
     return prices, limits, n_blocks

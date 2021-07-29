@@ -24,7 +24,7 @@ function tests_thermal_linear_cost(fnm, var, f)
     str = string(objective_function(fnm.model))
     @testset "Cost was correctly added to objective" begin
         @testset for g in unit_codes, t in 1:n_periods
-            C = mod(cost[g][t], 1) == 0 ? convert(Int, cost[g][t]) : cost[g][t]
+            C = mod(cost[g, t], 1) == 0 ? convert(Int, cost[g, t]) : cost[g, t]
             @test occursin("+ $C $var[$g,$t]", str)
         end
     end
@@ -43,10 +43,10 @@ function tests_ancillary_costs(fnm)
     str = string(objective_function(fnm.model))
     @testset "All ancillary terms correctly added to objective" begin
         @testset for g in unit_codes, t in 1:n_periods
-            C_reg = _convert_jump_number(cost_reg[g][t])
-            C_spin = _convert_jump_number(cost_spin[g][t])
-            C_on_sup = _convert_jump_number(cost_on_sup[g][t])
-            C_off_sup = _convert_jump_number(cost_off_sup[g][t])
+            C_reg = _convert_jump_number(cost_reg[g, t])
+            C_spin = _convert_jump_number(cost_spin[g, t])
+            C_on_sup = _convert_jump_number(cost_on_sup[g, t])
+            C_off_sup = _convert_jump_number(cost_off_sup[g, t])
             @test occursin("$C_reg r_reg[$g,$t]", str)
             @test occursin("$C_spin r_spin[$g,$t]", str)
             @test occursin("$C_on_sup r_on_sup[$g,$t]", str)

@@ -15,6 +15,7 @@ using TimeSeries
 const FNM = FullNetworkModels
 const TEST_SYSTEM = fake_3bus_system(MISO, DA)
 const TEST_SYSTEM_RT = fake_3bus_system(MISO, DA; commitment_forecasts=true)
+const TEST_DATETIMES = get_forecast_timestamps(TEST_SYSTEM)[5:15] # use an arbitrary period
 
 @testset "FullNetworkModels.jl" begin
     include("api.jl")

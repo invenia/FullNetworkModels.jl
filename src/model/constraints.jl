@@ -292,9 +292,9 @@ function con_energy_balance!(fnm::FullNetworkModel)
     psd = model[:psd]
     @constraint(
         model,
-        energy_balance[t in 1:n_periods],
+        energy_balance[t in fnm.datetimes],
         sum(p[g, t] for g in unit_codes) + sum(inc[i, t] for i in inc_names) ==
-            sum(D[f][t] for f in load_names) + sum(dec[d, t] for d in dec_names) +
+            sum(D[f, t] for f in load_names) + sum(dec[d, t] for d in dec_names) +
             sum(psd[s, t] for s in psd_names)
     )
     return fnm
@@ -305,13 +305,13 @@ function _con_generation_limits_commitment!(model::Model, ::Val{true}, unit_code
     u = model[:u]
     @constraint(
         model,
-        generation_min[g in unit_codes, t in 1:n_periods],
-        Pmin[g][t] * u[g, t] <= p[g, t]
+        generation_min[g in unit_codes, t in datetimes],
+        Pmin[g, t] * u[g, t] <= p[g, t]
     )
     @constraint(
         model,
-        generation_max[g in unit_codes, t in 1:n_periods],
-        p[g, t] <= Pmax[g][t] * u[g, t]
+        generation_max[g in unit_codes, t in datetimes],
+        p[g, t] <= Pmax[g, t] * u[g, t]
     )
     return model
 end
@@ -320,13 +320,13 @@ function _con_generation_limits_commitment!(model::Model, ::Val{false}, unit_cod
     p = model[:p]
     @constraint(
         model,
-        generation_min[g in unit_codes, t in 1:n_periods],
-        Pmin[g][t] <= p[g, t]
+        generation_min[g in unit_codes, t in datetimes],
+        Pmin[g, t] <= p[g, t]
     )
     @constraint(
         model,
-        generation_max[g in unit_codes, t in 1:n_periods],
-        p[g, t] <= Pmax[g][t]
+        generation_max[g in unit_codes, t in datetimes],
+        p[g, t] <= Pmax[g, t]
     )
 end
 
@@ -334,13 +334,13 @@ function _con_generation_limits_dispatch!(model::Model, U, unit_codes, n_periods
     p = model[:p]
     @constraint(
         model,
-        generation_min[g in unit_codes, t in 1:n_periods],
-        Pmin[g][t] * U[g][t] <= p[g, t]
+        generation_min[g in unit_codes, t in datetimes],
+        Pmin[g, t] * U[g, t] <= p[g, t]
     )
     @constraint(
         model,
-        generation_max[g in unit_codes, t in 1:n_periods],
-        p[g, t] <= Pmax[g][t] * U[g][t]
+        generation_max[g in unit_codes, t in datetimes],
+        p[g, t] <= Pmax[g, t] * U[g, t]
     )
     return model
 end
@@ -355,9 +355,9 @@ function _con_ancillary_max_commitment!(model::Model, unit_codes, n_periods, Pma
     u_reg = model[:u_reg]
     @constraint(
         model,
-        ancillary_max[g in unit_codes, t in 1:n_periods],
+        ancillary_max[g in unit_codes, t in datetimes],
         p[g, t] + r_reg[g, t] + r_spin[g, t] + r_on_sup[g, t] <=
-            Pmax[g][t] * (u[g, t] - u_reg[g, t]) + Pregmax[g][t] * u_reg[g, t]
+            Pmax[g, t] * (u[g, t] - u_reg[g, t]) + Pregmax[g, t] * u_reg[g, t]
     )
     return model
 end
@@ -369,9 +369,9 @@ function _con_ancillary_max_dispatch!(model::Model, unit_codes, n_periods, Pmax,
     r_on_sup = model[:r_on_sup]
     @constraint(
         model,
-        ancillary_max[g in unit_codes, t in 1:n_periods],
+        ancillary_max[g in unit_codes, t in datetimes],
         p[g, t] + r_reg[g, t] + r_spin[g, t] + r_on_sup[g, t] <=
-            Pmax[g][t] * (U[g][t] - U_reg[g][t]) + Pregmax[g][t] * U_reg[g][t]
+            Pmax[g, t] * (U[g, t] - U_reg[g, t]) + Pregmax[g, t] * U_reg[g, t]
     )
     return model
 end
@@ -384,9 +384,9 @@ function _con_ancillary_min_commitment!(model::Model, unit_codes, n_periods, Pmi
     u_reg = model[:u_reg]
     @constraint(
         model,
-        ancillary_min[g in unit_codes, t in 1:n_periods],
+        ancillary_min[g in unit_codes, t in datetimes],
         p[g, t] - r_reg[g, t] >=
-            Pmin[g][t] * (u[g, t] - u_reg[g, t]) + Pregmin[g][t] * u_reg[g, t]
+            Pmin[g, t] * (u[g, t] - u_reg[g, t]) + Pregmin[g, t] * u_reg[g, t]
     )
     return model
 end
@@ -396,9 +396,9 @@ function _con_ancillary_min_dispatch!(model::Model, unit_codes, n_periods, Pmin,
     r_reg = model[:r_reg]
     @constraint(
         model,
-        ancillary_min[g in unit_codes, t in 1:n_periods],
+        ancillary_min[g in unit_codes, t in datetimes],
         p[g, t] - r_reg[g, t] >=
-            Pmin[g][t] * (U[g][t] - U_reg[g][t]) + Pregmin[g][t] * U_reg[g][t]
+            Pmin[g, t] * (U[g, t] - U_reg[g, t]) + Pregmin[g, t] * U_reg[g, t]
     )
     return model
 end
@@ -409,8 +409,8 @@ function _con_regulation_max_commitment!(model::Model, unit_codes, n_periods, Pr
     u_reg = model[:u_reg]
     @constraint(
         model,
-        regulation_max[g in unit_codes, t in 1:n_periods],
-        r_reg[g, t] <= 0.5 * (Pregmax[g][t] - Pregmin[g][t]) * u_reg[g, t]
+        regulation_max[g in unit_codes, t in datetimes],
+        r_reg[g, t] <= 0.5 * (Pregmax[g, t] - Pregmin[g, t]) * u_reg[g, t]
     )
     return model
 end
@@ -422,8 +422,8 @@ function _con_spin_and_sup_max_commitment!(model::Model, unit_codes, n_periods, 
     u = model[:u]
     @constraint(
         model,
-        spin_and_sup_max[g in unit_codes, t in 1:n_periods],
-        r_spin[g, t] + r_on_sup[g, t] <= (Pmax[g][t] - Pmin[g][t]) * u[g, t]
+        spin_and_sup_max[g in unit_codes, t in datetimes],
+        r_spin[g, t] + r_on_sup[g, t] <= (Pmax[g, t] - Pmin[g, t]) * u[g, t]
     )
     return model
 end
@@ -433,8 +433,8 @@ function _con_spin_and_sup_max_dispatch!(model::Model, unit_codes, n_periods, Pm
     r_on_sup = model[:r_on_sup]
     @constraint(
         model,
-        spin_and_sup_max[g in unit_codes, t in 1:n_periods],
-        r_spin[g, t] + r_on_sup[g, t] <= (Pmax[g][t] - Pmin[g][t]) * U[g][t]
+        spin_and_sup_max[g in unit_codes, t in datetimes],
+        r_spin[g, t] + r_on_sup[g, t] <= (Pmax[g, t] - Pmin[g, t]) * U[g, t]
     )
     return model
 end
@@ -445,8 +445,8 @@ function _con_off_sup_max_commitment!(model::Model, unit_codes, n_periods, Pmin,
     u = model[:u]
     @constraint(
         model,
-        off_sup_max[g in unit_codes, t in 1:n_periods],
-        r_off_sup[g, t] <= (Pmax[g][t] - Pmin[g][t]) * (1 - u[g, t])
+        off_sup_max[g in unit_codes, t in datetimes],
+        r_off_sup[g, t] <= (Pmax[g, t] - Pmin[g, t]) * (1 - u[g, t])
     )
     return model
 end
@@ -455,8 +455,8 @@ function _con_off_sup_max_dispatch!(model::Model, unit_codes, n_periods, Pmin, P
     r_off_sup = model[:r_off_sup]
     @constraint(
         model,
-        off_sup_max[g in unit_codes, t in 1:n_periods],
-        r_off_sup[g, t] <= (Pmax[g][t] - Pmin[g][t]) * (1 - U[g][t])
+        off_sup_max[g in unit_codes, t in datetimes],
+        r_off_sup[g, t] <= (Pmax[g, t] - Pmin[g, t]) * (1 - U[g, t])
     )
     return model
 end
@@ -580,24 +580,24 @@ function _con_generation_ramp_rates!(fnm::FullNetworkModel, slack)
     @constraint(
         model,
         ramp_up[g in unit_codes, t in 2:n_periods],
-        p[g, t] - p[g, t - 1] <= Δt * RR[g] * u[g, t - 1] + SU[g][t] * v[g, t]
+        p[g, t] - p[g, t - 1] <= Δt * RR[g] * u[g, t - 1] + SU[g, t] * v[g, t]
     )
     @constraint(
         model,
         ramp_up_initial[g in unit_codes],
-        p[g, 1] - P0[g] <= Δt * RR[g] * U0[g] + SU[g][1] * v[g, 1]
+        p[g, 1] - P0[g] <= Δt * RR[g] * U0[g] + SU[g, 1] * v[g, 1]
     )
     # Ramp down - generation can't go down more than ramp capacity (defined in pu/min)
     # We consider SU = SD
     @constraint(
         model,
         ramp_down[g in unit_codes, t in 2:n_periods],
-        p[g, t - 1] - p[g, t] <= Δt * RR[g] * u[g, t] + SU[g][t] * w[g, t]
+        p[g, t - 1] - p[g, t] <= Δt * RR[g] * u[g, t] + SU[g, t] * w[g, t]
     )
     @constraint(
         model,
         ramp_down_initial[g in unit_codes],
-        P0[g] - p[g, 1] <= Δt * RR[g] * u[g, 1] + SU[g][1] * w[g, 1]
+        P0[g] - p[g, 1] <= Δt * RR[g] * u[g, 1] + SU[g, 1] * w[g, 1]
     )
 
     # If the constraints are supposed to be soft constraints, add slacks

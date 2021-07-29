@@ -2,6 +2,7 @@ module FullNetworkModels
 
 using Dates
 using JuMP
+using JuMP.Containers: DenseAxisArray
 using Memento
 using PowerSystems
 using PowerSystemsExtras
@@ -36,6 +37,7 @@ export FullNetworkModel
 export get_bid_names
 export get_bid_curves
 export get_fixed_loads
+export get_forecast_timestamps
 export get_generator_time_series
 export get_initial_commitment
 export get_initial_downtime
