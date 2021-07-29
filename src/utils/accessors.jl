@@ -21,6 +21,19 @@ end
 has_constraint(model::Model, con::String) = has_constraint(model, Symbol(con))
 
 """
+    get_forecast_timestamps(system::System) -> Vector{DateTime}
+
+Returns a vector with all forecast timestamps stored in `system`.
+"""
+function get_forecast_timestamps(system::System)
+    initial_timestamp = get_forecast_initial_timestamp(system)
+    horizon = get_forecast_horizon(system)
+    interval = get_forecast_interval(system)
+    timestamps = initial_timestamp .+ (0:horizon - 1) .* interval
+    return timestamps
+end
+
+"""
     get_unit_codes(gentype::Type{<:Generator}, system::System) -> Vector{Int}
 
 Returns the unit codes of all generators in `system` under type `gentype`.
@@ -48,25 +61,32 @@ function get_load_names(loadtype::Type{<:StaticLoad}, system::System)
 end
 
 """
-    get_generator_time_series(system::System, label::AbstractString; suffix=false) -> Dict
+    get_generator_time_series(
+        system::System, label::AbstractString, datetimes::Vector{DateTime}; suffix=false
+    ) -> KeyedArray
 
 Returns a dictionary with the time series values for `label` stored in `system`. The keys
 of the dictionary are the unit codes. If the label is supposed to have a zone suffix, e.g.
 for ancillary costs, then `suffix` should be set to `true`.
 """
-function get_generator_time_series(system::System, label::AbstractString; suffix=false)
-    unit_codes = get_unit_codes(ThermalGen, system)
-    ts_dict = Dict{Int, Vector}()
-    for unit in unit_codes
-        gen = get_component(ThermalGen, system, string(unit))
+function get_generator_time_series(
+    system::System, label::AbstractString, datetimes::Vector{DateTime}; suffix=false
+)
+    gens = get_components(ThermalGen, system)
+    unit_codes = map(get_name, gens)
+    output = KeyedArray(
+        fill(NaN, length(gens), length(datetimes)), id=unit_codes, datetime=datetimes
+    )
+    for gen in gens
         # If the label is supposed to have a zone suffix, append it
         full_label = suffix ? label * "_$(gen.ext["reserve_zone"])" : label
-        # Add the dict entry only if the unit actually has that time series
+        # Insert values only if the unit actually has that time series
         if full_label in get_time_series_names(SingleTimeSeries, gen)
-            ts_dict[unit] = get_time_series_values(SingleTimeSeries, gen, full_label)
+            ta = get_time_series_array(SingleTimeSeries, gen, full_label)
+            output(gen.name, datetimes) .= values(ta[datetimes])
         end
     end
-    return ts_dict
+    return output
 end
 
 """
@@ -89,11 +109,20 @@ function get_fixed_loads(system::System)
 end
 
 """
-    get_pmin(system::System) -> Dict
+    get_pmin(system::System) -> KeyedArray
+    get_pmin(system::System, datetimes::Vector{DateTime}) -> KeyedArray
 
-Returns Pmin, i.e., the minimum power outputs of the generators in `system`.
+Returns Pmin, i.e., the minimum power outputs of the generators in `system`. If no
+`datetimes` are passed, returns the values for all time periods.
 """
-get_pmin(system::System) = get_generator_time_series(system, "active_power_min")
+function get_pmin(system::System)
+    datetimes = get_forecast_timestamps(system)
+    return get_generator_time_series(system, "active_power_min", datetimes)
+end
+
+function get_pmin(system::System, datetimes::Vector{DateTime})
+    return get_generator_time_series(system, "active_power_min", datetimes)
+end
 
 """
     get_pmax(system::System) -> Dict
