@@ -73,7 +73,12 @@ function get_generator_time_series(
     system::System, label::AbstractString, datetimes::Vector{DateTime}; suffix=false
 )
     gens = get_components(ThermalGen, system)
-    unit_codes = map(get_name, gens)
+    # If it's a zonal service, get only the providers; otherwise get all generators
+    unit_codes = if suffix
+        _get_service_providers(system, label * "_$MARKET_WIDE_ZONE")
+    else
+        parse.(Int, get_name.(gens))
+    end
     output = DenseAxisArray(
         reduce(hcat, _generator_time_series_values.(gens, label, (datetimes, ), suffix)),
         unit_codes,
