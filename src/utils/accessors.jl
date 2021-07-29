@@ -74,18 +74,11 @@ function get_generator_time_series(
 )
     gens = get_components(ThermalGen, system)
     unit_codes = map(get_name, gens)
-    output = KeyedArray(
-        fill(NaN, length(gens), length(datetimes)), id=unit_codes, datetime=datetimes
+    output = DenseAxisArray(
+        reduce(hcat, _generator_time_series_values.(gens, label, (datetimes, ), suffix)),
+        unit_codes,
+        datetimes,
     )
-    for gen in gens
-        # If the label is supposed to have a zone suffix, append it
-        full_label = suffix ? label * "_$(gen.ext["reserve_zone"])" : label
-        # Insert values only if the unit actually has that time series
-        if full_label in get_time_series_names(SingleTimeSeries, gen)
-            ta = get_time_series_array(SingleTimeSeries, gen, full_label)
-            output(gen.name, datetimes) .= values(ta[datetimes])
-        end
-    end
     return output
 end
 

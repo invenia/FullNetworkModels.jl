@@ -146,3 +146,24 @@ Returns the time resolution of the time series in the system in minutes.
 function _get_resolution_in_minutes(system::System)
     return Dates.value(Minute(get_time_series_resolution(system)))
 end
+
+"""
+    _generator_time_series_values(
+        gen, label::AbstractString, datetimes::Vector{DateTime}, suffix::Bool
+    ) -> Vector
+
+Returns the values in `gen` of the time series named `label`, if it exists, for the time
+periods in `datetimes`. If `suffix` is set to `true`, then the reserve zone is considered.
+"""
+function _generator_time_series_values(
+    gen, label::AbstractString, datetimes::Vector{DateTime}, suffix::Bool
+)
+    # If the label is supposed to have a zone suffix, append it
+    full_label = suffix ? label * "_$(gen.ext["reserve_zone"])" : label
+    # Insert values only if the unit actually has that time series
+    if full_label in get_time_series_names(SingleTimeSeries, gen)
+        ta = get_time_series_array(SingleTimeSeries, gen, full_label)
+        return values(ta[datetimes])
+    end
+    return nothing
+end
