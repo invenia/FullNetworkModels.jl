@@ -173,13 +173,52 @@ function _latex(::typeof(con_regulation_requirements!))
 end
 
 """
-    con_regulation_requirements!(fnm::FullNetworkModel)
+    con_regulation_requirements!(fnm::FullNetworkModel{<:ED}; slack=1e4)
 
 Adds zonal and market-wide regulation requirements to the full network model:
 
 $(_latex(con_regulation_requirements!))
+
+Note: This is a Soft constraint
 """
-function con_regulation_requirements!(fnm::FullNetworkModel)
+function con_regulation_requirements!(fnm::FullNetworkModel{<:ED}; slack=1e4)
+    model = fnm.model
+    system = fnm.system
+    n_periods = get_forecast_horizon(system)
+    reserve_zones = get_reserve_zones(system)
+    zone_gens = _generators_by_reserve_zone(system)
+    reg_requirements = get_regulation_requirements(system)
+    r_reg = model[:r_reg]
+    @constraint(
+        model,
+        regulation_requirements[z in reserve_zones, t in 1:n_periods],
+        sum(r_reg[g, t] for g in zone_gens[z]) >= reg_requirements[z]
+    )
+    # Soft constraints, add slacks
+    @variable(model, s_reg_req[z in reserve_zones, t in 1:n_periods] >= 0)
+    for z in reserve_zones
+        for t in 2:n_periods
+            set_normalized_coefficient(regulation_requirements[z, t], s_reg_req[z, t], -1.0)
+        end
+    end
+
+    # Add slack penalty to the objective
+    for z in reserve_zones, t in 1:n_periods
+        set_objective_coefficient(model, s_reg_req[z, t], slack)
+    end
+    return fnm
+end
+
+"""
+    con_regulation_requirements!(fnm::FullNetworkModel{<:UC})
+
+Adds zonal and market-wide regulation requirements to the full network model:
+
+$(_latex(con_regulation_requirements!))
+
+Note: This is a Hard constraint
+"""
+function con_regulation_requirements!(fnm::FullNetworkModel{<:UC})
     model = fnm.model
     system = fnm.system
     n_periods = get_forecast_horizon(system)
