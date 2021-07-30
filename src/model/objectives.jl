@@ -49,7 +49,7 @@ function obj_thermal_variable_cost!(fnm::FullNetworkModel)
     datetimes = fnm.datetimes
     @assert has_variable(model, "p")
     unit_codes = get_unit_codes(ThermalGen, system)
-    offer_curves = get_offer_curves(system)
+    offer_curves = get_offer_curves(system, datetimes)
     # Get properties of the offer curves: prices, block MW limits, number of blocks
     Λ, p_aux_lims, n_blocks = _curve_properties(offer_curves)
     # Add variables and constraints for thermal generation blocks

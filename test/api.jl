@@ -1,11 +1,11 @@
 @testset "API functions" begin
-    fnm = FullNetworkModel(TEST_SYSTEM, GLPK.Optimizer)
-    fnm_rt = FullNetworkModel(TEST_SYSTEM_RT, GLPK.Optimizer)
+    fnm = FullNetworkModel{UC}(TEST_SYSTEM, GLPK.Optimizer)
+    fnm_rt = FullNetworkModel{ED}(TEST_SYSTEM_RT, GLPK.Optimizer)
 
     @testset "Prints" begin
         t1 = DateTime(2017, 12, 15)
         t2 = DateTime(2017, 12, 15, 23)
-        @test sprint(show, fnm) == "FullNetworkModel\nTime periods: $t1 to $t2\nModel formulation: 0 variables and 0 constraints\nSystem: 32 components, 24 time periods\n"
+        @test sprint(show, fnm) == "FullNetworkModel{UC}\nTime periods: $t1 to $t2\nModel formulation: 0 variables and 0 constraints\nSystem: 32 components\n"
     end
 
     @testset "Accessors" begin

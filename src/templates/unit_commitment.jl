@@ -18,9 +18,9 @@ $(_write_formulation(
     ],
     constraints=[
         _latex(_var_thermal_gen_blocks!; commitment=true),
-        _latex(_con_generation_limits_commitment!; commitment=true),
+        _latex(_con_generation_limits_uc!),
         _latex(_con_startup_shutdown!),
-        _latex(con_ancillary_limits_commitment!),
+        _latex(con_ancillary_limits_uc!),
         _latex(con_regulation_requirements!),
         _latex(con_operating_reserve_requirements!),
         _latex(_con_ancillary_services!),
@@ -50,7 +50,7 @@ function unit_commitment(
     relax_integrality=false
 )
     # Initialize FNM
-    fnm = FullNetworkModel(system, solver, datetimes)
+    fnm = FullNetworkModel{UC}(system, solver, datetimes)
     # Variables
     var_thermal_generation!(fnm)
     var_commitment!(fnm)
@@ -101,7 +101,7 @@ function unit_commitment_soft_ramps(
     slack=1e4, relax_integrality=false
 )
     # Initialize FNM
-    fnm = FullNetworkModel(system, solver, datetimes)
+    fnm = FullNetworkModel{UC}(system, solver, datetimes)
     # Variables
     var_thermal_generation!(fnm)
     var_commitment!(fnm)
@@ -151,7 +151,7 @@ function unit_commitment_no_ramps(
     relax_integrality=false
 )
     # Initialize FNM
-    fnm = FullNetworkModel(system, solver, datetimes)
+    fnm = FullNetworkModel{UC}(system, solver, datetimes)
     # Variables
     var_thermal_generation!(fnm)
     var_commitment!(fnm)

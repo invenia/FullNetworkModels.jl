@@ -48,7 +48,7 @@ function _obj_thermal_linear_cost!(
 )
     model = fnm.model
     @assert has_variable(model, var)
-    cost = f(fnm.system)
+    cost = f(fnm.system, fnm.datetimes)
     x = model[var]
     obj_cost = sum(cost[g, t] * x[g, t] for g in unit_codes, t in fnm.datetimes)
     _add_to_objective!(model, obj_cost)

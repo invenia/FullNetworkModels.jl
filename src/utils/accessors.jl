@@ -34,9 +34,9 @@ function get_forecast_timestamps(system::System)
 end
 
 # Extra constructor for convenience
-function FullNetworkModel(system::System, solver)
+function FullNetworkModel{T}(system::System, solver) where T<:UCED
     datetimes = get_forecast_timestamps(system)
-    return FullNetworkModel(Model(solver), system, datetimes)
+    return FullNetworkModel{T}(Model(solver), system, datetimes)
 end
 
 """
