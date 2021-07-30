@@ -96,19 +96,6 @@ function tests_operating_reserve_requirements(fnm::FullNetworkModel{<:ED})
     return nothing
 end
 
-function tests_operating_reserve_requirements(fnm)
-    @test sprint(show, constraint_by_name(
-        fnm.model, "operating_reserve_requirements[1,1]"
-    )) == "operating_reserve_requirements[1,1] : r_reg[3,1] + r_spin[3,1] + r_on_sup[3,1] + r_off_sup[3,1] ≥ 0.4"
-    @test sprint(show, constraint_by_name(
-        fnm.model, "operating_reserve_requirements[2,1]"
-    )) == "operating_reserve_requirements[2,1] : r_reg[7,1] + r_spin[7,1] + r_on_sup[7,1] + r_off_sup[7,1] ≥ 0.5"
-    @test sprint(show, constraint_by_name(
-        fnm.model, "operating_reserve_requirements[$(FNM.MARKET_WIDE_ZONE),1]"
-    )) == "operating_reserve_requirements[$(FNM.MARKET_WIDE_ZONE),1] : r_reg[7,1] + r_reg[3,1] + r_spin[7,1] + r_spin[3,1] + r_on_sup[7,1] + r_on_sup[3,1] + r_off_sup[7,1] + r_off_sup[3,1] ≥ 1.2"
-    return nothing
-end
-
 function tests_ramp_rates(fnm; slack=nothing)
     @test sprint(show, constraint_by_name(
         fnm.model, "ramp_regulation[3,1]"
