@@ -11,23 +11,23 @@ function _add_to_objective!(model::Model, expr)
 end
 
 """
-    _variable_cost(model::Model, names, n_periods, n_blocks, Λ, v, sense) -> AffExpr
+    _variable_cost(model::Model, names, datetimes, n_blocks, Λ, v, sense) -> AffExpr
 
 Defines the expression of a variable cost to be added in the objective function.
 
 Arguments:
  - `model::Model`: the JuMP model that contains the variables to be used.
  - `names`: the unit codes, bid names, or similar that act as indices.
- - `n_periods`: the number of time periods considered.
+ - `datetimes`: the time periods considered.
  - `Λ`: The offer/bid prices per block.
  - `v`: The name of the variable to be considered in the cost, e.g. `:p` for generation.
  - `sense`: constant multiplying the variable cost; should be 1 or -1 (i.e. if it's a
    positive or negative expression).
 """
-function _variable_cost(model::Model, names, n_periods, n_blocks, Λ, v, sense)
+function _variable_cost(model::Model, names, datetimes, n_blocks, Λ, v, sense)
     v_aux = model[Symbol(v, :_aux)]
     variable_cost = AffExpr(0.0)
-    for n in names, t in 1:n_periods, q in 1:n_blocks[n, t]
+    for n in names, t in datetimes, q in 1:n_blocks[n, t]
         # Faster version of `variable_cost += Λ[n, t, q] * v_aux[n, t, q]`
         add_to_expression!(variable_cost, Λ[n, t, q], v_aux[n, t, q])
     end
@@ -47,18 +47,16 @@ function _obj_thermal_linear_cost!(
     unit_codes=get_unit_codes(ThermalGen, fnm.system)
 )
     model = fnm.model
-    system = fnm.system
     @assert has_variable(model, var)
-    n_periods = get_forecast_horizon(system)
-    cost = f(system)
+    cost = f(fnm.system)
     x = model[var]
-    obj_cost = sum(cost[g, t] * x[g, t] for g in unit_codes, t in 1:n_periods)
+    obj_cost = sum(cost[g, t] * x[g, t] for g in unit_codes, t in fnm.datetimes)
     _add_to_objective!(model, obj_cost)
     return fnm
 end
 
 """
-    _curve_properties(curves, n_periods; blocks=false) -> Dict, Dict, Dict
+    _curve_properties(curves; blocks=false) -> DenseAxisArray, DenseAxisArray, DenseAxisArray
 
 Returns dictionaries for several properties of offer/bid curves, namely the prices, block
 MW limits and number of blocks for each component in each time period. All dictionaries have
@@ -143,9 +141,9 @@ function _get_resolution_in_minutes(system::System)
 end
 
 """
-    _time_series_values(device, label::AbstractString,, datetimes::Vector{DateTime}) -> Vector
+    _time_series_values(device, label::AbstractString, datetimes::Vector{DateTime}) -> Vector
 
-Returns the values in `device` of the time series named `label` for the time periods in
+Returns the valuesc in `device` of the time series named `label` for the time periods in
 `datetimes`.
 """
 function _time_series_values(device, label::AbstractString, datetimes::Vector{DateTime})

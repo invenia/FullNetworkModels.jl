@@ -13,30 +13,31 @@ function basic_feasibility_checks(system::System)
     feasibility = true
     unit_codes = get_unit_codes(ThermalGen, system)
     Pmax = get_pmax(system)
-    n_periods = get_forecast_horizon(system)
-    feasibility *= _total_demand_feasibility(system, n_periods, unit_codes, Pmax)
+    feasibility *= _total_demand_feasibility(system, unit_codes, Pmax)
     feasibility *= _initial_ramp_feasibility(system, unit_codes, Pmax)
-    feasibility *= _ancillary_requirement_feasibility(system, n_periods)
+    feasibility *= _ancillary_requirement_feasibility(system)
     return feasibility
 end
 
 """
-    _total_demand_feasibility(system, n_periods, unit_codes, Pmax) -> Bool
+    _total_demand_feasibility(system, unit_codes, Pmax) -> Bool
 
 Verifies that the system is able to attend its demand in each hour by looking at the
 system-wide generation capacity.
 """
-function _total_demand_feasibility(system, n_periods, unit_codes, Pmax)
+function _total_demand_feasibility(system, unit_codes, Pmax)
     loads = get_fixed_loads(system)
     load_names = get_load_names(PowerLoad, system)
+    datetimes = get_forecast_timestamps(system)
+    n_periods = length(datetimes)
     gen_capacity = Vector{Float64}(undef, n_periods)
     system_load = Vector{Float64}(undef, n_periods)
-    infeasible_periods = Int[]
-    for t in 1:n_periods
-        gen_capacity[t] = sum(Pmax[g, t] for g in unit_codes)
-        system_load[t] = sum(loads[l, t] for l in load_names)
-        if gen_capacity[t] < system_load[t]
-            push!(infeasible_periods, t)
+    infeasible_periods = DateTime[]
+    for i in 1:length(datetimes)
+        gen_capacity[i] = sum(Pmax[g, datetimes[i]] for g in unit_codes)
+        system_load[i] = sum(loads[l, datetimes[i]] for l in load_names)
+        if gen_capacity[i] < system_load[i]
+            push!(infeasible_periods, datetimes[i])
         end
     end
     if !isempty(infeasible_periods)
@@ -51,7 +52,7 @@ function _total_demand_feasibility(system, n_periods, unit_codes, Pmax)
 end
 
 """
-    _initial_ramp_feasibility(system, unit_codes, Pmax) -> Bool
+    _initial_ramp_feasibility(system, unit_codes, datetimes, Pmax) -> Bool
 
 Verifies if the units that are initially online are able to go from their generation at t=0
 to a value within [Pmin, Pmax] at t=1. For example, in a problem with hourly resolution, if
@@ -65,9 +66,10 @@ function _initial_ramp_feasibility(system, unit_codes, Pmax)
     Pmin = get_pmin(system)
     RR = get_ramp_rates(system)
     Δt = _get_resolution_in_minutes(system)
+    h1 = first(get_forecast_timestamps(system))
     for g in unit_codes
         if U0[g] == 1
-            if P0[g] > Pmax[g, 1] + Δt * RR[g] || P0[g] < Pmin[g, 1] - Δt * RR[g]
+            if P0[g] > Pmax[g, h1] + Δt * RR[g] || P0[g] < Pmin[g, h1] - Δt * RR[g]
                 warn(LOGGER, "Initial ramp constraints are being violated. Problem will be infeasible if hard constraints for ramps are used.")
                 return false
             end
@@ -77,7 +79,7 @@ function _initial_ramp_feasibility(system, unit_codes, Pmax)
 end
 
 """
-    _ancillary_requirement_feasibility(system, n_periods) -> Bool
+    _ancillary_requirement_feasibility(system) -> Bool
 
 Verifies if there is enough capacity to attend ancillary service requirements in each zone
 (including market-wide). Note that the total regmax is used to run the operating reserve
@@ -85,7 +87,7 @@ checks – for units that are not providing regulation, Pmax should be used, but
 be known beforehand. Nonetheless, this is a bound that has virtually zero probability of
 being exceeded by the requirements unless there is some data issue.
 """
-function _ancillary_requirement_feasibility(system, n_periods)
+function _ancillary_requirement_feasibility(system)
     regmax = get_regmax(system)
     zone_gens = _generators_by_reserve_zone(system)
     reg_reqs = get_regulation_requirements(system)
@@ -97,7 +99,8 @@ function _ancillary_requirement_feasibility(system, n_periods)
         get_on_sup_providers(system),
         get_off_sup_providers(system),
     )
-    for t in 1:n_periods, zone in get_reserve_zones(system)
+    datetimes = get_forecast_timestamps(system)
+    for t in datetimes, zone in get_reserve_zones(system)
         # Get the units providing regulation within that zone
         reg_zone_units = intersect(zone_gens[zone], reg_units)
         total_regmax = sum(regmax[g, t] for g in reg_zone_units)

@@ -19,11 +19,10 @@
         system = fake_3bus_system(MISO, DA; n_periods=2)
         fnm = unit_commitment(system, GLPK.Optimizer)
         unit_codes = get_unit_codes(ThermalGen, fnm.system)
-        n_periods = get_forecast_horizon(fnm.system)
         offer_curves = get_offer_curves(fnm.system)
-        Λ, block_lims, n_blocks = FNM._curve_properties(offer_curves, n_periods)
+        Λ, block_lims, n_blocks = FNM._curve_properties(offer_curves)
         thermal_cost = FNM._variable_cost(
-            fnm.model, unit_codes, n_periods, n_blocks, Λ, :p, 1
+            fnm.model, unit_codes, fnm.datetimes, n_blocks, Λ, :p, 1
         )
         p_aux = fnm.model[:p_aux]
         # Generators 3 and 7 have offer curves with prices and [600, 800, 825]

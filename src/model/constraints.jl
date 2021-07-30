@@ -56,7 +56,7 @@ function con_generation_limits!(fnm::FullNetworkModel)
             model,
             get_commitment_status(system),
             unit_codes,
-            get_forecast_horizon(system),
+            fnm.datetimes,
             get_pmin(system),
             get_pmax(system),
         )
@@ -65,7 +65,7 @@ function con_generation_limits!(fnm::FullNetworkModel)
             model,
             Val(has_variable(model, "u")),
             unit_codes,
-            get_forecast_horizon(system),
+            fnm.datetimes,
             get_pmin(system),
             get_pmax(system),
         )
@@ -113,9 +113,9 @@ if `fnm.system` has commitment as a forecast named "status".
 function con_ancillary_limits!(fnm::FullNetworkModel)
     model = fnm.model
     system = fnm.system
+    datetimes = fnm.datetimes
     @assert has_variable(model, "p")
     unit_codes = get_unit_codes(ThermalGen, system)
-    n_periods = get_forecast_horizon(system)
     Pmax = get_pmax(system)
     Pregmax = get_regmax(system)
     Pmin = get_pmin(system)
@@ -127,29 +127,29 @@ function con_ancillary_limits!(fnm::FullNetworkModel)
         U = get_commitment_status(system)
         U_reg = get_commitment_reg_status(system)
         # Upper bound on generation + ancillary services
-        _con_ancillary_max_dispatch!(model, unit_codes, n_periods, Pmax, Pregmax, U, U_reg)
+        _con_ancillary_max_dispatch!(model, unit_codes, datetimes, Pmax, Pregmax, U, U_reg)
         # Lower bound on generation - ancillary services
-        _con_ancillary_min_dispatch!(model, unit_codes, n_periods, Pmin, Pregmin, U, U_reg)
+        _con_ancillary_min_dispatch!(model, unit_codes, datetimes, Pmin, Pregmin, U, U_reg)
         # Upper bound on spinning + online supplemental reserves
-        _con_spin_and_sup_max_dispatch!(model, unit_codes, n_periods, Pmin, Pmax, U)
+        _con_spin_and_sup_max_dispatch!(model, unit_codes, datetimes, Pmin, Pmax, U)
         # Upper bound on offline supplemental reserve
-        _con_off_sup_max_dispatch!(model, unit_codes, n_periods, Pmin, Pmax, U)
+        _con_off_sup_max_dispatch!(model, unit_codes, datetimes, Pmin, Pmax, U)
         # Ensure that units that don't provide services have services set to zero
-        _con_zero_non_providers_dispatch!(model, system, unit_codes, n_periods)
+        _con_zero_non_providers_dispatch!(model, system, unit_codes, datetimes)
     else
         @assert has_variable(model, "u")
         # Upper bound on generation + ancillary services
-        _con_ancillary_max_commitment!(model, unit_codes, n_periods, Pmax, Pregmax)
+        _con_ancillary_max_commitment!(model, unit_codes, datetimes, Pmax, Pregmax)
         # Lower bound on generation - ancillary services
-        _con_ancillary_min_commitment!(model, unit_codes, n_periods, Pmin, Pregmin)
+        _con_ancillary_min_commitment!(model, unit_codes, datetimes, Pmin, Pregmin)
         # Upper bound on regulation
-        _con_regulation_max_commitment!(model, unit_codes, n_periods, Pregmin, Pregmax)
+        _con_regulation_max_commitment!(model, unit_codes, datetimes, Pregmin, Pregmax)
         # Upper bound on spinning + online supplemental reserves
-        _con_spin_and_sup_max_commitment!(model, unit_codes, n_periods, Pmin, Pmax)
+        _con_spin_and_sup_max_commitment!(model, unit_codes, datetimes, Pmin, Pmax)
         # Upper bound on offline supplemental reserve
-        _con_off_sup_max_commitment!(model, unit_codes, n_periods, Pmin, Pmax)
+        _con_off_sup_max_commitment!(model, unit_codes, datetimes, Pmin, Pmax)
         # Ensure that units that don't provide services have services set to zero
-        _con_zero_non_providers_commitment!(model, system, unit_codes, n_periods)
+        _con_zero_non_providers_commitment!(model, system, unit_codes, datetimes)
     end
     return fnm
 end
@@ -170,7 +170,6 @@ $(_latex(con_regulation_requirements!))
 function con_regulation_requirements!(fnm::FullNetworkModel)
     model = fnm.model
     system = fnm.system
-    n_periods = get_forecast_horizon(system)
     reserve_zones = get_reserve_zones(system)
     zone_gens = _generators_by_reserve_zone(system)
     reg_requirements = get_regulation_requirements(system)
@@ -178,7 +177,7 @@ function con_regulation_requirements!(fnm::FullNetworkModel)
     r_reg = model[:r_reg]
     @constraint(
         model,
-        regulation_requirements[z in reserve_zones, t in 1:n_periods],
+        regulation_requirements[z in reserve_zones, t in fnm.datetimes],
         sum(r_reg[g, t] for g in zone_gens[z]) >= reg_requirements[z]
     )
     return fnm
@@ -200,7 +199,6 @@ $(_latex(con_operating_reserve_requirements!))
 function con_operating_reserve_requirements!(fnm::FullNetworkModel)
     model = fnm.model
     system = fnm.system
-    n_periods = get_forecast_horizon(system)
     reserve_zones = get_reserve_zones(system)
     zone_gens = _generators_by_reserve_zone(system)
     or_requirements = get_operating_reserve_requirements(system)
@@ -211,7 +209,7 @@ function con_operating_reserve_requirements!(fnm::FullNetworkModel)
     r_off_sup = model[:r_off_sup]
     @constraint(
         model,
-        operating_reserve_requirements[z in reserve_zones, t in 1:n_periods],
+        operating_reserve_requirements[z in reserve_zones, t in fnm.datetimes],
         sum(
             r_reg[g, t] + r_spin[g, t] + r_on_sup[g, t] + r_off_sup[g, t]
                 for g in zone_gens[z]
@@ -283,7 +281,6 @@ function con_energy_balance!(fnm::FullNetworkModel)
     inc_names = get_bid_names(Increment, system)
     dec_names = get_bid_names(Decrement, system)
     psd_names = get_bid_names(PriceSensitiveDemand, system)
-    n_periods = get_forecast_horizon(system)
     D = get_fixed_loads(system)
     # Get variables for better readability
     p = model[:p]
@@ -300,7 +297,7 @@ function con_energy_balance!(fnm::FullNetworkModel)
     return fnm
 end
 
-function _con_generation_limits_commitment!(model::Model, ::Val{true}, unit_codes, n_periods, Pmin, Pmax)
+function _con_generation_limits_commitment!(model::Model, ::Val{true}, unit_codes, datetimes, Pmin, Pmax)
     p = model[:p]
     u = model[:u]
     @constraint(
@@ -316,7 +313,7 @@ function _con_generation_limits_commitment!(model::Model, ::Val{true}, unit_code
     return model
 end
 
-function _con_generation_limits_commitment!(model::Model, ::Val{false}, unit_codes, n_periods, Pmin, Pmax)
+function _con_generation_limits_commitment!(model::Model, ::Val{false}, unit_codes, datetimes, Pmin, Pmax)
     p = model[:p]
     @constraint(
         model,
@@ -330,7 +327,7 @@ function _con_generation_limits_commitment!(model::Model, ::Val{false}, unit_cod
     )
 end
 
-function _con_generation_limits_dispatch!(model::Model, U, unit_codes, n_periods, Pmin, Pmax)
+function _con_generation_limits_dispatch!(model::Model, U, unit_codes, datetimes, Pmin, Pmax)
     p = model[:p]
     @constraint(
         model,
@@ -345,7 +342,7 @@ function _con_generation_limits_dispatch!(model::Model, U, unit_codes, n_periods
     return model
 end
 
-function _con_ancillary_max_commitment!(model::Model, unit_codes, n_periods, Pmax, Pregmax)
+function _con_ancillary_max_commitment!(model::Model, unit_codes, datetimes, Pmax, Pregmax)
     # Get variables for better readability
     p = model[:p]
     r_reg = model[:r_reg]
@@ -361,7 +358,7 @@ function _con_ancillary_max_commitment!(model::Model, unit_codes, n_periods, Pma
     )
     return model
 end
-function _con_ancillary_max_dispatch!(model::Model, unit_codes, n_periods, Pmax, Pregmax, U, U_reg)
+function _con_ancillary_max_dispatch!(model::Model, unit_codes, datetimes, Pmax, Pregmax, U, U_reg)
     # Get variables for better readability
     p = model[:p]
     r_reg = model[:r_reg]
@@ -376,7 +373,7 @@ function _con_ancillary_max_dispatch!(model::Model, unit_codes, n_periods, Pmax,
     return model
 end
 
-function _con_ancillary_min_commitment!(model::Model, unit_codes, n_periods, Pmin, Pregmin)
+function _con_ancillary_min_commitment!(model::Model, unit_codes, datetimes, Pmin, Pregmin)
     # Get variables for better readability
     p = model[:p]
     r_reg = model[:r_reg]
@@ -390,7 +387,7 @@ function _con_ancillary_min_commitment!(model::Model, unit_codes, n_periods, Pmi
     )
     return model
 end
-function _con_ancillary_min_dispatch!(model::Model, unit_codes, n_periods, Pmin, Pregmin, U, U_reg)
+function _con_ancillary_min_dispatch!(model::Model, unit_codes, datetimes, Pmin, Pregmin, U, U_reg)
     # Get variables for better readability
     p = model[:p]
     r_reg = model[:r_reg]
@@ -403,7 +400,7 @@ function _con_ancillary_min_dispatch!(model::Model, unit_codes, n_periods, Pmin,
     return model
 end
 
-function _con_regulation_max_commitment!(model::Model, unit_codes, n_periods, Pregmin, Pregmax)
+function _con_regulation_max_commitment!(model::Model, unit_codes, datetimes, Pregmin, Pregmax)
     # Get variable for better readability
     r_reg = model[:r_reg]
     u_reg = model[:u_reg]
@@ -415,7 +412,7 @@ function _con_regulation_max_commitment!(model::Model, unit_codes, n_periods, Pr
     return model
 end
 
-function _con_spin_and_sup_max_commitment!(model::Model, unit_codes, n_periods, Pmin, Pmax)
+function _con_spin_and_sup_max_commitment!(model::Model, unit_codes, datetimes, Pmin, Pmax)
     # Get variables for better readability
     r_spin = model[:r_spin]
     r_on_sup = model[:r_on_sup]
@@ -427,7 +424,7 @@ function _con_spin_and_sup_max_commitment!(model::Model, unit_codes, n_periods, 
     )
     return model
 end
-function _con_spin_and_sup_max_dispatch!(model::Model, unit_codes, n_periods, Pmin, Pmax, U)
+function _con_spin_and_sup_max_dispatch!(model::Model, unit_codes, datetimes, Pmin, Pmax, U)
     # Get variables for better readability
     r_spin = model[:r_spin]
     r_on_sup = model[:r_on_sup]
@@ -439,7 +436,7 @@ function _con_spin_and_sup_max_dispatch!(model::Model, unit_codes, n_periods, Pm
     return model
 end
 
-function _con_off_sup_max_commitment!(model::Model, unit_codes, n_periods, Pmin, Pmax)
+function _con_off_sup_max_commitment!(model::Model, unit_codes, datetimes, Pmin, Pmax)
     # Get variables for better readability
     r_off_sup = model[:r_off_sup]
     u = model[:u]
@@ -450,7 +447,7 @@ function _con_off_sup_max_commitment!(model::Model, unit_codes, n_periods, Pmin,
     )
     return model
 end
-function _con_off_sup_max_dispatch!(model::Model, unit_codes, n_periods, Pmin, Pmax, U)
+function _con_off_sup_max_dispatch!(model::Model, unit_codes, datetimes, Pmin, Pmax, U)
     # Get variables for better readability
     r_off_sup = model[:r_off_sup]
     @constraint(
@@ -461,7 +458,7 @@ function _con_off_sup_max_dispatch!(model::Model, unit_codes, n_periods, Pmin, P
     return model
 end
 
-function _con_zero_non_providers_commitment!(model::Model, system::System, unit_codes, n_periods)
+function _con_zero_non_providers_commitment!(model::Model, system::System, unit_codes, datetimes)
     # Units that provide each service
     reg_providers = get_regulation_providers(system)
     spin_providers = get_spinning_providers(system)
@@ -475,33 +472,33 @@ function _con_zero_non_providers_commitment!(model::Model, system::System, unit_
     r_off_sup = model[:r_off_sup]
     @constraint(
         model,
-        zero_reg[g in setdiff(unit_codes, reg_providers), t in 1:n_periods],
+        zero_reg[g in setdiff(unit_codes, reg_providers), t in datetimes],
         r_reg[g, t] == 0
     )
     @constraint(
         model,
-        zero_u_reg[g in setdiff(unit_codes, reg_providers), t in 1:n_periods],
+        zero_u_reg[g in setdiff(unit_codes, reg_providers), t in datetimes],
         u_reg[g, t] == 0
     )
     @constraint(
         model,
-        zero_spin[g in setdiff(unit_codes, spin_providers), t in 1:n_periods],
+        zero_spin[g in setdiff(unit_codes, spin_providers), t in datetimes],
         r_spin[g, t] == 0
     )
     @constraint(
         model,
-        zero_on_sup[g in setdiff(unit_codes, on_sup_providers), t in 1:n_periods],
+        zero_on_sup[g in setdiff(unit_codes, on_sup_providers), t in datetimes],
         r_on_sup[g, t] == 0
     )
     @constraint(
         model,
-        zero_off_sup[g in setdiff(unit_codes, off_sup_providers), t in 1:n_periods],
+        zero_off_sup[g in setdiff(unit_codes, off_sup_providers), t in datetimes],
         r_off_sup[g, t] == 0
     )
     return model
 end
 
-function _con_zero_non_providers_dispatch!(model::Model, system::System, unit_codes, n_periods)
+function _con_zero_non_providers_dispatch!(model::Model, system::System, unit_codes, datetimes)
     # Units that provide each service
     reg_providers = get_regulation_providers(system)
     spin_providers = get_spinning_providers(system)
@@ -514,22 +511,22 @@ function _con_zero_non_providers_dispatch!(model::Model, system::System, unit_co
     r_off_sup = model[:r_off_sup]
     @constraint(
         model,
-        zero_reg[g in setdiff(unit_codes, reg_providers), t in 1:n_periods],
+        zero_reg[g in setdiff(unit_codes, reg_providers), t in datetimes],
         r_reg[g, t] == 0
     )
     @constraint(
         model,
-        zero_spin[g in setdiff(unit_codes, spin_providers), t in 1:n_periods],
+        zero_spin[g in setdiff(unit_codes, spin_providers), t in datetimes],
         r_spin[g, t] == 0
     )
     @constraint(
         model,
-        zero_on_sup[g in setdiff(unit_codes, on_sup_providers), t in 1:n_periods],
+        zero_on_sup[g in setdiff(unit_codes, on_sup_providers), t in datetimes],
         r_on_sup[g, t] == 0
     )
     @constraint(
         model,
-        zero_off_sup[g in setdiff(unit_codes, off_sup_providers), t in 1:n_periods],
+        zero_off_sup[g in setdiff(unit_codes, off_sup_providers), t in datetimes],
         r_off_sup[g, t] == 0
     )
     return model
@@ -538,8 +535,8 @@ end
 function _con_ancillary_ramp_rates!(fnm::FullNetworkModel)
     model = fnm.model
     system = fnm.system
+    datetimes = fnm.datetimes
     unit_codes = get_unit_codes(ThermalGen, system)
-    n_periods = get_forecast_horizon(system)
     # Get ramp rates in pu/min
     RR = get_ramp_rates(system)
     # Get variables for better readability
@@ -550,13 +547,13 @@ function _con_ancillary_ramp_rates!(fnm::FullNetworkModel)
     # Allocated regulation can't be over 5 minutes of ramping
     @constraint(
         model,
-        ramp_regulation[g in unit_codes, t in 1:n_periods],
+        ramp_regulation[g in unit_codes, t in datetimes],
         r_reg[g, t] <= 5 * RR[g]
     )
     # Allocated reserves can't be over 10 minutes of ramping
     @constraint(
         model,
-        ramp_spin_sup[g in unit_codes, t in 1:n_periods],
+        ramp_spin_sup[g in unit_codes, t in datetimes],
         r_spin[g, t] + r_on_sup[g, t] + r_off_sup[g, t] <= 10 * RR[g]
     )
     return fnm
@@ -565,13 +562,15 @@ end
 function _con_generation_ramp_rates!(fnm::FullNetworkModel, slack)
     model = fnm.model
     system = fnm.system
+    datetimes = fnm.datetimes
     unit_codes = get_unit_codes(ThermalGen, system)
-    n_periods = get_forecast_horizon(system)
     RR = get_ramp_rates(system)
     SU = get_startup_limits(system)
     P0 = get_initial_generation(system)
     U0 = get_initial_commitment(system)
     Δt = _get_resolution_in_minutes(system)
+    Δh = Hour(Δt / 60) # assume hourly resolution
+    h1 = first(datetimes)
     p = model[:p]
     u = model[:u]
     v = model[:v]
@@ -579,41 +578,41 @@ function _con_generation_ramp_rates!(fnm::FullNetworkModel, slack)
     # Ramp up - generation can't go up more than the ramp capacity (defined in pu/min)
     @constraint(
         model,
-        ramp_up[g in unit_codes, t in 2:n_periods],
-        p[g, t] - p[g, t - 1] <= Δt * RR[g] * u[g, t - 1] + SU[g, t] * v[g, t]
+        ramp_up[g in unit_codes, t in datetimes[2:end]],
+        p[g, t] - p[g, t - Δh] <= Δt * RR[g] * u[g, t - Δh] + SU[g, t] * v[g, t]
     )
     @constraint(
         model,
         ramp_up_initial[g in unit_codes],
-        p[g, 1] - P0[g] <= Δt * RR[g] * U0[g] + SU[g, 1] * v[g, 1]
+        p[g, h1] - P0[g] <= Δt * RR[g] * U0[g] + SU[g, h1] * v[g, h1]
     )
     # Ramp down - generation can't go down more than ramp capacity (defined in pu/min)
     # We consider SU = SD
     @constraint(
         model,
-        ramp_down[g in unit_codes, t in 2:n_periods],
-        p[g, t - 1] - p[g, t] <= Δt * RR[g] * u[g, t] + SU[g, t] * w[g, t]
+        ramp_down[g in unit_codes, t in datetimes[2:end]],
+        p[g, t - Δh] - p[g, t] <= Δt * RR[g] * u[g, t] + SU[g, t] * w[g, t]
     )
     @constraint(
         model,
         ramp_down_initial[g in unit_codes],
-        P0[g] - p[g, 1] <= Δt * RR[g] * u[g, 1] + SU[g, 1] * w[g, 1]
+        P0[g] - p[g, h1] <= Δt * RR[g] * u[g, h1] + SU[g, h1] * w[g, h1]
     )
 
     # If the constraints are supposed to be soft constraints, add slacks
     if slack !== nothing
-        @variable(model, s_ramp[g in unit_codes, t in 1:n_periods] >= 0)
+        @variable(model, s_ramp[g in unit_codes, t in datetimes] >= 0)
         for g in unit_codes
-            set_normalized_coefficient(ramp_up_initial[g], s_ramp[g, 1], -1.0)
-            set_normalized_coefficient(ramp_down_initial[g], s_ramp[g, 1], -1.0)
-            for t in 2:n_periods
+            set_normalized_coefficient(ramp_up_initial[g], s_ramp[g, h1], -1.0)
+            set_normalized_coefficient(ramp_down_initial[g], s_ramp[g, h1], -1.0)
+            for t in datetimes[2:end]
                 set_normalized_coefficient(ramp_up[g, t], s_ramp[g, t], -1.0)
                 set_normalized_coefficient(ramp_down[g, t], s_ramp[g, t], -1.0)
             end
         end
 
         # Add slack penalty to the objective
-        for g in unit_codes, t in 1:n_periods
+        for g in unit_codes, t in datetimes
             set_objective_coefficient(model, s_ramp[g, t], slack)
         end
     end

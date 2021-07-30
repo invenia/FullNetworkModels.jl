@@ -3,119 +3,122 @@ function tests_generation_limits(fnm)
         @test has_constraint(fnm.model, "generation_min")
         @test has_constraint(fnm.model, "generation_max")
         @test issetequal(fnm.model[:generation_min].axes[1], (7, 3))
-        @test issetequal(fnm.model[:generation_min].axes[2], 1:24)
+        @test issetequal(fnm.model[:generation_min].axes[2], fnm.datetimes)
         @test issetequal(fnm.model[:generation_max].axes[1], (7, 3))
-        @test issetequal(fnm.model[:generation_max].axes[2], 1:24)
+        @test issetequal(fnm.model[:generation_max].axes[2], fnm.datetimes)
     end
     return nothing
 end
 
 function tests_ancillary_limits_commitment(fnm)
-    @test sprint(show, constraint_by_name(fnm.model, "ancillary_max[7,1]")) ==
-        "ancillary_max[7,1] : p[7,1] - 8 u[7,1] + r_reg[7,1] + 0.5 u_reg[7,1] + r_spin[7,1] + r_on_sup[7,1] ≤ 0.0"
-    @test sprint(show, constraint_by_name(fnm.model, "ancillary_min[7,1]")) ==
-        "ancillary_min[7,1] : p[7,1] - 0.5 u[7,1] - r_reg[7,1] ≥ 0.0"
-    @test sprint(show, constraint_by_name(fnm.model, "regulation_max[7,1]")) ==
-        "regulation_max[7,1] : r_reg[7,1] - 3.5 u_reg[7,1] ≤ 0.0"
-    @test sprint(show, constraint_by_name(fnm.model, "spin_and_sup_max[7,1]")) ==
-        "spin_and_sup_max[7,1] : -7.5 u[7,1] + r_spin[7,1] + r_on_sup[7,1] ≤ 0.0"
-    @test sprint(show, constraint_by_name(fnm.model, "off_sup_max[7,1]")) ==
-        "off_sup_max[7,1] : 7.5 u[7,1] + r_off_sup[7,1] ≤ 7.5"
+    t = first(fnm.datetimes)
+    @test sprint(show, constraint_by_name(fnm.model, "ancillary_max[7,$t]")) ==
+        "ancillary_max[7,$t] : p[7,$t] - 8 u[7,$t] + r_reg[7,$t] + 0.5 u_reg[7,$t] + r_spin[7,$t] + r_on_sup[7,$t] ≤ 0.0"
+    @test sprint(show, constraint_by_name(fnm.model, "ancillary_min[7,$t]")) ==
+        "ancillary_min[7,$t] : p[7,$t] - 0.5 u[7,$t] - r_reg[7,$t] ≥ 0.0"
+    @test sprint(show, constraint_by_name(fnm.model, "regulation_max[7,$t]")) ==
+        "regulation_max[7,$t] : r_reg[7,$t] - 3.5 u_reg[7,$t] ≤ 0.0"
+    @test sprint(show, constraint_by_name(fnm.model, "spin_and_sup_max[7,$t]")) ==
+        "spin_and_sup_max[7,$t] : -7.5 u[7,$t] + r_spin[7,$t] + r_on_sup[7,$t] ≤ 0.0"
+    @test sprint(show, constraint_by_name(fnm.model, "off_sup_max[7,$t]")) ==
+        "off_sup_max[7,$t] : 7.5 u[7,$t] + r_off_sup[7,$t] ≤ 7.5"
     # Units in test system provide regulation, spinning, and on/off supplemental
     unit_codes = get_unit_codes(ThermalGen, fnm.system)
-    n_periods = get_forecast_horizon(fnm.system)
-    for str in ("reg", "u_reg", "spin", "on_sup", "off_sup"), g in unit_codes, t in 1:n_periods
+    for str in ("reg", "u_reg", "spin", "on_sup", "off_sup"), g in unit_codes, t in fnm.datetimes
         @test constraint_by_name(fnm.model, "zero_$str[$g,$t]") === nothing
     end
     return nothing
 end
 
 function tests_ancillary_limits_dispatch(fnm)
-    @test sprint(show, constraint_by_name(fnm.model, "ancillary_max[7,1]")) ==
-        "ancillary_max[7,1] : p[7,1] + r_reg[7,1] + r_spin[7,1] + r_on_sup[7,1] ≤ 0.0"
-    @test sprint(show, constraint_by_name(fnm.model, "ancillary_min[7,1]")) ==
-        "ancillary_min[7,1] : p[7,1] - r_reg[7,1] ≥ 0.0"
-    @test sprint(show, constraint_by_name(fnm.model, "spin_and_sup_max[7,1]")) ==
-        "spin_and_sup_max[7,1] : r_spin[7,1] + r_on_sup[7,1] ≤ 0.0"
-    @test sprint(show, constraint_by_name(fnm.model, "off_sup_max[7,1]")) ==
-        "off_sup_max[7,1] : r_off_sup[7,1] ≤ 7.5"
+    t = first(fnm.datetimes)
+    @test sprint(show, constraint_by_name(fnm.model, "ancillary_max[7,$t]")) ==
+        "ancillary_max[7,$t] : p[7,$t] + r_reg[7,$t] + r_spin[7,$t] + r_on_sup[7,$t] ≤ 0.0"
+    @test sprint(show, constraint_by_name(fnm.model, "ancillary_min[7,$t]")) ==
+        "ancillary_min[7,$t] : p[7,$t] - r_reg[7,$t] ≥ 0.0"
+    @test sprint(show, constraint_by_name(fnm.model, "spin_and_sup_max[7,$t]")) ==
+        "spin_and_sup_max[7,$t] : r_spin[7,$t] + r_on_sup[7,$t] ≤ 0.0"
+    @test sprint(show, constraint_by_name(fnm.model, "off_sup_max[7,$t]")) ==
+        "off_sup_max[7,$t] : r_off_sup[7,$t] ≤ 7.5"
     # Units in test system provide regulation, spinning, and on/off supplemental
     unit_codes = get_unit_codes(ThermalGen, fnm.system)
-    n_periods = get_forecast_horizon(fnm.system)
-    for str in ("reg", "spin", "on_sup", "off_sup"), g in unit_codes, t in 1:n_periods
+    for str in ("reg", "spin", "on_sup", "off_sup"), g in unit_codes, t in fnm.datetimes
         @test constraint_by_name(fnm.model, "zero_$str[$g,$t]") === nothing
     end
     return nothing
 end
 
 function tests_regulation_requirements(fnm)
-    @test sprint(show, constraint_by_name(fnm.model, "regulation_requirements[1,1]")) ==
-        "regulation_requirements[1,1] : r_reg[3,1] ≥ 0.3"
-    @test sprint(show, constraint_by_name(fnm.model, "regulation_requirements[2,1]")) ==
-        "regulation_requirements[2,1] : r_reg[7,1] ≥ 0.4"
+    t = first(fnm.datetimes)
+    @test sprint(show, constraint_by_name(fnm.model, "regulation_requirements[1,$t]")) ==
+        "regulation_requirements[1,$t] : r_reg[3,$t] ≥ 0.3"
+    @test sprint(show, constraint_by_name(fnm.model, "regulation_requirements[2,$t]")) ==
+        "regulation_requirements[2,$t] : r_reg[7,$t] ≥ 0.4"
     @test sprint(show, constraint_by_name(
-        fnm.model, "regulation_requirements[$(FNM.MARKET_WIDE_ZONE),1]"
-    )) == "regulation_requirements[$(FNM.MARKET_WIDE_ZONE),1] : r_reg[7,1] + r_reg[3,1] ≥ 0.8"
+        fnm.model, "regulation_requirements[$(FNM.MARKET_WIDE_ZONE),$t]"
+    )) == "regulation_requirements[$(FNM.MARKET_WIDE_ZONE),$t] : r_reg[7,$t] + r_reg[3,$t] ≥ 0.8"
     return nothing
 end
 
 function tests_operating_reserve_requirements(fnm)
+    t = first(fnm.datetimes)
     @test sprint(show, constraint_by_name(
-        fnm.model, "operating_reserve_requirements[1,1]"
-    )) == "operating_reserve_requirements[1,1] : r_reg[3,1] + r_spin[3,1] + r_on_sup[3,1] + r_off_sup[3,1] ≥ 0.4"
+        fnm.model, "operating_reserve_requirements[1,$t]"
+    )) == "operating_reserve_requirements[1,$t] : r_reg[3,$t] + r_spin[3,$t] + r_on_sup[3,$t] + r_off_sup[3,$t] ≥ 0.4"
     @test sprint(show, constraint_by_name(
-        fnm.model, "operating_reserve_requirements[2,1]"
-    )) == "operating_reserve_requirements[2,1] : r_reg[7,1] + r_spin[7,1] + r_on_sup[7,1] + r_off_sup[7,1] ≥ 0.5"
+        fnm.model, "operating_reserve_requirements[2,$t]"
+    )) == "operating_reserve_requirements[2,$t] : r_reg[7,$t] + r_spin[7,$t] + r_on_sup[7,$t] + r_off_sup[7,$t] ≥ 0.5"
     @test sprint(show, constraint_by_name(
-        fnm.model, "operating_reserve_requirements[$(FNM.MARKET_WIDE_ZONE),1]"
-    )) == "operating_reserve_requirements[$(FNM.MARKET_WIDE_ZONE),1] : r_reg[7,1] + r_reg[3,1] + r_spin[7,1] + r_spin[3,1] + r_on_sup[7,1] + r_on_sup[3,1] + r_off_sup[7,1] + r_off_sup[3,1] ≥ 1.2"
+        fnm.model, "operating_reserve_requirements[$(FNM.MARKET_WIDE_ZONE),$t]"
+    )) == "operating_reserve_requirements[$(FNM.MARKET_WIDE_ZONE),$t] : r_reg[7,$t] + r_reg[3,$t] + r_spin[7,$t] + r_spin[3,$t] + r_on_sup[7,$t] + r_on_sup[3,$t] + r_off_sup[7,$t] + r_off_sup[3,$t] ≥ 1.2"
     return nothing
 end
 
 function tests_ramp_rates(fnm; slack=nothing)
+    t1 = fnm.datetimes[1]
+    t2 = fnm.datetimes[2]
     @test sprint(show, constraint_by_name(
-        fnm.model, "ramp_regulation[3,1]"
-    )) == "ramp_regulation[3,1] : r_reg[3,1] ≤ 1.25"
+        fnm.model, "ramp_regulation[3,$t1]"
+    )) == "ramp_regulation[3,$t1] : r_reg[3,$t1] ≤ 1.25"
     @test sprint(show, constraint_by_name(
-        fnm.model, "ramp_spin_sup[3,1]"
-    )) == "ramp_spin_sup[3,1] : r_spin[3,1] + r_on_sup[3,1] + r_off_sup[3,1] ≤ 2.5"
-    @test constraint_by_name(fnm.model, "ramp_up[3,1]") === nothing
-    @test constraint_by_name(fnm.model, "ramp_down[3,1]") === nothing
+        fnm.model, "ramp_spin_sup[3,$t1]"
+    )) == "ramp_spin_sup[3,$t1] : r_spin[3,$t1] + r_on_sup[3,$t1] + r_off_sup[3,$t1] ≤ 2.5"
+    @test constraint_by_name(fnm.model, "ramp_up[3,$t1]") === nothing
+    @test constraint_by_name(fnm.model, "ramp_down[3,$t1]") === nothing
     if slack !== nothing
         @test sprint(show, constraint_by_name(
-        fnm.model, "ramp_up[3,2]"
-        )) == "ramp_up[3,2] : -p[3,1] + p[3,2] - 15 u[3,1] - 0.5 v[3,2] - s_ramp[3,2] ≤ 0.0"
+        fnm.model, "ramp_up[3,$t2]"
+        )) == "ramp_up[3,$t2] : -p[3,$t1] + p[3,$t2] - 15 u[3,$t1] - 0.5 v[3,$t2] - s_ramp[3,$t2] ≤ 0.0"
         @test sprint(show, constraint_by_name(
-            fnm.model, "ramp_down[3,2]"
-        )) == "ramp_down[3,2] : p[3,1] - p[3,2] - 15 u[3,2] - 0.5 w[3,2] - s_ramp[3,2] ≤ 0.0"
+            fnm.model, "ramp_down[3,$t2]"
+        )) == "ramp_down[3,$t2] : p[3,$t1] - p[3,$t2] - 15 u[3,$t2] - 0.5 w[3,$t2] - s_ramp[3,$t2] ≤ 0.0"
         @test sprint(show, constraint_by_name(
             fnm.model, "ramp_up_initial[3]"
-        )) == "ramp_up_initial[3] : p[3,1] - 0.5 v[3,1] - s_ramp[3,1] ≤ 16.0"
+        )) == "ramp_up_initial[3] : p[3,$t1] - 0.5 v[3,$t1] - s_ramp[3,$t1] ≤ 16.0"
         @test sprint(show, constraint_by_name(
             fnm.model, "ramp_down_initial[3]"
-        )) == "ramp_down_initial[3] : -p[3,1] - 15 u[3,1] - 0.5 w[3,1] - s_ramp[3,1] ≤ -1.0"
+        )) == "ramp_down_initial[3] : -p[3,$t1] - 15 u[3,$t1] - 0.5 w[3,$t1] - s_ramp[3,$t1] ≤ -1.0"
     else
         @test sprint(show, constraint_by_name(
-        fnm.model, "ramp_up[3,2]"
-        )) == "ramp_up[3,2] : -p[3,1] + p[3,2] - 15 u[3,1] - 0.5 v[3,2] ≤ 0.0"
+        fnm.model, "ramp_up[3,$t2]"
+        )) == "ramp_up[3,$t2] : -p[3,$t1] + p[3,$t2] - 15 u[3,$t1] - 0.5 v[3,$t2] ≤ 0.0"
         @test sprint(show, constraint_by_name(
-            fnm.model, "ramp_down[3,2]"
-        )) == "ramp_down[3,2] : p[3,1] - p[3,2] - 15 u[3,2] - 0.5 w[3,2] ≤ 0.0"
+            fnm.model, "ramp_down[3,$t2]"
+        )) == "ramp_down[3,$t2] : p[3,$t1] - p[3,$t2] - 15 u[3,$t2] - 0.5 w[3,$t2] ≤ 0.0"
         @test sprint(show, constraint_by_name(
             fnm.model, "ramp_up_initial[3]"
-        )) == "ramp_up_initial[3] : p[3,1] - 0.5 v[3,1] ≤ 16.0"
+        )) == "ramp_up_initial[3] : p[3,$t1] - 0.5 v[3,$t1] ≤ 16.0"
         @test sprint(show, constraint_by_name(
             fnm.model, "ramp_down_initial[3]"
-        )) == "ramp_down_initial[3] : -p[3,1] - 15 u[3,1] - 0.5 w[3,1] ≤ -1.0"
+        )) == "ramp_down_initial[3] : -p[3,$t1] - 15 u[3,$t1] - 0.5 w[3,$t1] ≤ -1.0"
     end
     return nothing
 end
 
 function tests_energy_balance(fnm)
     load_names = get_load_names(PowerLoad, fnm.system)
-    n_periods = get_forecast_horizon(fnm.system)
     D = get_fixed_loads(fnm.system)
-    @testset "Constraints were correctly defined" for t in 1:n_periods
+    @testset "Constraints were correctly defined" for t in fnm.datetimes
         system_load = sum(D[f, t] for f in load_names)
         @test sprint(show, constraint_by_name(fnm.model, "energy_balance[$t]")) ==
             "energy_balance[$t] : p[7,$t] + p[3,$t] + inc[111_1,$t] - dec[222_1,$t] - psd[333_1,$t] = $(system_load)"

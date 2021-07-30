@@ -19,15 +19,19 @@ end
 
 # This is necessary to avoid printing a lot of stuff due to PowerSystems printing
 function Base.show(io::IO, fnm::FullNetworkModel)
-    if length(fnm.dastetimes > 1)
-        println(io, "FullNetworkModel defined for $(first(fnm.datetimes)) to $(last(fnm.datetimes))")
+    println(io, "FullNetworkModel")
+    if length(fnm.datetimes) > 1
+        println(io, "Time periods: $(first(fnm.datetimes)) to $(last(fnm.datetimes))")
     else
-        println(io, "FullNetworkModel defined for $(only(fnm.datetimes))")
+        println(io, "Time periods: $(only(fnm.datetimes))")
     end
     n_vars = num_variables(fnm.model)
-    n_cons = sum(
-        num_constraints(fnm.model, F, S) for (F, S) in list_of_constraint_types(fnm.model)
-    )
+    con_list = list_of_constraint_types(fnm.model)
+    n_cons = if isempty(con_list)
+        0
+    else
+        sum(num_constraints(fnm.model, F, S) for (F, S) in con_list)
+    end
     println(io, "Model formulation: $n_vars variables and $n_cons constraints")
     println(io, "System: $(length(get_components(Component, fnm.system))) components, $(get_forecast_horizon(fnm.system)) time periods")
     return nothing

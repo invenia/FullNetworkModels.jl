@@ -3,54 +3,78 @@
     fnm_rt = FullNetworkModel(TEST_SYSTEM_RT, GLPK.Optimizer)
 
     @testset "Prints" begin
-        @test sprint(show, fnm) == "FullNetworkModel\nModel formulation: 0 variables\nSystem: 32 components, 24 time periods\n"
+        t1 = DateTime(2017, 12, 15)
+        t2 = DateTime(2017, 12, 15, 23)
+        @test sprint(show, fnm) == "FullNetworkModel\nTime periods: $t1 to $t2\nModel formulation: 0 variables and 0 constraints\nSystem: 32 components, 24 time periods\n"
     end
 
     @testset "Accessors" begin
         system = fnm.system
         system_rt = fnm_rt.system
-
+        datetimes = fnm.datetimes
         n_periods = get_forecast_horizon(system)
-        @test issetequal(get_unit_codes(ThermalGen, system), (7, 3))
+        unit_codes = get_unit_codes(ThermalGen, system)
+
+        @test issetequal(unit_codes, (7, 3))
         @test issetequal(get_load_names(PowerLoad, system), ("Load1_2", "Load2_3"))
-        @test get_pmin(system) == Dict(
-            3 => fill(0.5, n_periods), 7 => fill(0.5, n_periods)
+
+        n_units = length(unit_codes)
+        @test get_pmin(system) == DenseAxisArray(
+            fill(0.5, n_units, n_periods), unit_codes, datetimes
         )
-        @test get_pmax(system) == Dict(
-            3 => fill(8.0, n_periods), 7 => fill(8.0, n_periods)
+        @test get_pmax(system) == DenseAxisArray(
+            fill(8.0, n_units, n_periods), unit_codes, datetimes
         )
-        @test get_regmin(system) == Dict(
-            3 => fill(0.5, n_periods), 7 => fill(0.5, n_periods)
+        @test get_regmin(system) == DenseAxisArray(
+            fill(0.5, n_units, n_periods), unit_codes, datetimes
         )
-        @test get_regmax(system) == Dict(
-            3 => fill(7.5, n_periods), 7 => fill(7.5, n_periods)
+        @test get_regmax(system) == DenseAxisArray(
+            fill(7.5, n_units, n_periods), unit_codes, datetimes
         )
-        @test get_regulation_cost(system) == Dict(
-            3 => fill(20_000, n_periods), 7 => fill(10_000, n_periods)
+        @test get_regulation_cost(system) == DenseAxisArray(
+            vcat(fill(10_000, 1, n_periods), fill(20_000, 1, n_periods)),
+            unit_codes,
+            datetimes
         )
         rng = MersenneTwister(1)
         stat_gen3 = bitrand(rng, n_periods)
-        @test get_commitment_status(system_rt) == Dict(
-            3 => stat_gen3, 7 => [false; fill(true, n_periods - 1)]
+        @test get_commitment_status(system_rt) == DenseAxisArray(
+            permutedims(hcat([false; fill(true, n_periods - 1)], stat_gen3)),
+            unit_codes,
+            datetimes
         )
-        @test get_spinning_cost(system) == Dict(
-            3 => fill(30_000, n_periods), 7 => fill(15_000, n_periods)
+        @test get_spinning_cost(system) == DenseAxisArray(
+            vcat(fill(15_000, 1, n_periods), fill(30_000, 1, n_periods)),
+            unit_codes,
+            datetimes
         )
-        @test get_on_sup_cost(system) == Dict(
-            3 => fill(35_000, n_periods), 7 => fill(17_500, n_periods)
+        @test get_on_sup_cost(system) == DenseAxisArray(
+            vcat(fill(17_500, 1, n_periods), fill(35_000, 1, n_periods)),
+            unit_codes,
+            datetimes
         )
-        @test get_off_sup_cost(system) == Dict(
-            3 => fill(40_000, n_periods), 7 => fill(20_000, n_periods)
+        @test get_off_sup_cost(system) == DenseAxisArray(
+            vcat(fill(20_000, 1, n_periods), fill(40_000, 1, n_periods)),
+            unit_codes,
+            datetimes
         )
-        @test get_offer_curves(system) == Dict(
-            3 => fill([(600.0, 0.5), (800.0, 1.0), (825.0, 5.0)], n_periods),
-            7 => fill([(400.0, 0.5), (600.0, 1.0), (625.0, 5.0)], n_periods)
+        @test get_offer_curves(system) == DenseAxisArray(
+            vcat(
+                fill([(400.0, 0.5), (600.0, 1.0), (625.0, 5.0)], 1, n_periods),
+                fill([(600.0, 0.5), (800.0, 1.0), (825.0, 5.0)], 1, n_periods)
+            ),
+            unit_codes,
+            datetimes
         )
-        @test get_noload_cost(system) == Dict(
-            3 => fill(200.0, n_periods), 7 => fill(100.0, n_periods)
+        @test get_noload_cost(system) == DenseAxisArray(
+            vcat(fill(100, 1, n_periods), fill(200, 1, n_periods)),
+            unit_codes,
+            datetimes
         )
-        @test get_startup_cost(system) == Dict(
-            3 => fill(300.0, n_periods), 7 => fill(150.0, n_periods)
+        @test get_startup_cost(system) == DenseAxisArray(
+            vcat(fill(150, 1, n_periods), fill(300, 1, n_periods)),
+            unit_codes,
+            datetimes
         )
         @test get_regulation_requirements(system) == Dict(
             1 => 0.3, 2 => 0.4, FNM.MARKET_WIDE_ZONE => 0.8

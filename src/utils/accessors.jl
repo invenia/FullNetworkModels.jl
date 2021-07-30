@@ -85,7 +85,7 @@ function get_generator_time_series(
     else
         parse.(Int, get_name.(gens))
     end
-    time_series_values = _generator_time_series_values.(gens, label, (datetimes, ), suffix)
+    time_series_values = _generator_time_series_values.(gens, label, Ref(datetimes), suffix)
     # Filter out the nothings resulting from generators that don't have the time series
     filter!(!isnothing, time_series_values)
     output = DenseAxisArray(
@@ -95,15 +95,15 @@ function get_generator_time_series(
 end
 
 """
-    get_fixed_loads(system::System) -> Dict
+    get_fixed_loads(system::System, datetimes=get_forecast_timestamps(system)) -> DenseAxisArray
 
 Returns a dictionary with the fixed load forecasts stored in `system`. The keys of the
 dictionary are the load names.
 """
-function get_fixed_loads(system::System)
+function get_fixed_loads(system::System, datetimes=get_forecast_timestamps(system))
     loads = get_components(PowerLoad, system)
     load_names = get_load_names(PowerLoad, system)
-    time_series_values = _load_time_series_values.(loads, (datetimes, ))
+    time_series_values = _load_time_series_values.(loads, Ref(datetimes))
     output = DenseAxisArray(
         permutedims(reduce(hcat, time_series_values)), load_names, datetimes
     )
@@ -464,15 +464,19 @@ shutdown limits, which are identical under this assumption.
 get_startup_limits(system::System) = get_regmin(system)
 
 """
-    get_bid_curves(bidtype::Type{<:Device}, system::System) -> Dict{String, Vector}
+    get_bid_curves(
+        bidtype::Type{<:Device}, system::System, datetimes=get_forecast_timestamps(system)
+    ) -> Dict{String, Vector}
 
 Returns a dictionary with the bid curves time series stored in `system` for devices of type
 `bidtype`. The keys of the dictionary are the bid names.
 """
-function get_bid_curves(bidtype::Type{<:Device}, system::System)
+function get_bid_curves(
+    bidtype::Type{<:Device}, system::System, datetimes=get_forecast_timestamps(system)
+)
     bids = get_components(bidtype, system)
     bid_names = get_bid_names(bidtype, system)
-    time_series_values = _time_series_values.(bids, "bid_curve", (datetimes, ))
+    time_series_values = _time_series_values.(bids, "bid_curve", Ref(datetimes))
     output = DenseAxisArray(
         permutedims(reduce(hcat, time_series_values)), bid_names, datetimes
     )
