@@ -56,6 +56,7 @@ end
 @testset "Objectives" begin
     @testset "obj_thermal_variable_cost!" begin
         fnm = FullNetworkModel(TEST_SYSTEM, GLPK.Optimizer)
+        t = first(fnm.datetimes)
         @test objective_function(fnm.model) == AffExpr()
         @testset "Adding cost before thermal generation throws error" begin
             @test_throws AssertionError obj_thermal_variable_cost!(fnm)
@@ -64,7 +65,6 @@ end
             var_thermal_generation!(fnm)
             obj_thermal_variable_cost!(fnm)
             tests_thermal_variable_cost(fnm)
-            t = first(fnm.datetimes)
             @test sprint(show, constraint_by_name(fnm.model, "gen_block_limits[7,$t,1]")) ==
                 "gen_block_limits[7,$t,1] : p_aux[7,$t,1] ≤ 0.5"
         end
@@ -111,8 +111,7 @@ end
         # https://gitlab.invenia.ca/invenia/research/FullNetworkDataPrep.jl/-/blob/16f570e9116d86a2ce65e2e08aa702cefa268cc5/src/testutils.jl#L162
         inc_name, dec_name, psd_name = ("111_1", "222_1", "333_1")
         inc_aux, dec_aux, psd_aux = fnm.model[:inc_aux], fnm.model[:dec_aux], fnm.model[:psd_aux]
-        t1 = fnm.datetimes[1]
-        t2 = fnm.datetimes[2]
+        t1, t2 = fnm.datetimes[1:2]
         @test objective_function(fnm.model) == 100 * (
             inc_aux[inc_name, t1, 1] + inc_aux[inc_name, t2, 1]
             - dec_aux[dec_name, t1, 1] - dec_aux[dec_name, t2, 1]

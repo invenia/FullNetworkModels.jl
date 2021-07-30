@@ -75,8 +75,7 @@ function tests_operating_reserve_requirements(fnm)
 end
 
 function tests_ramp_rates(fnm; slack=nothing)
-    t1 = fnm.datetimes[1]
-    t2 = fnm.datetimes[2]
+    t1, t2 = fnm.datetimes[1:2]
     @test sprint(show, constraint_by_name(
         fnm.model, "ramp_regulation[3,$t1]"
     )) == "ramp_regulation[3,$t1] : r_reg[3,$t1] ≤ 1.25"

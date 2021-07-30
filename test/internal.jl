@@ -25,13 +25,14 @@
             fnm.model, unit_codes, fnm.datetimes, n_blocks, Λ, :p, 1
         )
         p_aux = fnm.model[:p_aux]
+        t1, t2 = fnm.datetimes[1:2]
         # Generators 3 and 7 have offer curves with prices and [600, 800, 825]
         # [400, 600, 625], respectively.
         # https://gitlab.invenia.ca/invenia/research/FullNetworkDataPrep.jl/-/blob/16f570e9116d86a2ce65e2e08aa702cefa268cc5/src/testutils.jl#L122
         @test thermal_cost ==
-            600 * p_aux[3, 1, 1] + 800 * p_aux[3, 1, 2] + 825 * p_aux[3, 1, 3] +
-            600 * p_aux[3, 2, 1] + 800 * p_aux[3, 2, 2] + 825 * p_aux[3, 2, 3] +
-            400 * p_aux[7, 1, 1] + 600 * p_aux[7, 1, 2] + 625 * p_aux[7, 1, 3] +
-            400 * p_aux[7, 2, 1] + 600 * p_aux[7, 2, 2] + 625 * p_aux[7, 2, 3]
+            600 * p_aux[3, t1, 1] + 800 * p_aux[3, t1, 2] + 825 * p_aux[3, t1, 3] +
+            600 * p_aux[3, t2, 1] + 800 * p_aux[3, t2, 2] + 825 * p_aux[3, t2, 3] +
+            400 * p_aux[7, t1, 1] + 600 * p_aux[7, t1, 2] + 625 * p_aux[7, t1, 3] +
+            400 * p_aux[7, t2, 1] + 600 * p_aux[7, t2, 2] + 625 * p_aux[7, t2, 3]
     end
 end

@@ -21,8 +21,7 @@ end
 function tests_startup_shutdown(fnm)
     tests_thermal_variable(fnm, "v")
     tests_thermal_variable(fnm, "w")
-    t1 = fnm.datetimes[1]
-    t2 = fnm.datetimes[2]
+    t1, t2 = fnm.datetimes[1:2]
     @test sprint(show, constraint_by_name(
         fnm.model, "startup_shutdown_definition[7,$t2]"
     )) == "startup_shutdown_definition[7,$t2] : -u[7,$t1] + u[7,$t2] - v[7,$t2] + w[7,$t2] = 0.0"
