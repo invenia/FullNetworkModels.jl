@@ -68,15 +68,22 @@ end
 
 """
     get_generator_time_series(
-        system::System, label::AbstractString, datetimes::Vector{DateTime}; suffix=false
+        system::System,
+        label::AbstractString,
+        datetimes::Vector{DateTime}=get_forecast_timestamps(system);
+        suffix=false
     ) -> DenseAxisArray
 
-Returns a dictionary with the time series values for `label` stored in `system`. The keys
-of the dictionary are the unit codes. If the label is supposed to have a zone suffix, e.g.
-for ancillary costs, then `suffix` should be set to `true`.
+Returns a DenseAxisArray with the time series values for `label` stored in `system` for the
+periods in `datetimes`. If the label is supposed to have a zone suffix, e.g. ancillary
+costs, then `suffix` should be set to `true`. The axes of the array are the unit codes and
+the datetimes, respectively.
 """
 function get_generator_time_series(
-    system::System, label::AbstractString, datetimes::Vector{DateTime}; suffix=false
+    system::System,
+    label::AbstractString,
+    datetimes::Vector{DateTime}=get_forecast_timestamps(system);
+    suffix=false
 )
     gens = get_components(ThermalGen, system)
     # If it's a zonal service, get only the providers; otherwise get all generators
@@ -88,6 +95,7 @@ function get_generator_time_series(
     time_series_values = _generator_time_series_values.(gens, label, Ref(datetimes), suffix)
     # Filter out the nothings resulting from generators that don't have the time series
     filter!(!isnothing, time_series_values)
+    # `permutedims` because our convention is that datetimes are the last dimension
     output = DenseAxisArray(
         permutedims(reduce(hcat, time_series_values)), unit_codes, datetimes
     )
@@ -95,12 +103,16 @@ function get_generator_time_series(
 end
 
 """
-    get_fixed_loads(system::System, datetimes=get_forecast_timestamps(system)) -> DenseAxisArray
+    get_fixed_loads(
+        system::System, datetimes::Vector{DateTime}=get_forecast_timestamps(system)
+    ) -> DenseAxisArray
 
-Returns a dictionary with the fixed load forecasts stored in `system`. The keys of the
-dictionary are the load names.
+Returns a DenseAxisArray with the fixed load forecasts stored in `system` for the periods in
+`datetimes`. The axes of the array are the load names and the datetimes, respectively.
 """
-function get_fixed_loads(system::System, datetimes=get_forecast_timestamps(system))
+function get_fixed_loads(
+    system::System, datetimes::Vector{DateTime}=get_forecast_timestamps(system)
+)
     loads = get_components(PowerLoad, system)
     load_names = get_load_names(PowerLoad, system)
     time_series_values = _load_time_series_values.(loads, Ref(datetimes))
@@ -111,184 +123,181 @@ function get_fixed_loads(system::System, datetimes=get_forecast_timestamps(syste
 end
 
 """
-    get_pmin(system::System) -> DenseAxisArray
-    get_pmin(system::System, datetimes::Vector{DateTime}) -> DenseAxisArray
+    get_pmin(
+        system::System, datetimes::Vector{DateTime}=get_forecast_timestamps(system)
+    ) -> DenseAxisArray
 
-Returns Pmin, i.e., the minimum power outputs of the generators in `system`.
+Returns Pmin, i.e., the minimum power outputs of the generators in `system` for the
+periods in `datetimes`.
 """
-function get_pmin(system::System)
-    datetimes = get_forecast_timestamps(system)
+function get_pmin(
+    system::System, datetimes::Vector{DateTime}=get_forecast_timestamps(system)
+)
     return get_generator_time_series(system, "active_power_min", datetimes)
 end
-function get_pmin(system::System, datetimes::Vector{DateTime})
-    return get_generator_time_series(system, "active_power_min", datetimes)
-end
 
 """
-    get_pmax(system::System) -> DenseAxisArray
-    get_pmax(system::System, datetimes::Vector{DateTime}) -> DenseAxisArray
+    get_pmax(
+        system::System, datetimes::Vector{DateTime}=get_forecast_timestamps(system)
+    ) -> DenseAxisArray
 
-Returns Pmax, i.e., the maximum power outputs of the generators in `system`.
+Returns Pmax, i.e., the maximum power outputs of the generators in `system` for the
+periods in `datetimes`.
 """
-function get_pmax(system::System)
-    datetimes = get_forecast_timestamps(system)
-    return get_generator_time_series(system, "active_power_max", datetimes)
-end
-function get_pmax(system::System, datetimes::Vector{DateTime})
+function get_pmax(
+    system::System, datetimes::Vector{DateTime}=get_forecast_timestamps(system)
+)
     return get_generator_time_series(system, "active_power_max", datetimes)
 end
 
 """
-    get_regmin(system::System) -> DenseAxisArray
-    get_regmin(system::System, datetimes::Vector{DateTime}) -> DenseAxisArray
+    get_regmin(
+        system::System, datetimes::Vector{DateTime}=get_forecast_timestamps(system)
+    ) -> DenseAxisArray
 
-Returns the minimum power outputs with regulation of the generators in `system`.
+Returns the minimum power outputs with regulation of the generators in `system` for the
+periods in `datetimes`.
 """
-function get_regmin(system::System)
-    datetimes = get_forecast_timestamps(system)
+function get_regmin(
+    system::System, datetimes::Vector{DateTime}=get_forecast_timestamps(system)
+)
     return get_generator_time_series(system, "regulation_min", datetimes)
 end
-function get_regmin(system::System, datetimes::Vector{DateTime})
-    return get_generator_time_series(system, "regulation_min", datetimes)
-end
 
 """
-    get_regmax(system::System) -> DenseAxisArray
-    get_regmax(system::System, datetimes::Vector{DateTime}) -> DenseAxisArray
+    get_regmax(
+        system::System, datetimes::Vector{DateTime}=get_forecast_timestamps(system)
+    ) -> DenseAxisArray
 
-Returns the maximum power outputs with regulation of the generators in `system`.
+Returns the maximum power outputs with regulation of the generators in `system` for the
+periods in `datetimes`.
 """
-function get_regmax(system::System)
-    datetimes = get_forecast_timestamps(system)
-    return get_generator_time_series(system, "regulation_max", datetimes)
-end
-function get_regmax(system::System, datetimes::Vector{DateTime})
+function get_regmax(
+    system::System, datetimes::Vector{DateTime}=get_forecast_timestamps(system)
+)
     return get_generator_time_series(system, "regulation_max", datetimes)
 end
 
 """
-    get_regulation_cost(system::System) -> DenseAxisArray
-    get_regulation_cost(system::System, datetimes::Vector{DateTime}) -> DenseAxisArray
+    get_regulation_cost(
+        system::System, datetimes::Vector{DateTime}=get_forecast_timestamps(system)
+    ) -> DenseAxisArray
 
-Returns the costs of regulation offered by the generators in `system`.
+Returns the costs of regulation offered by the generators in `system` for the periods
+in `datetimes`.
 """
-function get_regulation_cost(system::System)
-    datetimes = get_forecast_timestamps(system)
+function get_regulation_cost(
+    system::System, datetimes::Vector{DateTime}=get_forecast_timestamps(system)
+)
     return get_generator_time_series(system, "regulation", datetimes; suffix=true)
 end
-function get_regulation_cost(system::System, datetimes::Vector{DateTime})
-    return get_generator_time_series(system, "regulation", datetimes; suffix=true)
-end
 
 """
-    get_commitment_status(system::System) -> DenseAxisArray
-    get_commitment_status(system::System, datetimes::Vector{DateTime}) -> DenseAxisArray
+    get_commitment_status(
+        system::System, datetimes::Vector{DateTime}=get_forecast_timestamps(system)
+    ) -> DenseAxisArray
 
-Returns the commitment status of the Thermal generators in `system`.
+Returns the commitment status of the Thermal generators in `system` for the periods in
+`datetimes`.
 """
-function get_commitment_status(system::System)
-    datetimes = get_forecast_timestamps(system)
-    return get_generator_time_series(system, "status", datetimes)
-end
-function get_commitment_status(system::System, datetimes::Vector{DateTime})
+function get_commitment_status(
+    system::System, datetimes::Vector{DateTime}=get_forecast_timestamps(system)
+)
     return get_generator_time_series(system, "status", datetimes)
 end
 
 """
-    get_commitment_reg_status(system::System) -> DenseAxisArray
-    get_commitment_reg_status(system::System, datetimes::Vector{DateTime}) -> DenseAxisArray
+    get_commitment_reg_status(
+        system::System, datetimes::Vector{DateTime}=get_forecast_timestamps(system)
+    ) -> DenseAxisArray
 
-Returns the commitment regulation status of the Thermal generators in `system`.
+Returns the commitment regulation status of the Thermal generators in `system` for the
+periods in `datetimes`.
 """
-function get_commitment_reg_status(system::System)
-    datetimes = get_forecast_timestamps(system)
+function get_commitment_reg_status(
+    system::System, datetimes::Vector{DateTime}=get_forecast_timestamps(system)
+)
     return get_generator_time_series(system, "status_reg", datetimes)
 end
-function get_commitment_reg_status(system::System, datetimes::Vector{DateTime})
-    return get_generator_time_series(system, "status_reg", datetimes)
-end
 
 """
-    get_spinning_cost(system::System) -> DenseAxisArray
-    get_spinning_cost(system::System, datetimes::Vector{DateTime}) -> DenseAxisArray
+    get_spinning_cost(
+        system::System, datetimes::Vector{DateTime}=get_forecast_timestamps(system)
+    ) -> DenseAxisArray
 
-Returns the costs of spinning reserve offered by the generators in `system`.
+Returns the costs of spinning reserve offered by the generators in `system` for the periods
+in `datetimes`.
 """
-function get_spinning_cost(system::System)
-    datetimes = get_forecast_timestamps(system)
-    return get_generator_time_series(system, "spinning", datetimes; suffix=true)
-end
-function get_spinning_cost(system::System, datetimes::Vector{DateTime})
+function get_spinning_cost(
+    system::System, datetimes::Vector{DateTime}=get_forecast_timestamps(system)
+)
     return get_generator_time_series(system, "spinning", datetimes; suffix=true)
 end
 
 """
-    get_on_sup_cost(system::System) -> DenseAxisArray
-    get_on_sup_cost(system::System, datetimes::Vector{DateTime}) -> DenseAxisArray
+    get_on_sup_cost(
+        system::System, datetimes::Vector{DateTime}=get_forecast_timestamps(system)
+    ) -> DenseAxisArray
 
-Returns the costs of online supplemental reserve offered by the generators in `system`.
+Returns the costs of online supplemental reserve offered by the generators in `system` for
+the periods in `datetimes`.
 """
-function get_on_sup_cost(system::System)
-    datetimes = get_forecast_timestamps(system)
+function get_on_sup_cost(
+    system::System, datetimes::Vector{DateTime}=get_forecast_timestamps(system)
+)
     return get_generator_time_series(system, "supplemental_on", datetimes; suffix=true)
 end
-function get_on_sup_cost(system::System, datetimes::Vector{DateTime})
-    return get_generator_time_series(system, "supplemental_on", datetimes; suffix=true)
-end
 
 """
-    get_off_sup_cost(system::System) -> DenseAxisArray
-    get_off_sup_cost(system::System, datetimes::Vector{DateTime}) -> DenseAxisArray
+    get_off_sup_cost(
+        system::System, datetimes::Vector{DateTime}=get_forecast_timestamps(system)
+    ) -> DenseAxisArray
 
-Returns the costs of offline supplemental reserve offered by the generators in `system`.
+Returns the costs of offline supplemental reserve offered by the generators in `system` for
+the periods in `datetimes`.
 """
-function get_off_sup_cost(system::System)
-    datetimes = get_forecast_timestamps(system)
-    return get_generator_time_series(system, "supplemental_off", datetimes; suffix=true)
-end
-function get_off_sup_cost(system::System, datetimes::Vector{DateTime})
+function get_off_sup_cost(
+    system::System, datetimes::Vector{DateTime}=get_forecast_timestamps(system)
+)
     return get_generator_time_series(system, "supplemental_off", datetimes; suffix=true)
 end
 
 """
-    get_offer_curves(system::System) -> DenseAxisArray
-    get_offer_curves(system::System, datetimes::Vector{DateTime}) -> DenseAxisArray
+    get_offer_curves(
+        system::System, datetimes::Vector{DateTime}=get_forecast_timestamps(system)
+    ) -> DenseAxisArray
 
-Returns the offer curves of generators in `system`.
+Returns the offer curves of generators in `system` for the periods in `datetimes`.
 """
-function get_offer_curves(system::System)
-    datetimes = get_forecast_timestamps(system)
+function get_offer_curves(
+    system::System, datetimes::Vector{DateTime}=get_forecast_timestamps(system)
+)
     return get_generator_time_series(system, "offer_curve", datetimes)
 end
-function get_offer_curves(system::System, datetimes::Vector{DateTime})
-    return get_generator_time_series(system, "offer_curve", datetimes)
-end
 
 """
-    get_noload_cost(system::System) -> DenseAxisArray
-    get_noload_cost(system::System, datetimes::Vector{DateTime}) -> DenseAxisArray
+    get_noload_cost(
+        system::System, datetimes::Vector{DateTime}=get_forecast_timestamps(system)
+    ) -> DenseAxisArray
 
-Returns the no-load costs of the generators in `system`.
+Returns the no-load costs of the generators in `system` for the periods in `datetimes`.
 """
-function get_noload_cost(system::System)
-    datetimes = get_forecast_timestamps(system)
-    return get_generator_time_series(system, "no_load_cost", datetimes)
-end
-function get_noload_cost(system::System, datetimes::Vector{DateTime})
+function get_noload_cost(
+    system::System, datetimes::Vector{DateTime}=get_forecast_timestamps(system)
+)
     return get_generator_time_series(system, "no_load_cost", datetimes)
 end
 
 """
-    get_noload_cost(system::System) -> DenseAxisArray
-    get_noload_cost(system::System, datetimes::Vector{DateTime}) -> DenseAxisArray
+    get_startup_cost(
+        system::System, datetimes::Vector{DateTime}=get_forecast_timestamps(system)
+    ) -> DenseAxisArray
 
-Returns the start-up costs of the generators in `system`.
+Returns the start-up costs of the generators in `system` for the periods in `datetimes`.
 """
-function get_startup_cost(system::System)
-    datetimes = get_forecast_timestamps(system)
-    return get_generator_time_series(system, "start_up_cost", datetimes)
-end
-function get_startup_cost(system::System, datetimes::Vector{DateTime})
+function get_startup_cost(
+    system::System, datetimes::Vector{DateTime}=get_forecast_timestamps(system)
+)
     return get_generator_time_series(system, "start_up_cost", datetimes)
 end
 
@@ -465,14 +474,19 @@ get_startup_limits(system::System) = get_regmin(system)
 
 """
     get_bid_curves(
-        bidtype::Type{<:Device}, system::System, datetimes=get_forecast_timestamps(system)
-    ) -> Dict{String, Vector}
+        bidtype::Type{<:Device},
+        system::System,
+        datetimes::Vector{DateTime}=get_forecast_timestamps(system)
+    ) -> DenseAxisArray
 
-Returns a dictionary with the bid curves time series stored in `system` for devices of type
-`bidtype`. The keys of the dictionary are the bid names.
+Returns a DenseAxisArray with the bid curves time series stored in `system` for devices of
+type `bidtype` for the periods in `datetimes`. The axes of the array are the unit codes and
+the datetimes, respectively.
 """
 function get_bid_curves(
-    bidtype::Type{<:Device}, system::System, datetimes=get_forecast_timestamps(system)
+    bidtype::Type{<:Device},
+    system::System,
+    datetimes::Vector{DateTime}=get_forecast_timestamps(system)
 )
     bids = get_components(bidtype, system)
     bid_names = get_bid_names(bidtype, system)

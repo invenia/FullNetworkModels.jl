@@ -1,7 +1,7 @@
 """
     unit_commitment(
-        system::System, solver;
-        datetimes=get_forecast_timestamps(system), relax_integrality=false
+        system::System, solver, datetimes=get_forecast_timestamps(system);
+        relax_integrality=false
     ) -> FullNetworkModel
 
 Defines the unit commitment default template.
@@ -40,14 +40,14 @@ $(_write_formulation(
 Arguments:
  - `system::System`: The PowerSystems system that provides the input data.
  - `solver`: The solver of choice, e.g. `GLPK.Optimizer`.
+ - `datetimes=get_forecast_timestamps(system)`: The time periods considered in the model.
 
 Keyword arguments:
- - `datetimes=get_forecast_timestamps(system)`: The time periods considered in the model.
  - `relax_integrality=false`: If set to `true`, binary variables will be relaxed.
 """
 function unit_commitment(
-    system::System, solver;
-    datetimes=get_forecast_timestamps(system), relax_integrality=false
+    system::System, solver, datetimes=get_forecast_timestamps(system);
+    relax_integrality=false
 )
     # Initialize FNM
     fnm = FullNetworkModel(system, solver, datetimes)
@@ -78,8 +78,8 @@ end
 
 """
     unit_commitment_soft_ramps(
-        system::System, solver;
-        datetimes=get_forecast_timestamps(system), slack=1e4, relax_integrality=false
+        system::System, solver, datetimes=get_forecast_timestamps(system);
+        slack=1e4, relax_integrality=false
     ) -> FullNetworkModel
 
 Defines the unit commitment template with soft generation ramp constraints.
@@ -90,15 +90,15 @@ which are modeled as soft constraints with slack variables.
 Arguments:
  - `system::System`: The PowerSystems system that provides the input data.
  - `solver`: The solver of choice, e.g. `GLPK.Optimizer`.
+ - `datetimes=get_forecast_timestamps(system)`: The time periods considered in the model.
 
 Keyword arguments:
- - `datetimes=get_forecast_timestamps(system)`: The time periods considered in the model.
  - `slack=1e4`: The slack penalty for the soft constraints.
  - `relax_integrality=false`: If set to `true`, binary variables will be relaxed.
 """
 function unit_commitment_soft_ramps(
-    system::System, solver;
-    datetimes=get_forecast_timestamps(system), slack=1e4, relax_integrality=false
+    system::System, solver, datetimes=get_forecast_timestamps(system);
+    slack=1e4, relax_integrality=false
 )
     # Initialize FNM
     fnm = FullNetworkModel(system, solver, datetimes)
@@ -129,8 +129,8 @@ end
 
 """
     unit_commitment_no_ramps(
-        system::System, solver;
-        datetimes=get_forecast_timestamps(system), relax_integrality=false
+        system::System, solver, datetimes=get_forecast_timestamps(system);
+        relax_integrality=false
     ) -> FullNetworkModel
 
 Defines the unit commitment template with no ramp constraints.
@@ -141,14 +141,14 @@ are omitted.
 Arguments:
  - `system::System`: The PowerSystems system that provides the input data.
  - `solver`: The solver of choice, e.g. `GLPK.Optimizer`.
+ - `datetimes=get_forecast_timestamps(system)`: The time periods considered in the model.
 
 Keyword arguments:
- - `datetimes=get_forecast_timestamps(system)`: The time periods considered in the model.
  - `relax_integrality=false`: If set to `true`, binary variables will be relaxed.
 """
 function unit_commitment_no_ramps(
-    system::System, solver;
-    datetimes=get_forecast_timestamps(system), relax_integrality=false
+    system::System, solver, datetimes=get_forecast_timestamps(system);
+    relax_integrality=false
 )
     # Initialize FNM
     fnm = FullNetworkModel(system, solver, datetimes)
