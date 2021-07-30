@@ -48,7 +48,7 @@ function tests_ancillary_limits_dispatch(fnm)
     return nothing
 end
 
-function tests_regulation_requirements(fnm)
+function tests_regulation_requirements(fnm::FullNetworkModel{<:UC})
     @test sprint(show, constraint_by_name(fnm.model, "regulation_requirements[1,1]")) ==
         "regulation_requirements[1,1] : r_reg[3,1] ≥ 0.3"
     @test sprint(show, constraint_by_name(fnm.model, "regulation_requirements[2,1]")) ==
@@ -56,6 +56,17 @@ function tests_regulation_requirements(fnm)
     @test sprint(show, constraint_by_name(
         fnm.model, "regulation_requirements[$(FNM.MARKET_WIDE_ZONE),1]"
     )) == "regulation_requirements[$(FNM.MARKET_WIDE_ZONE),1] : r_reg[7,1] + r_reg[3,1] ≥ 0.8"
+    return nothing
+end
+
+function tests_regulation_requirements(fnm::FullNetworkModel{<:ED})
+    @test sprint(show, constraint_by_name(fnm.model, "regulation_requirements[1,1]")) ==
+        "regulation_requirements[1,1] : r_reg[3,1] + s_reg_req[1,1] ≥ 0.3"
+    @test sprint(show, constraint_by_name(fnm.model, "regulation_requirements[2,1]")) ==
+        "regulation_requirements[2,1] : r_reg[7,1] + s_reg_req[2,1] ≥ 0.4"
+    @test sprint(show, constraint_by_name(
+        fnm.model, "regulation_requirements[$(FNM.MARKET_WIDE_ZONE),1]"
+    )) == "regulation_requirements[$(FNM.MARKET_WIDE_ZONE),1] : r_reg[7,1] + r_reg[3,1] + s_reg_req[$(FNM.MARKET_WIDE_ZONE),1] ≥ 0.8"
     return nothing
 end
 
@@ -166,7 +177,11 @@ end
             con_ancillary_limits!(fnm)
             tests_ancillary_limits_dispatch(fnm)
         end
-        #TODO: RT con_regulation_requirements! and con_operating_reserve_requirements
+        @testset "con_regulation_requirements!" begin
+            con_regulation_requirements!(fnm; slack = 1e4)
+            tests_regulation_requirements(fnm)
+        end
+        #TODO: RT con_operating_reserve_requirements
     end
     @testset "Ramp constraints $T" for T in (UC, ED)
         # Basic tests for hard constraints
