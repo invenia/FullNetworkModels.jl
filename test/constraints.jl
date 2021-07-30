@@ -51,12 +51,12 @@ end
 function tests_regulation_requirements(fnm; slack=nothing)
     if slack !== nothing
         @test sprint(show, constraint_by_name(fnm.model, "regulation_requirements[1,1]")) ==
-            "regulation_requirements[1,1] : r_reg[3,1] - s_reg_req[1,1] ≥ 0.3"
+            "regulation_requirements[1,1] : r_reg[3,1] + s_reg_req[1,1] ≥ 0.3"
         @test sprint(show, constraint_by_name(fnm.model, "regulation_requirements[2,1]")) ==
-            "regulation_requirements[2,1] : r_reg[7,1] - s_reg_req[2,1] ≥ 0.4"
+            "regulation_requirements[2,1] : r_reg[7,1] + s_reg_req[2,1] ≥ 0.4"
         @test sprint(show, constraint_by_name(
             fnm.model, "regulation_requirements[$(FNM.MARKET_WIDE_ZONE),1]"
-        )) == "regulation_requirements[$(FNM.MARKET_WIDE_ZONE),1] : r_reg[7,1] + r_reg[3,1] - s_reg_req[$(FNM.MARKET_WIDE_ZONE),1] ≥ 0.8"
+        )) == "regulation_requirements[$(FNM.MARKET_WIDE_ZONE),1] : r_reg[7,1] + r_reg[3,1] + s_reg_req[$(FNM.MARKET_WIDE_ZONE),1] ≥ 0.8"
     else
         @test sprint(show, constraint_by_name(fnm.model, "regulation_requirements[1,1]")) ==
             "regulation_requirements[1,1] : r_reg[3,1] ≥ 0.3"

@@ -208,7 +208,7 @@ function con_regulation_requirements!(fnm::FullNetworkModel, slack)
         # Soft constraints, add slacks
         @variable(model, s_reg_req[z in reserve_zones, t in 1:n_periods] >= 0)
         for z in reserve_zones, t in 1:n_periods
-            set_normalized_coefficient(regulation_requirements[z, t], s_reg_req[z, t], -1.0)
+            set_normalized_coefficient(regulation_requirements[z, t], s_reg_req[z, t], 1.0)
             # Add slack penalty to the objective
             set_objective_coefficient(model, s_reg_req[z, t], slack)
         end
