@@ -70,7 +70,7 @@ function tests_regulation_requirements(fnm::FullNetworkModel{<:ED})
     return nothing
 end
 
-function tests_operating_reserve_requirements(fnm)
+function tests_operating_reserve_requirements(fnm::FullNetworkModel{<:UC})
     @test sprint(show, constraint_by_name(
         fnm.model, "operating_reserve_requirements[1,1]"
     )) == "operating_reserve_requirements[1,1] : r_reg[3,1] + r_spin[3,1] + r_on_sup[3,1] + r_off_sup[3,1] ≥ 0.4"
@@ -80,6 +80,19 @@ function tests_operating_reserve_requirements(fnm)
     @test sprint(show, constraint_by_name(
         fnm.model, "operating_reserve_requirements[$(FNM.MARKET_WIDE_ZONE),1]"
     )) == "operating_reserve_requirements[$(FNM.MARKET_WIDE_ZONE),1] : r_reg[7,1] + r_reg[3,1] + r_spin[7,1] + r_spin[3,1] + r_on_sup[7,1] + r_on_sup[3,1] + r_off_sup[7,1] + r_off_sup[3,1] ≥ 1.2"
+    return nothing
+end
+
+function tests_operating_reserve_requirements(fnm::FullNetworkModel{<:ED})
+    @test sprint(show, constraint_by_name(
+        fnm.model, "operating_reserve_requirements[1,1]"
+    )) == "operating_reserve_requirements[1,1] : r_reg[3,1] + r_spin[3,1] + r_on_sup[3,1] + r_off_sup[3,1] + s_or_req[1,1] ≥ 0.4"
+    @test sprint(show, constraint_by_name(
+        fnm.model, "operating_reserve_requirements[2,1]"
+    )) == "operating_reserve_requirements[2,1] : r_reg[7,1] + r_spin[7,1] + r_on_sup[7,1] + r_off_sup[7,1] + s_or_req[2,1] ≥ 0.5"
+    @test sprint(show, constraint_by_name(
+        fnm.model, "operating_reserve_requirements[$(FNM.MARKET_WIDE_ZONE),1]"
+    )) == "operating_reserve_requirements[$(FNM.MARKET_WIDE_ZONE),1] : r_reg[7,1] + r_reg[3,1] + r_spin[7,1] + r_spin[3,1] + r_on_sup[7,1] + r_on_sup[3,1] + r_off_sup[7,1] + r_off_sup[3,1] + s_or_req[$(FNM.MARKET_WIDE_ZONE),1] ≥ 1.2"
     return nothing
 end
 
@@ -178,10 +191,13 @@ end
             tests_ancillary_limits_dispatch(fnm)
         end
         @testset "con_regulation_requirements!" begin
-            con_regulation_requirements!(fnm; slack = 1e4)
+            con_regulation_requirements!(fnm)
             tests_regulation_requirements(fnm)
         end
-        #TODO: RT con_operating_reserve_requirements
+        @testset "con_operating_reserve_requirements!" begin
+            con_operating_reserve_requirements!(fnm)
+            tests_operating_reserve_requirements(fnm)
+        end
     end
     @testset "Ramp constraints $T" for T in (UC, ED)
         # Basic tests for hard constraints
