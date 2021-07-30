@@ -173,15 +173,15 @@ function _latex(::typeof(con_regulation_requirements!))
 end
 
 """
-    con_regulation_requirements!(fnm::FullNetworkModel; slack=1e4)
+    con_regulation_requirements!(fnm::FullNetworkModel; slack)
 
 Adds zonal and market-wide regulation requirements to the full network model:
 
 $(_latex(con_regulation_requirements!))
 
 Note:
-    -For fnm::FullNetworkModel{<:ED} This is a Soft constraint
-    -For fnm::FullNetworkModel{<:UC} This is a Hard constraint
+    - For `fnm::FullNetworkModel{<:ED}` this defaults to a soft constraint (`slack=1e4`).
+    - For `fnm::FullNetworkModel{<:UC}` this defaults to a hard constraint (`slack=nothing`).
 """
 function con_regulation_requirements!(fnm::FullNetworkModel; slack=nothing)
     model = fnm.model
