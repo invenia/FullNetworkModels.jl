@@ -28,8 +28,8 @@ function _variable_cost(model::Model, names, datetimes, n_blocks, Λ, v, sense)
     v_aux = model[Symbol(v, :_aux)]
     variable_cost = AffExpr(0.0)
     for n in names, t in datetimes, q in 1:n_blocks[n, t]
-        # Faster version of `variable_cost += Λ[n, t, q] * v_aux[n, t, q]`
-        add_to_expression!(variable_cost, Λ[n, t, q], v_aux[n, t, q])
+        # Faster version of `variable_cost += Λ[n, t][q] * v_aux[n, t, q]`
+        add_to_expression!(variable_cost, Λ[n, t][q], v_aux[n, t, q])
     end
     # Apply sense to expression - same as `variable_cost *= sense`
     map_coefficients_inplace!(x -> sense * x, variable_cost)
@@ -65,7 +65,6 @@ The kwarg `blocks` indicates if the curve is just a series of blocks, meaning th
 represent the size of the blocks instead of the cumulative MW value in the curve.
 """
 function _curve_properties(curves; blocks=false)
-    names, datetimes = axes(curves)
     prices = map(x -> first.(x), curves)
     limits = map(x -> last.(x), curves)
     n_blocks = map(length, limits)

@@ -145,13 +145,13 @@ function _var_thermal_gen_blocks!(
         @constraint(
             model,
             gen_block_limits[g in unit_codes, t in datetimes, q in 1:n_blocks[g, t]],
-            p_aux[g, t, q] <= p_aux_lims[g, t, q] * u[g, t]
+            p_aux[g, t, q] <= p_aux_lims[g, t][q] * u[g, t]
         )
     else
         @constraint(
             model,
             gen_block_limits[g in unit_codes, t in datetimes, q in 1:n_blocks[g, t]],
-            p_aux[g, t, q] <= p_aux_lims[g, t, q]
+            p_aux[g, t, q] <= p_aux_lims[g, t][q]
         )
     end
     return model
@@ -238,7 +238,7 @@ function _var_bid_blocks!(model::Model, bid_names, block_lims, datetimes, n_bloc
     model[lims] = @constraint(
         model,
         [b in bid_names, t in datetimes, q in 1:n_blocks[b, t]],
-        model[v_aux][b, t, q] <= block_lims[b, t, q],
+        model[v_aux][b, t, q] <= block_lims[b, t][q],
         base_name = "$lims"
     )
     return model

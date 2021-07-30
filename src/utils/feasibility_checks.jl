@@ -42,8 +42,8 @@ function _total_demand_feasibility(system, unit_codes, Pmax)
     end
     if !isempty(infeasible_periods)
         str = "There's not enough generation to meet the system-wide demand; problem will be infeasible."
-        for t in infeasible_periods
-            str *= "\n Time period: $t | Generation capacity: $(gen_capacity[t]) | System load: $(system_load[t])"
+        for i in 1:length(datetimes)
+            str *= "\n Time period: $(datetimes[i]) | Generation capacity: $(gen_capacity[i]) | System load: $(system_load[i])"
         end
         warn(LOGGER, str)
         return false
