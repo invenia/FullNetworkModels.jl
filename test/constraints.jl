@@ -204,11 +204,11 @@ end
             tests_ancillary_limits_dispatch(fnm)
         end
         @testset "con_regulation_requirements!" begin
-            con_regulation_requirements!(fnm; slack = 1e4)
+            con_regulation_requirements!(fnm)
             tests_regulation_requirements(fnm)
         end
         @testset "con_operating_reserve_requirements!" begin
-            con_operating_reserve_requirements!(fnm; slack = 1e4)
+            con_operating_reserve_requirements!(fnm)
             tests_operating_reserve_requirements(fnm)
         end
     end
