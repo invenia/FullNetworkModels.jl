@@ -229,7 +229,15 @@ Adds zonal and market-wide operating reserve requirements to the full network mo
 
 $(_latex(con_operating_reserve_requirements!))
 """
-function con_operating_reserve_requirements!(fnm::FullNetworkModel)
+function con_operating_reserve_requirements!(fnm::FullNetworkModel{<:UC}; slack=nothing)
+    return con_operating_reserve_requirements!(fnm, slack)
+end
+
+function con_operating_reserve_requirements!(fnm::FullNetworkModel{<:ED}; slack=1e4)
+    return con_operating_reserve_requirements!(fnm, slack)
+end
+
+function con_operating_reserve_requirements!(fnm::FullNetworkModel, slack)
     model = fnm.model
     system = fnm.system
     n_periods = get_forecast_horizon(system)
@@ -248,6 +256,15 @@ function con_operating_reserve_requirements!(fnm::FullNetworkModel)
                 for g in zone_gens[z]
         ) >= or_requirements[z]
     )
+    if slack !== nothing
+        # Soft constraints, add slacks
+        @variable(model, s_op_res_req[z in reserve_zones, t in 1:n_periods] >= 0)
+        for z in reserve_zones, t in 1:n_periods
+            set_normalized_coefficient(operating_reserve_requirements[z, t], s_op_res_req[z, t], 1.0)
+            # Add slack penalty to the objective
+            set_objective_coefficient(model, s_op_res_req[z, t], slack)
+        end
+    end
     return fnm
 end
 
