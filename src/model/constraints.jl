@@ -321,7 +321,7 @@ function _latex(::typeof(con_energy_balance_uc!))
 end
 
 """
-    con_energy_balance!(::FullNetworkModel{ED})
+    con_energy_balance!(fnm::FullNetworkModel{ED})
 
 Adds the energy balance constraints to the full network model. The constraints ensure that
 the total generation in the system meets the demand in each time period, assuming no loss:
@@ -350,18 +350,12 @@ end
     con_energy_balance!(fnm::FullNetworkModel{UC})
 
 Adds the energy balance constraints to the full network model. The constraints ensure that
-the total generation in the system meets the demand in each time period, assuming no loss:
+the total generation in the system meets the demand in each time period, including bids such
+as increments, decrements, and price-sensitive demands, assuming no loss:
 
 $(_latex(con_energy_balance_uc!))
 
 The constraint is named `energy_balance`.
-
-Note: This energy balance constraint considers the following variables as well:
-
-``inc_{g, t} \\geq 0, \\forall i \\in \\mathcal{I}, t \\in \\mathcal{T}`` \n
-``dec_{g, t} \\geq 0, \\forall d \\in \\mathcal{D}, t \\in \\mathcal{T}`` \n
-``psd_{g, t} \\geq 0, \\forall s \\in \\mathcal{S}, t \\in \\mathcal{T}``
-
 """
 function con_energy_balance!(fnm::FullNetworkModel{<:UC})
     model = fnm.model
