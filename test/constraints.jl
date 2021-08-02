@@ -230,19 +230,12 @@ end
             tests_ramp_rates(fnm; slack=1e4)
         end
     end
-    @testset "Energy balance constraints ED" begin
+    @testset "Energy balance constraints $T" for (T, t_system) in
+        ((UC, TEST_SYSTEM), (ED, TEST_SYSTEM_RT))
         @testset "con_energy_balance!" begin
-            fnm = FullNetworkModel{ED}(TEST_SYSTEM_RT, GLPK.Optimizer)
+            fnm = FullNetworkModel{T}(t_system, GLPK.Optimizer)
             var_thermal_generation!(fnm)
-            con_energy_balance!(fnm)
-            tests_energy_balance(fnm)
-        end
-    end
-    @testset "Energy balance constraints UC" begin
-        @testset "con_energy_balance!" begin
-            fnm = FullNetworkModel{UC}(TEST_SYSTEM, GLPK.Optimizer)
-            var_thermal_generation!(fnm)
-            var_bids!(fnm)
+            T == UC && var_bids!(fnm)
             con_energy_balance!(fnm)
             tests_energy_balance(fnm)
         end

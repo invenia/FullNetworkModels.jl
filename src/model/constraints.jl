@@ -355,6 +355,11 @@ the total generation in the system meets the demand in each time period, assumin
 $(_latex(con_energy_balance_uc!))
 
 The constraint is named `energy_balance`.
+
+Note: This energy balance constraint considers the following variables as well:
+
+$(_latex(var_bids!))
+
 """
 function con_energy_balance!(fnm::FullNetworkModel{<:UC})
     model = fnm.model
