@@ -94,6 +94,25 @@
         )
         @test get_initial_downtime(system) == Dict(3 => 0.0, 7 => 0.0)
         @test get_ramp_rates(system) == Dict(3 => 0.25, 7 => 0.25)
+
+        @testset "Get data for specific datetimes" begin
+            datetimes = get_forecast_timestamps(system)[5:8]
+            n_periods = length(datetimes)
+            @test get_pmax(system, datetimes) == DenseAxisArray(
+                fill(8.0, n_units, n_periods), unit_codes, datetimes
+            )
+            @test get_regmin(system, datetimes) == DenseAxisArray(
+                fill(0.5, n_units, n_periods), unit_codes, datetimes
+            )
+            @test get_regmax(system, datetimes) == DenseAxisArray(
+                fill(7.5, n_units, n_periods), unit_codes, datetimes
+            )
+            @test get_regulation_cost(system, datetimes) == DenseAxisArray(
+                vcat(fill(10_000, 1, n_periods), fill(20_000, 1, n_periods)),
+                unit_codes,
+                datetimes
+            )
+        end
     end
 
     @testset "API extensions" begin
