@@ -2,9 +2,10 @@
     fnm = FullNetworkModel{UC}(TEST_SYSTEM, GLPK.Optimizer)
     fnm_rt = FullNetworkModel{ED}(TEST_SYSTEM_RT, GLPK.Optimizer)
 
+    t1 = DateTime(2017, 12, 15)
+    t2 = DateTime(2017, 12, 15, 23)
+
     @testset "Prints" begin
-        t1 = DateTime(2017, 12, 15)
-        t2 = DateTime(2017, 12, 15, 23)
         @test sprint(show, fnm) == "FullNetworkModel{UC}\nTime periods: $t1 to $t2\nModel formulation: 0 variables and 0 constraints\nSystem: 32 components\n"
     end
 
@@ -17,6 +18,7 @@
 
         @test issetequal(unit_codes, (7, 3))
         @test issetequal(get_load_names(PowerLoad, system), ("Load1_2", "Load2_3"))
+        @test get_forecast_timestamps(system) == t1:Hour(1):t2
 
         n_units = length(unit_codes)
         @test get_pmin(system) == DenseAxisArray(
