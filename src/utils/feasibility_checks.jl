@@ -33,17 +33,17 @@ function _total_demand_feasibility(system, unit_codes, Pmax)
     gen_capacity = Vector{Float64}(undef, n_periods)
     system_load = Vector{Float64}(undef, n_periods)
     infeasible_periods = DateTime[]
-    for i in 1:length(datetimes)
-        gen_capacity[i] = sum(Pmax[g, datetimes[i]] for g in unit_codes)
-        system_load[i] = sum(loads[l, datetimes[i]] for l in load_names)
+    for (i, t) in enumerate(datetimes)
+        gen_capacity[i] = sum(Pmax[g, t] for g in unit_codes)
+        system_load[i] = sum(loads[l, t] for l in load_names)
         if gen_capacity[i] < system_load[i]
-            push!(infeasible_periods, datetimes[i])
+            push!(infeasible_periods, t)
         end
     end
     if !isempty(infeasible_periods)
         str = "There's not enough generation to meet the system-wide demand; problem will be infeasible."
-        for i in 1:length(datetimes)
-            str *= "\n Time period: $(datetimes[i]) | Generation capacity: $(gen_capacity[i]) | System load: $(system_load[i])"
+        for (i, t) in enumerate(datetimes)
+            str *= "\n Time period: $t | Generation capacity: $(gen_capacity[i]) | System load: $(system_load[i])"
         end
         warn(LOGGER, str)
         return false
