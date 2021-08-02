@@ -29,8 +29,9 @@ function get_forecast_timestamps(system::System)
     initial_timestamp = get_forecast_initial_timestamp(system)
     horizon = get_forecast_horizon(system)
     interval = get_forecast_interval(system)
-    timestamps = initial_timestamp .+ (0:horizon - 1) .* interval
-    return timestamps
+    return map(0:(horizon - 1)) do t
+        initial_timestamp + t * interval
+    end::Vector{DateTime}
 end
 
 # Extra constructor for convenience
