@@ -34,7 +34,7 @@ struct FullNetworkModel{T<:UCED}
     datetimes::Vector{DateTime}
 end
 
-function FullNetworkModel{T}(system::System, solver, datetimes) where T<:UCED
+function FullNetworkModel{T}(system::System, solver, datetimes=get_forecast_timestamps(system)) where T<:UCED
     return FullNetworkModel{T}(Model(solver), system, datetimes)
 end
 

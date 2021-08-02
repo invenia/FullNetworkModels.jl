@@ -34,12 +34,6 @@ function get_forecast_timestamps(system::System)
     end::Vector{DateTime}
 end
 
-# Extra constructor for convenience
-function FullNetworkModel{T}(system::System, solver) where T<:UCED
-    datetimes = get_forecast_timestamps(system)
-    return FullNetworkModel{T}(Model(solver), system, datetimes)
-end
-
 """
     get_unit_codes(gentype::Type{<:Generator}, system::System) -> Vector{Int}
 
