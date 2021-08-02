@@ -142,10 +142,9 @@ end
 
 function tests_energy_balance(fnm::FullNetworkModel{<:ED})
     load_names = get_load_names(PowerLoad, fnm.system)
-    n_periods = get_forecast_horizon(fnm.system)
     D = get_fixed_loads(fnm.system)
-    @testset "Constraints were correctly defined" for t in 1:n_periods
-        system_load = sum(D[f][t] for f in load_names)
+    @testset "Constraints were correctly defined" for t in fnm.datetimes
+        system_load = sum(D[f, t] for f in load_names)
         @test sprint(show, constraint_by_name(fnm.model, "energy_balance[$t]")) ==
             "energy_balance[$t] : p[7,$t] + p[3,$t] = $(system_load)"
     end

@@ -334,13 +334,12 @@ function con_energy_balance!(fnm::FullNetworkModel{<:ED})
     system = fnm.system
     unit_codes = get_unit_codes(ThermalGen, system)
     load_names = get_load_names(PowerLoad, system)
-    n_periods = get_forecast_horizon(system)
     D = get_fixed_loads(system)
     p = model[:p]
     @constraint(
         model,
-        energy_balance[t in 1:n_periods],
-        sum(p[g, t] for g in unit_codes) == sum(D[f][t] for f in load_names)
+        energy_balance[t in fnm.datetimes],
+        sum(p[g, t] for g in unit_codes) == sum(D[f, t] for f in load_names)
     )
     return fnm
 end
