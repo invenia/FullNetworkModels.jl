@@ -25,7 +25,7 @@ $(_write_formulation(
         _latex(con_operating_reserve_requirements!),
         _latex(_con_ancillary_services!),
         _latex(con_ramp_rates!),
-        _latex(con_energy_balance!),
+        _latex(con_energy_balance_uc!),
         _latex(_var_bid_blocks!),
     ],
     variables=[

@@ -1,7 +1,8 @@
 # Define functions so that `_latex` can be dispatched over them
 function con_ancillary_limits_ed! end
 function con_ancillary_limits_uc! end
-function con_energy_balance! end
+function con_energy_balance_ed! end
+function con_energy_balance_uc! end
 function _con_generation_limits_uc! end
 function _con_generation_limits_ed! end
 function con_operating_reserve_requirements! end
@@ -305,7 +306,13 @@ function con_ramp_rates!(fnm::FullNetworkModel; slack=nothing)
     return fnm
 end
 
-function _latex(::typeof(con_energy_balance!))
+function _latex(::typeof(con_energy_balance_ed!))
+    return """
+        ``\\sum_{g \\in \\mathcal{G}} p_{g, t} =
+        \\sum_{f \\in \\mathcal{F}} D_{f, t}, \\forall t \\in \\mathcal{T}``
+        """
+end
+function _latex(::typeof(con_energy_balance_uc!))
     return """
         ``\\sum_{g \\in \\mathcal{G}} p_{g, t} + \\sum_{i \\in \\mathcal{I}} inc_{i, t} =
         \\sum_{f \\in \\mathcal{F}} D_{f, t} + \\sum_{d \\in \\mathcal{D}} dec_{d, t} + \\sum_{s \\in \\mathcal{S}} psd_{s, t}, \\forall t \\in \\mathcal{T}``
@@ -313,16 +320,43 @@ function _latex(::typeof(con_energy_balance!))
 end
 
 """
-    con_energy_balance!(fnm::FullNetworkModel)
+    con_energy_balance!(fnm::FullNetworkModel{ED})
 
 Adds the energy balance constraints to the full network model. The constraints ensure that
 the total generation in the system meets the demand in each time period, assuming no loss:
 
-$(_latex(con_energy_balance!))
+$(_latex(con_energy_balance_ed!))
 
 The constraint is named `energy_balance`.
 """
-function con_energy_balance!(fnm::FullNetworkModel)
+function con_energy_balance!(fnm::FullNetworkModel{<:ED})
+    model = fnm.model
+    system = fnm.system
+    unit_codes = get_unit_codes(ThermalGen, system)
+    load_names = get_load_names(PowerLoad, system)
+    n_periods = get_forecast_horizon(system)
+    D = get_fixed_loads(system)
+    p = model[:p]
+    @constraint(
+        model,
+        energy_balance[t in 1:n_periods],
+        sum(p[g, t] for g in unit_codes) == sum(D[f][t] for f in load_names)
+    )
+    return fnm
+end
+
+"""
+    con_energy_balance!(fnm::FullNetworkModel{UC})
+
+Adds the energy balance constraints to the full network model. The constraints ensure that
+the total generation in the system meets the demand in each time period, including bids such
+as increments, decrements, and price-sensitive demands, assuming no loss:
+
+$(_latex(con_energy_balance_uc!))
+
+The constraint is named `energy_balance`.
+"""
+function con_energy_balance!(fnm::FullNetworkModel{<:UC})
     model = fnm.model
     system = fnm.system
     datetimes = fnm.datetimes
