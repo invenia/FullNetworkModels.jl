@@ -228,9 +228,18 @@ Adds zonal and market-wide operating reserve requirements to the full network mo
 
 $(_latex(con_operating_reserve_requirements!))
 """
-function con_operating_reserve_requirements!(fnm::FullNetworkModel)
+function con_operating_reserve_requirements!(fnm::FullNetworkModel{<:UC}; slack=nothing)
+    return con_operating_reserve_requirements!(fnm, slack)
+end
+
+function con_operating_reserve_requirements!(fnm::FullNetworkModel{<:ED}; slack=1e4)
+    return con_operating_reserve_requirements!(fnm, slack)
+end
+
+function con_operating_reserve_requirements!(fnm::FullNetworkModel, slack)
     model = fnm.model
     system = fnm.system
+    datetimes = fnm.datetimes
     reserve_zones = get_reserve_zones(system)
     zone_gens = _generators_by_reserve_zone(system)
     or_requirements = get_operating_reserve_requirements(system)
@@ -240,12 +249,21 @@ function con_operating_reserve_requirements!(fnm::FullNetworkModel)
     r_off_sup = model[:r_off_sup]
     @constraint(
         model,
-        operating_reserve_requirements[z in reserve_zones, t in fnm.datetimes],
+        operating_reserve_requirements[z in reserve_zones, t in datetimes],
         sum(
             r_reg[g, t] + r_spin[g, t] + r_on_sup[g, t] + r_off_sup[g, t]
                 for g in zone_gens[z]
         ) >= or_requirements[z]
     )
+    if slack !== nothing
+        # Soft constraints, add slacks
+        @variable(model, s_or_req[z in reserve_zones, t in datetimes] >= 0)
+        for z in reserve_zones, t in datetimes
+            set_normalized_coefficient(operating_reserve_requirements[z, t], s_or_req[z, t], 1.0)
+            # Add slack penalty to the objective
+            set_objective_coefficient(model, s_or_req[z, t], slack)
+        end
+    end
     return fnm
 end
 
