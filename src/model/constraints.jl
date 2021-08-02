@@ -358,7 +358,9 @@ The constraint is named `energy_balance`.
 
 Note: This energy balance constraint considers the following variables as well:
 
-$(_latex(var_bids!))
+``inc_{g, t} \\geq 0, \\forall i \\in \\mathcal{I}, t \\in \\mathcal{T}`` \n
+``dec_{g, t} \\geq 0, \\forall d \\in \\mathcal{D}, t \\in \\mathcal{T}`` \n
+``psd_{g, t} \\geq 0, \\forall s \\in \\mathcal{S}, t \\in \\mathcal{T}``
 
 """
 function con_energy_balance!(fnm::FullNetworkModel{<:UC})
