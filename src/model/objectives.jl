@@ -13,10 +13,9 @@ function _latex(::typeof(_obj_thermal_variable_cost!))
     """
 end
 
-function _latex(::typeof(_var_thermal_gen_blocks!); commitment)
-    u_gt = commitment ? "u_{g, t}" : ""
+function _latex(::typeof(_var_thermal_gen_blocks_uc!))
     return """
-        ``0 \\leq p^{\\text{aux}}_{g, t, q} \\leq \\bar{P}_{g, t, q} $u_gt, \\forall g \\in \\mathcal{G}, t \\in \\mathcal{T}, q \\in \\mathcal{Q}_{g, t}`` \n
+        ``0 \\leq p^{\\text{aux}}_{g, t, q} \\leq \\bar{P}_{g, t, q} u_{g, t}, \\forall g \\in \\mathcal{G}, t \\in \\mathcal{T}, q \\in \\mathcal{Q}_{g, t}`` \n
         ``p_{g, t} = \\sum_{q \\in \\mathcal{Q}_{g, t}} p^{\\text{aux}}_{g, t, q}, \\forall g \\in \\mathcal{G}, t \\in \\mathcal{T}``
         """
 end
