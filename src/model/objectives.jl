@@ -22,7 +22,7 @@ function _latex(::typeof(_var_thermal_gen_blocks!); commitment)
 end
 
 """
-    obj_thermal_variable_cost!(fnm::FullNetworkModel)
+    obj_thermal_variable_cost!(fnm::FullNetworkModel{UC})
 
 Adds the variable cost related to thermal generators by using auxiliary generation variables
 that multiply the offer prices. The variables `p_aux` are indexed, respectively, by the unit
@@ -43,17 +43,16 @@ $(_latex(_var_thermal_gen_blocks!; commitment=false))
 
 if `fnm.model` does not have commitment.
 """
-function obj_thermal_variable_cost!(fnm::FullNetworkModel)
+function obj_thermal_variable_cost!(fnm::FullNetworkModel{<:UC})
     model = fnm.model
     system = fnm.system
     datetimes = fnm.datetimes
-    @assert has_variable(model, "p")
     unit_codes = get_unit_codes(ThermalGen, system)
     offer_curves = get_offer_curves(system, datetimes)
     # Get properties of the offer curves: prices, block MW limits, number of blocks
-    Λ, p_aux_lims, n_blocks = _curve_properties(offer_curves)
+    Λ, block_lims, n_blocks = _curve_properties(offer_curves)
     # Add variables and constraints for thermal generation blocks
-    _var_thermal_gen_blocks!(model, unit_codes, p_aux_lims, datetimes, n_blocks)
+    _var_thermal_gen_blocks!(model, unit_codes, block_lims, datetimes, n_blocks)
     # Add thermal variable cost to objective
     _obj_thermal_variable_cost!(model, unit_codes, datetimes, n_blocks, Λ)
     return fnm
@@ -126,7 +125,7 @@ function obj_ancillary_costs!(fnm::FullNetworkModel)
 end
 
 function _var_thermal_gen_blocks!(
-    model::Model, unit_codes, p_aux_lims, datetimes, n_blocks
+    model::Model, unit_codes, block_lims, datetimes, n_blocks
 )
     @variable(
         model,
@@ -139,21 +138,13 @@ function _var_thermal_gen_blocks!(
         generation_definition[g in unit_codes, t in datetimes],
         p[g, t] == sum(p_aux[g, t, q] for q in 1:n_blocks[g, t])
     )
-    # Add upper bounds to `p_aux` - formulation changes a bit if there is commitment or not
-    if has_variable(model, "u")
-        u = model[:u]
-        @constraint(
-            model,
-            gen_block_limits[g in unit_codes, t in datetimes, q in 1:n_blocks[g, t]],
-            p_aux[g, t, q] <= p_aux_lims[g, t][q] * u[g, t]
-        )
-    else
-        @constraint(
-            model,
-            gen_block_limits[g in unit_codes, t in datetimes, q in 1:n_blocks[g, t]],
-            p_aux[g, t, q] <= p_aux_lims[g, t][q]
-        )
-    end
+    # Add upper bounds to `p_aux`
+    u = model[:u]
+    @constraint(
+        model,
+        gen_block_limits[g in unit_codes, t in datetimes, q in 1:n_blocks[g, t]],
+        p_aux[g, t, q] <= block_lims[g, t][q] * u[g, t]
+    )
     return model
 end
 
