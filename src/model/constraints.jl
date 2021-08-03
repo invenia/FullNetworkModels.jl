@@ -118,7 +118,6 @@ The constraints added are named, respectively, `ancillary_max`, `ancillary_min`,
 """
 function con_ancillary_limits!(fnm::FullNetworkModel{<:UC})
     system = fnm.system
-    model = fnm.model
     datetimes = fnm.datetimes
     unit_codes = get_unit_codes(ThermalGen, system)
     Pmax = get_pmax(system, datetimes)
@@ -126,12 +125,16 @@ function con_ancillary_limits!(fnm::FullNetworkModel{<:UC})
     Pmin = get_pmin(system, datetimes)
     Pregmin = get_regmin(system, datetimes)
 
-    _con_ancillary_max_commitment!(model, unit_codes, datetimes, Pmax, Pregmax)
-    _con_ancillary_min_commitment!(model, unit_codes, datetimes, Pmin, Pregmin)
-    _con_regulation_max_commitment!(model, unit_codes, datetimes, Pregmin, Pregmax)
-    _con_spin_and_sup_max_commitment!(model, unit_codes, datetimes, Pmin, Pmax)
-    _con_off_sup_max_commitment!(model, unit_codes, datetimes, Pmin, Pmax)
-    _con_zero_non_providers_commitment!(model, system, unit_codes, datetimes)
+    model = fnm.model
+    u = model[:u]
+    u_reg = model[:u_reg]
+
+    _con_ancillary_max!(model, unit_codes, datetimes, Pmax, Pregmax, u, u_reg)
+    _con_ancillary_min!(model, unit_codes, datetimes, Pmin, Pregmin, u, u_reg)
+    _con_regulation_max!(model, unit_codes, datetimes, Pregmin, Pregmax, u_reg)
+    _con_spin_and_sup_max!(model, unit_codes, datetimes, Pmin, Pmax, u)
+    _con_off_sup_max!(model, unit_codes, datetimes, Pmin, Pmax, u)
+    _con_zero_non_providers!(model, system, unit_codes, datetimes, u_reg)
     return fnm
 end
 
@@ -147,7 +150,6 @@ The constraints added are named, respectively, `ancillary_max`, `ancillary_min`,
 """
 function con_ancillary_limits!(fnm::FullNetworkModel{<:ED})
     system = fnm.system
-    model = fnm.model
     datetimes = fnm.datetimes
     unit_codes = get_unit_codes(ThermalGen, system)
     Pmax = get_pmax(system, datetimes)
@@ -157,11 +159,12 @@ function con_ancillary_limits!(fnm::FullNetworkModel{<:ED})
     U = get_commitment_status(system, datetimes)
     U_reg = get_commitment_reg_status(system, datetimes)
 
-    _con_ancillary_max_dispatch!(model, unit_codes, datetimes, Pmax, Pregmax, U, U_reg)
-    _con_ancillary_min_dispatch!(model, unit_codes, datetimes, Pmin, Pregmin, U, U_reg)
-    _con_spin_and_sup_max_dispatch!(model, unit_codes, datetimes, Pmin, Pmax, U)
-    _con_off_sup_max_dispatch!(model, unit_codes, datetimes, Pmin, Pmax, U)
-    _con_zero_non_providers_dispatch!(model, system, unit_codes, datetimes)
+    model = fnm.model
+    _con_ancillary_max!(model, unit_codes, datetimes, Pmax, Pregmax, U, U_reg)
+    _con_ancillary_min!(model, unit_codes, datetimes, Pmin, Pregmin, U, U_reg)
+    _con_spin_and_sup_max!(model, unit_codes, datetimes, Pmin, Pmax, U)
+    _con_off_sup_max!(model, unit_codes, datetimes, Pmin, Pmax, U)
+    _con_zero_non_providers!(model, system, unit_codes, datetimes)
     return fnm
 end
 
@@ -357,13 +360,12 @@ function con_energy_balance!(fnm::FullNetworkModel{<:UC})
 end
 
 "Upper bound on generation + ancillary services"
-function _con_ancillary_max_commitment!(model::Model, unit_codes, datetimes, Pmax, Pregmax)
+function _con_ancillary_max!(model::Model, unit_codes, datetimes, Pmax, Pregmax, u, u_reg)
     p = model[:p]
     r_reg = model[:r_reg]
     r_spin = model[:r_spin]
     r_on_sup = model[:r_on_sup]
-    u = model[:u]
-    u_reg = model[:u_reg]
+    # `u` here may be a variable or it may be the parameter "`U`". Likewise `u_reg`/`U_reg`.
     @constraint(
         model,
         ancillary_max[g in unit_codes, t in datetimes],
@@ -373,26 +375,11 @@ function _con_ancillary_max_commitment!(model::Model, unit_codes, datetimes, Pma
     return model
 end
 
-function _con_ancillary_max_dispatch!(model::Model, unit_codes, datetimes, Pmax, Pregmax, U, U_reg)
-    p = model[:p]
-    r_reg = model[:r_reg]
-    r_spin = model[:r_spin]
-    r_on_sup = model[:r_on_sup]
-    @constraint(
-        model,
-        ancillary_max[g in unit_codes, t in datetimes],
-        p[g, t] + r_reg[g, t] + r_spin[g, t] + r_on_sup[g, t] <=
-            Pmax[g, t] * (U[g, t] - U_reg[g, t]) + Pregmax[g, t] * U_reg[g, t]
-    )
-    return model
-end
-
 "Lower bound on generation - ancillary services"
-function _con_ancillary_min_commitment!(model::Model, unit_codes, datetimes, Pmin, Pregmin)
+function _con_ancillary_min!(model::Model, unit_codes, datetimes, Pmin, Pregmin, u ,u_reg)
     p = model[:p]
     r_reg = model[:r_reg]
-    u = model[:u]
-    u_reg = model[:u_reg]
+    # `u`/`u_reg` may be variables or parameters (which we'd usually write as `U`/`U_reg`).
     @constraint(
         model,
         ancillary_min[g in unit_codes, t in datetimes],
@@ -402,22 +389,10 @@ function _con_ancillary_min_commitment!(model::Model, unit_codes, datetimes, Pmi
     return model
 end
 
-function _con_ancillary_min_dispatch!(model::Model, unit_codes, datetimes, Pmin, Pregmin, U, U_reg)
-    p = model[:p]
-    r_reg = model[:r_reg]
-    @constraint(
-        model,
-        ancillary_min[g in unit_codes, t in datetimes],
-        p[g, t] - r_reg[g, t] >=
-            Pmin[g, t] * (U[g, t] - U_reg[g, t]) + Pregmin[g, t] * U_reg[g, t]
-    )
-    return model
-end
-
+# For UC only, so `u_reg` should be a variable here.
 "Upper bound on regulation"
-function _con_regulation_max_commitment!(model::Model, unit_codes, datetimes, Pregmin, Pregmax)
+function _con_regulation_max!(model::Model, unit_codes, datetimes, Pregmin, Pregmax, u_reg)
     r_reg = model[:r_reg]
-    u_reg = model[:u_reg]
     @constraint(
         model,
         regulation_max[g in unit_codes, t in datetimes],
@@ -427,10 +402,10 @@ function _con_regulation_max_commitment!(model::Model, unit_codes, datetimes, Pr
 end
 
 "Upper bound on spinning + online supplemental reserves"
-function _con_spin_and_sup_max_commitment!(model::Model, unit_codes, datetimes, Pmin, Pmax)
+function _con_spin_and_sup_max!(model::Model, unit_codes, datetimes, Pmin, Pmax, u)
     r_spin = model[:r_spin]
     r_on_sup = model[:r_on_sup]
-    u = model[:u]
+    # `u` may be a variable or a parameter (which we'd usually write as `U`).
     @constraint(
         model,
         spin_and_sup_max[g in unit_codes, t in datetimes],
@@ -439,21 +414,10 @@ function _con_spin_and_sup_max_commitment!(model::Model, unit_codes, datetimes, 
     return model
 end
 
-function _con_spin_and_sup_max_dispatch!(model::Model, unit_codes, datetimes, Pmin, Pmax, U)
-    r_spin = model[:r_spin]
-    r_on_sup = model[:r_on_sup]
-    @constraint(
-        model,
-        spin_and_sup_max[g in unit_codes, t in datetimes],
-        r_spin[g, t] + r_on_sup[g, t] <= (Pmax[g, t] - Pmin[g, t]) * U[g, t]
-    )
-    return model
-end
-
 "Upper bound on offline supplemental reserve"
-function _con_off_sup_max_commitment!(model::Model, unit_codes, datetimes, Pmin, Pmax)
+function _con_off_sup_max!(model::Model, unit_codes, datetimes, Pmin, Pmax, u)
     r_off_sup = model[:r_off_sup]
-    u = model[:u]
+    # `u` may be a variable or a parameter (which we'd usually write as `U`).
     @constraint(
         model,
         off_sup_max[g in unit_codes, t in datetimes],
@@ -462,25 +426,14 @@ function _con_off_sup_max_commitment!(model::Model, unit_codes, datetimes, Pmin,
     return model
 end
 
-function _con_off_sup_max_dispatch!(model::Model, unit_codes, datetimes, Pmin, Pmax, U)
-    r_off_sup = model[:r_off_sup]
-    @constraint(
-        model,
-        off_sup_max[g in unit_codes, t in datetimes],
-        r_off_sup[g, t] <= (Pmax[g, t] - Pmin[g, t]) * (1 - U[g, t])
-    )
-    return model
-end
-
 "Ensure that units that don't provide services have services set to zero."
-function _con_zero_non_providers_commitment!(model::Model, system::System, unit_codes, datetimes)
+function _con_zero_non_providers!(model::Model, system::System, unit_codes, datetimes)
     # Units that provide each service
     reg_providers = get_regulation_providers(system)
     spin_providers = get_spinning_providers(system)
     on_sup_providers = get_on_sup_providers(system)
     off_sup_providers = get_off_sup_providers(system)
     r_reg = model[:r_reg]
-    u_reg = model[:u_reg]
     r_spin = model[:r_spin]
     r_on_sup = model[:r_on_sup]
     r_off_sup = model[:r_off_sup]
@@ -489,60 +442,33 @@ function _con_zero_non_providers_commitment!(model::Model, system::System, unit_
         zero_reg[g in setdiff(unit_codes, reg_providers), t in datetimes],
         r_reg[g, t] == 0
     )
+    @constraint(
+        model,
+        zero_spin[g in setdiff(unit_codes, spin_providers), t in datetimes],
+        r_spin[g, t] == 0
+    )
+    @constraint(
+        model,
+        zero_on_sup[g in setdiff(unit_codes, on_sup_providers), t in datetimes],
+        r_on_sup[g, t] == 0
+    )
+    @constraint(
+        model,
+        zero_off_sup[g in setdiff(unit_codes, off_sup_providers), t in datetimes],
+        r_off_sup[g, t] == 0
+    )
+    return model
+end
+
+# For UC, add additional `zero_u_reg` constraint. `u_reg` here should be a variable.
+function _con_zero_non_providers!(model::Model, system::System, unit_codes, datetimes, u_reg)
+    reg_providers = get_regulation_providers(system)
     @constraint(
         model,
         zero_u_reg[g in setdiff(unit_codes, reg_providers), t in datetimes],
         u_reg[g, t] == 0
     )
-    @constraint(
-        model,
-        zero_spin[g in setdiff(unit_codes, spin_providers), t in datetimes],
-        r_spin[g, t] == 0
-    )
-    @constraint(
-        model,
-        zero_on_sup[g in setdiff(unit_codes, on_sup_providers), t in datetimes],
-        r_on_sup[g, t] == 0
-    )
-    @constraint(
-        model,
-        zero_off_sup[g in setdiff(unit_codes, off_sup_providers), t in datetimes],
-        r_off_sup[g, t] == 0
-    )
-    return model
-end
-
-function _con_zero_non_providers_dispatch!(model::Model, system::System, unit_codes, datetimes)
-    # Units that provide each service
-    reg_providers = get_regulation_providers(system)
-    spin_providers = get_spinning_providers(system)
-    on_sup_providers = get_on_sup_providers(system)
-    off_sup_providers = get_off_sup_providers(system)
-    r_reg = model[:r_reg]
-    r_spin = model[:r_spin]
-    r_on_sup = model[:r_on_sup]
-    r_off_sup = model[:r_off_sup]
-    @constraint(
-        model,
-        zero_reg[g in setdiff(unit_codes, reg_providers), t in datetimes],
-        r_reg[g, t] == 0
-    )
-    @constraint(
-        model,
-        zero_spin[g in setdiff(unit_codes, spin_providers), t in datetimes],
-        r_spin[g, t] == 0
-    )
-    @constraint(
-        model,
-        zero_on_sup[g in setdiff(unit_codes, on_sup_providers), t in datetimes],
-        r_on_sup[g, t] == 0
-    )
-    @constraint(
-        model,
-        zero_off_sup[g in setdiff(unit_codes, off_sup_providers), t in datetimes],
-        r_off_sup[g, t] == 0
-    )
-    return model
+    return _con_zero_non_providers!(model, system, unit_codes, datetimes)
 end
 
 """
