@@ -47,7 +47,6 @@ function _obj_thermal_linear_cost!(
     unit_codes=get_unit_codes(ThermalGen, fnm.system)
 )
     model = fnm.model
-    @assert has_variable(model, var)
     cost = f(fnm.system, fnm.datetimes)
     x = model[var]
     obj_cost = sum(cost[g, t] * x[g, t] for g in unit_codes, t in fnm.datetimes)
@@ -58,11 +57,11 @@ end
 """
     _curve_properties(curves; blocks=false) -> DenseAxisArray, DenseAxisArray, DenseAxisArray
 
-Returns dictionaries for several properties of offer/bid curves, namely the prices, block
-MW limits and number of blocks for each component in each time period. All dictionaries have
-either the unit codes or bid names as keys, for offer and bid curves respectively.
-The kwarg `blocks` indicates if the curve is just a series of blocks, meaning the MW values
-represent the size of the blocks instead of the cumulative MW value in the curve.
+Returns DenseAxisArrays for several properties of offer/bid curves, namely the prices, block
+MW limits and number of blocks for each component in each time period. All arrays have unit
+codes/bid names and datetimes as axes, respectively. The kwarg `blocks` indicates if the
+curve is just a series of blocks, meaning the MW values represent the size of the blocks
+instead of the cumulative MW value in the curve.
 """
 function _curve_properties(curves; blocks=false)
     prices = map(x -> first.(x), curves)

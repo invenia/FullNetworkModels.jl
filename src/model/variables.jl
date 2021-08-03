@@ -75,7 +75,6 @@ function var_startup_shutdown!(fnm::FullNetworkModel)
     model = fnm.model
     system = fnm.system
     datetimes = fnm.datetimes
-    @assert has_variable(model, "u")
     unit_codes = get_unit_codes(ThermalGen, system)
     _var_startup_shutdown!(model, unit_codes, datetimes)
     _con_startup_shutdown!(model, system, unit_codes, datetimes)
@@ -140,7 +139,6 @@ The created variables are named `r_reg`, `u_reg`, `r_spin`, `r_on_sup`, and `r_o
 """
 function var_ancillary_services!(fnm::FullNetworkModel)
     model = fnm.model
-    @assert has_variable(model, "u")
     unit_codes = get_unit_codes(ThermalGen, fnm.system)
     _var_ancillary_services!(model, unit_codes, fnm.datetimes)
     _con_ancillary_services!(model, unit_codes, fnm.datetimes)

@@ -56,20 +56,12 @@ end
 @testset "Objectives" begin
     @testset "obj_thermal_variable_cost!" begin
         t = first(get_forecast_timestamps(TEST_SYSTEM))
-        @testset "Adding cost before thermal generation throws error" begin
+        @testset "Adding cost before generation variables throws error" begin
             fnm = FullNetworkModel{UC}(TEST_SYSTEM, GLPK.Optimizer)
             @test objective_function(fnm.model) == AffExpr()
-            @test_throws AssertionError obj_thermal_variable_cost!(fnm)
+            @test_throws Exception obj_thermal_variable_cost!(fnm)
         end
-        @testset "Economic dispatch (just thermal generation added)" begin
-            fnm = FullNetworkModel{ED}(TEST_SYSTEM, GLPK.Optimizer)
-            var_thermal_generation!(fnm)
-            obj_thermal_variable_cost!(fnm)
-            tests_thermal_variable_cost(fnm)
-            @test sprint(show, constraint_by_name(fnm.model, "gen_block_limits[7,$t,1]")) ==
-                "gen_block_limits[7,$t,1] : p_aux[7,$t,1] ≤ 0.5"
-        end
-        @testset "unit commitment (both thermal generation and commitment added)" begin
+        @testset "Unit commitment" begin
             fnm = FullNetworkModel{UC}(TEST_SYSTEM, GLPK.Optimizer)
             var_thermal_generation!(fnm)
             var_commitment!(fnm)
@@ -94,8 +86,8 @@ end
         obj_thermal_noload_cost!(fnm)
         tests_thermal_noload_cost(fnm)
     end
-    @testset "obj_thermal_startup_cost! $T" for T in (UC, ED)
-        fnm = FullNetworkModel{T}(TEST_SYSTEM, GLPK.Optimizer)
+    @testset "obj_thermal_startup_cost!" begin
+        fnm = FullNetworkModel{UC}(TEST_SYSTEM, GLPK.Optimizer)
         var_commitment!(fnm)
         var_startup_shutdown!(fnm)
         obj_thermal_noload_cost!(fnm)
