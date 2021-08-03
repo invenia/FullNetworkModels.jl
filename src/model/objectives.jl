@@ -2,7 +2,7 @@
 function _obj_bid_variable_cost! end
 function _obj_thermal_variable_cost! end
 function _var_bid_blocks! end
-function _var_thermal_gen_blocks! end
+function _var_thermal_gen_blocks_uc! end
 function obj_ancillary_costs! end
 function obj_thermal_noload_cost! end
 function obj_thermal_startup_cost! end
@@ -35,13 +35,7 @@ $(_latex(_obj_thermal_variable_cost!))
 
 And adds the following constraints:
 
-$(_latex(_var_thermal_gen_blocks!; commitment=true))
-
-if `fnm.model` has commitment, or
-
-$(_latex(_var_thermal_gen_blocks!; commitment=false))
-
-if `fnm.model` does not have commitment.
+$(_latex(_var_thermal_gen_blocks_uc!))
 """
 function obj_thermal_variable_cost!(fnm::FullNetworkModel{<:UC})
     model = fnm.model
