@@ -18,7 +18,7 @@
 
         @test issetequal(unit_codes, (7, 3))
         @test issetequal(get_load_names(PowerLoad, system), ("Load1_2", "Load2_3"))
-        @test get_forecast_timestamps(system) == t1:Hour(1):t2
+        @test @inferred(get_forecast_timestamps(system)) == t1:Hour(1):t2
 
         n_units = length(unit_codes)
         @test get_pmin(system) == DenseAxisArray(
