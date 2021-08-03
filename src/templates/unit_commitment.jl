@@ -2,7 +2,7 @@
     unit_commitment(
         system::System, solver, datetimes=get_forecast_timestamps(system);
         relax_integrality=false
-    ) -> FullNetworkModel
+    ) -> FullNetworkModel{UC}
 
 Defines the unit commitment default template.
 Receives a `system` from FullNetworkDataPrep and returns a `FullNetworkModel` with a
@@ -81,7 +81,7 @@ end
     unit_commitment_soft_ramps(
         system::System, solver, datetimes=get_forecast_timestamps(system);
         slack=1e4, relax_integrality=false
-    ) -> FullNetworkModel
+    ) -> FullNetworkModel{UC}
 
 Defines the unit commitment template with soft generation ramp constraints.
 Receives a `system` from FullNetworkDataPrep and returns a `FullNetworkModel` with a
@@ -133,7 +133,7 @@ end
     unit_commitment_no_ramps(
         system::System, solver, datetimes=get_forecast_timestamps(system);
         relax_integrality=false
-    ) -> FullNetworkModel
+    ) -> FullNetworkModel{UC}
 
 Defines the unit commitment template with no ramp constraints.
 Receives a `system` from FullNetworkDataPrep and returns a `FullNetworkModel` with a
