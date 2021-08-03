@@ -84,10 +84,11 @@ export var_thermal_generation!
 
 # Constraint functions
 export con_ancillary_limits!
+export con_ancillary_ramp_rates!
 export con_energy_balance!
 export con_generation_limits!
+export con_generation_ramp_rates!
 export con_operating_reserve_requirements!
-export con_ramp_rates!
 export con_regulation_requirements!
 
 # Objective functions

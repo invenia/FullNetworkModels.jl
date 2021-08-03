@@ -6,10 +6,9 @@ function con_energy_balance_uc! end
 function _con_generation_limits_uc! end
 function _con_generation_limits_ed! end
 function con_operating_reserve_requirements! end
-function con_ramp_rates! end
 function con_regulation_requirements! end
-function _con_ancillary_ramp_rates! end
-function _con_generation_ramp_rates! end
+function con_ancillary_ramp_rates! end
+function con_generation_ramp_rates! end
 
 function _latex(::typeof(_con_generation_limits_uc!))
     return """
@@ -268,42 +267,20 @@ function con_operating_reserve_requirements!(fnm::FullNetworkModel, slack)
     return fnm
 end
 
-function _latex(::typeof(_con_ancillary_ramp_rates!))
+function _latex(::typeof(con_ancillary_ramp_rates!))
     return """
         ``r^{\\text{reg}}_{g, t} \\leq 5 RR_{g}, \\forall g \\in \\mathcal{G}, t \\in \\mathcal{T}`` \n
         ``r^{\\text{spin}}_{g, t} + r^{\\text{on-sup}}_{g, t} + r^{\\text{off-sup}}_{g, t} \\leq 10 RR_{g}, \\forall g \\in \\mathcal{G}, t \\in \\mathcal{T}``
         """
 end
 
-function _latex(::typeof(_con_generation_ramp_rates!))
+function _latex(::typeof(con_generation_ramp_rates!))
     return """
         ``p_{g, t} - p_{g, t - 1} \\leq \\Delta t RR_{g} u_{g, t - 1} + SU_{g} v_{g, t}, \\forall g \\in \\mathcal{G}, t \\in \\mathcal{T} \\setminus \\{1\\}`` \n
         ``p_{g, 1} - P^{0}_{g} \\leq \\Delta t RR_{g} U^{0}_{g} + SU_{g} v_{g, 1}, \\forall g \\in \\mathcal{G}`` \n
         ``p_{g, t - 1} - p_{g, t} \\leq \\Delta t RR_{g} u_{g, t} + SD_{g} w_{g, t}, \\forall g \\in \\mathcal{G}, t \\in \\mathcal{T} \\setminus \\{1\\}`` \n
         ``P^{0}_{g} - p_{g, 1} \\leq \\Delta t RR_{g} u_{g, 1} + SD_{g} w_{g, 1}, \\forall g \\in \\mathcal{G}``
         """
-end
-
-function _latex(::typeof(con_ramp_rates!))
-    return join(_latex.([_con_ancillary_ramp_rates!, _con_generation_ramp_rates!]), "\n")
-end
-
-"""
-    con_ramp_rates!(fnm::FullNetworkModel; slack=nothing)
-
-Adds ramp rate constraints to the full network model. The kwarg `slack` can be used to set
-the generator ramp constraints as soft constraints; any value different than `nothing` will
-result in soft constraints with the slack penalty value specified in `slack`.
-
-$(_latex(con_ramp_rates!))
-
-The constraints are named `ramp_regulation`, `ramp_spin_sup`, `ramp_up`, `ramp_up_initial`,
-`ramp_down`, and `ramp_down_initial`.
-"""
-function con_ramp_rates!(fnm::FullNetworkModel; slack=nothing)
-    _con_ancillary_ramp_rates!(fnm)
-    _con_generation_ramp_rates!(fnm, slack)
-    return fnm
 end
 
 function _latex(::typeof(con_energy_balance_ed!))
@@ -568,7 +545,16 @@ function _con_zero_non_providers_dispatch!(model::Model, system::System, unit_co
     return model
 end
 
-function _con_ancillary_ramp_rates!(fnm::FullNetworkModel)
+"""
+    con_ancillary_ramp_rates!(fnm::FullNetworkModel)
+
+Adds ancillary service ramp rate constraints to the full network model.
+
+$(_latex(con_ancillary_ramp_rates!))
+
+The constraints are named `ramp_regulation` and `ramp_spin_sup`.
+"""
+function con_ancillary_ramp_rates!(fnm::FullNetworkModel)
     model = fnm.model
     system = fnm.system
     datetimes = fnm.datetimes
@@ -594,7 +580,16 @@ function _con_ancillary_ramp_rates!(fnm::FullNetworkModel)
     return fnm
 end
 
-function _con_generation_ramp_rates!(fnm::FullNetworkModel, slack)
+"""
+    con_generation_ramp_rates!(fnm::FullNetworkModel; slack=nothing)
+
+Adds generation ramp rate constraints to the full network model.
+
+$(_latex(con_generation_ramp_rates!))
+
+The constraints are named `ramp_up`, `ramp_up_initial`, `ramp_down`, and `ramp_down_initial`.
+"""
+function con_generation_ramp_rates!(fnm::FullNetworkModel; slack=nothing)
     model = fnm.model
     system = fnm.system
     datetimes = fnm.datetimes

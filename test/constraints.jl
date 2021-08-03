@@ -220,7 +220,8 @@ end
         var_commitment!(fnm)
         var_startup_shutdown!(fnm)
         var_ancillary_services!(fnm)
-        con_ramp_rates!(fnm)
+        con_generation_ramp_rates!(fnm)
+        con_ancillary_ramp_rates!(fnm)
         tests_ramp_rates(fnm)
 
         @testset "soft constraints" begin
@@ -229,7 +230,8 @@ end
             var_commitment!(fnm)
             var_startup_shutdown!(fnm)
             var_ancillary_services!(fnm)
-            con_ramp_rates!(fnm; slack=1e4)
+            con_generation_ramp_rates!(fnm; slack=1e4)
+            con_ancillary_ramp_rates!(fnm)
             tests_ramp_rates(fnm; slack=1e4)
         end
     end

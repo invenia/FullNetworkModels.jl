@@ -24,7 +24,8 @@ $(_write_formulation(
         _latex(con_regulation_requirements!),
         _latex(con_operating_reserve_requirements!),
         _latex(_con_ancillary_services!),
-        _latex(con_ramp_rates!),
+        _latex(con_generation_ramp_rates!),
+        _latex(con_ancillary_ramp_rates!),
         _latex(con_energy_balance_uc!),
         _latex(_var_bid_blocks!),
     ],
@@ -62,7 +63,8 @@ function unit_commitment(
     con_ancillary_limits!(fnm)
     con_regulation_requirements!(fnm)
     con_operating_reserve_requirements!(fnm)
-    con_ramp_rates!(fnm)
+    con_generation_ramp_rates!(fnm)
+    con_ancillary_ramp_rates!(fnm)
     con_energy_balance!(fnm)
     # Objectives
     obj_thermal_variable_cost!(fnm)
@@ -113,7 +115,8 @@ function unit_commitment_soft_ramps(
     con_ancillary_limits!(fnm)
     con_regulation_requirements!(fnm)
     con_operating_reserve_requirements!(fnm)
-    con_ramp_rates!(fnm; slack=slack)
+    con_generation_ramp_rates!(fnm; slack=slack)
+    con_ancillary_ramp_rates!(fnm)
     con_energy_balance!(fnm)
     # Objectives
     obj_thermal_variable_cost!(fnm)
