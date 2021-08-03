@@ -5,8 +5,8 @@
     ) -> FullNetworkModel{UC}
 
 Defines the unit commitment default template.
-Receives a `system` from FullNetworkDataPrep and returns a `FullNetworkModel` with a
-`model` with the following formulation:
+Receives a `System` from FullNetworkDataPrep.jl and returns a [`FullNetworkModel`](@ref)
+with a `Model` with the following formulation:
 
 $(_write_formulation(
     objectives=[
@@ -37,12 +37,14 @@ $(_write_formulation(
     ]
 ))
 
-Arguments:
+See also [`unit_commitment_soft_ramps`](@ref) and [`unit_commitment_no_ramps`](@ref).
+
+# Arguments
  - `system::System`: The PowerSystems system that provides the input data.
  - `solver`: The solver of choice, e.g. `GLPK.Optimizer`.
  - `datetimes=get_forecast_timestamps(system)`: The time periods considered in the model.
 
-Keyword arguments:
+# Keywords
  - `relax_integrality=false`: If set to `true`, binary variables will be relaxed.
 """
 function unit_commitment(
@@ -84,16 +86,18 @@ end
     ) -> FullNetworkModel{UC}
 
 Defines the unit commitment template with soft generation ramp constraints.
-Receives a `system` from FullNetworkDataPrep and returns a `FullNetworkModel` with a
-`model` with the same formulation as `unit_commitment`, except for the ramp constraints,
+Receives a `system` from FullNetworkDataPrep and returns a [`FullNetworkModel`](@ref) with a
+`model` with the same formulation as [`unit_commitment`], except for the ramp constraints,
 which are modeled as soft constraints with slack variables.
 
-Arguments:
+See also [`unit_commitment`](@ref) and [`unit_commitment_no_ramps`](@ref).
+
+# Arguments
  - `system::System`: The PowerSystems system that provides the input data.
  - `solver`: The solver of choice, e.g. `GLPK.Optimizer`.
  - `datetimes=get_forecast_timestamps(system)`: The time periods considered in the model.
 
-Keyword arguments:
+# Keywords
  - `slack=1e4`: The slack penalty for the soft constraints.
  - `relax_integrality=false`: If set to `true`, binary variables will be relaxed.
 """
@@ -136,16 +140,18 @@ end
     ) -> FullNetworkModel{UC}
 
 Defines the unit commitment template with no ramp constraints.
-Receives a `system` from FullNetworkDataPrep and returns a `FullNetworkModel` with a
-`model` with the same formulation as `unit_commitment`, except for ramp constraints, which
-are omitted.
+Receives a `system` from FullNetworkDataPrep and returns a [`FullNetworkModel`](@ref) with a
+`model` with the same formulation as [`unit_commitment`](@ref), except for ramp constraints,
+which are omitted.
 
-Arguments:
+See also [`unit_commitment`](@ref) and [`unit_commitment_soft_ramps`](@ref).
+
+# Arguments
  - `system::System`: The PowerSystems system that provides the input data.
  - `solver`: The solver of choice, e.g. `GLPK.Optimizer`.
  - `datetimes=get_forecast_timestamps(system)`: The time periods considered in the model.
 
-Keyword arguments:
+# Keywords
  - `relax_integrality=false`: If set to `true`, binary variables will be relaxed.
 """
 function unit_commitment_no_ramps(
