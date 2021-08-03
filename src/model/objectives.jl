@@ -3,6 +3,7 @@ function _obj_bid_variable_cost! end
 function _obj_thermal_variable_cost! end
 function _var_bid_blocks! end
 function _var_thermal_gen_blocks_uc! end
+function _var_thermal_gen_blocks_ed! end
 function obj_ancillary_costs! end
 function obj_thermal_noload_cost! end
 function obj_thermal_startup_cost! end
@@ -19,6 +20,12 @@ function _latex(::typeof(_var_thermal_gen_blocks_uc!))
         ``p_{g, t} = \\sum_{q \\in \\mathcal{Q}_{g, t}} p^{\\text{aux}}_{g, t, q}, \\forall g \\in \\mathcal{G}, t \\in \\mathcal{T}``
         """
 end
+function _latex(::typeof(_var_thermal_gen_blocks_ed!))
+    return """
+        ``0 \\leq p^{\\text{aux}}_{g, t, q} \\leq \\bar{P}_{g, t, q} U_{g, t}, \\forall g \\in \\mathcal{G}, t \\in \\mathcal{T}, q \\in \\mathcal{Q}_{g, t}`` \n
+        ``p_{g, t} = \\sum_{q \\in \\mathcal{Q}_{g, t}} p^{\\text{aux}}_{g, t, q}, \\forall g \\in \\mathcal{G}, t \\in \\mathcal{T}``
+        """
+end
 
 """
     obj_thermal_variable_cost!(fnm::FullNetworkModel{UC})
@@ -32,11 +39,15 @@ Adds to the objective function:
 
 $(_latex(_obj_thermal_variable_cost!))
 
-And adds the following constraints:
+And adds the following constraints to a `UC` model:
 
 $(_latex(_var_thermal_gen_blocks_uc!))
+
+Or if a `ED` model, adds the constraints:
+
+$(_latex(_var_thermal_gen_blocks_ed!))
 """
-function obj_thermal_variable_cost!(fnm::FullNetworkModel{<:UC})
+function obj_thermal_variable_cost!(fnm::FullNetworkModel{T}) where T
     model = fnm.model
     system = fnm.system
     datetimes = fnm.datetimes
@@ -45,7 +56,8 @@ function obj_thermal_variable_cost!(fnm::FullNetworkModel{<:UC})
     # Get properties of the offer curves: prices, block MW limits, number of blocks
     Λ, block_lims, n_blocks = _curve_properties(offer_curves)
     # Add variables and constraints for thermal generation blocks
-    _var_thermal_gen_blocks!(model, unit_codes, block_lims, datetimes, n_blocks)
+    u = T === UC ? model[:u] : get_commitment_status(system, datetimes)
+    _var_thermal_gen_blocks!(model, unit_codes, block_lims, datetimes, n_blocks, u)
     # Add thermal variable cost to objective
     _obj_thermal_variable_cost!(model, unit_codes, datetimes, n_blocks, Λ)
     return fnm
@@ -118,8 +130,7 @@ function obj_ancillary_costs!(fnm::FullNetworkModel)
 end
 
 function _var_thermal_gen_blocks!(
-    model::Model, unit_codes, block_lims, datetimes, n_blocks
-)
+    model::Model, unit_codes, block_lims, datetimes, n_blocks, u)
     @variable(
         model,
         p_aux[g in unit_codes, t in datetimes, q in 1:n_blocks[g, t]] >= 0
@@ -131,8 +142,7 @@ function _var_thermal_gen_blocks!(
         generation_definition[g in unit_codes, t in datetimes],
         p[g, t] == sum(p_aux[g, t, q] for q in 1:n_blocks[g, t])
     )
-    # Add upper bounds to `p_aux`
-    u = model[:u]
+    # Add upper bounds to `p_aux`. For UC, `u` is a variable. For ED, `u` is a parameter.
     @constraint(
         model,
         gen_block_limits[g in unit_codes, t in datetimes, q in 1:n_blocks[g, t]],
