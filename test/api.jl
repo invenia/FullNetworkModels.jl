@@ -1,6 +1,6 @@
 @testset "API functions" begin
-    fnm = FullNetworkModel{UC}(TEST_SYSTEM, GLPK.Optimizer)
-    fnm_rt = FullNetworkModel{ED}(TEST_SYSTEM_RT, GLPK.Optimizer)
+    fnm = FullNetworkModel{UC}(TEST_SYSTEM)
+    fnm_rt = FullNetworkModel{ED}(TEST_SYSTEM_RT)
 
     t1 = DateTime(2017, 12, 15)
     t2 = DateTime(2017, 12, 15, 23)
@@ -118,6 +118,12 @@
     end
 
     @testset "API extensions" begin
+        # test model has no solver
+        @test solver_name(fnm.model) === solver_name(Model())
+
+        set_optimizer(fnm, GLPK.Optimizer)
+        @test solver_name(fnm.model) == "GLPK"
+
         set_optimizer_attribute(fnm, "tol_obj", 1e-2)
         @test get_optimizer_attribute(fnm, "tol_obj") == 1e-2
 

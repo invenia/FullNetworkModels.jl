@@ -4,6 +4,10 @@
 
 JuMP.optimize!(fnm::FullNetworkModel) = optimize!(fnm.model)
 
+function JuMP.set_optimizer(fnm::FullNetworkModel, solver; kwargs...)
+    return set_optimizer(fnm.model, solver; kwargs...)
+end
+
 function JuMP.set_optimizer_attribute(fnm::FullNetworkModel, name::String, value)
     return set_optimizer_attribute(fnm.model, name, value)
 end

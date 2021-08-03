@@ -2,7 +2,7 @@
     unit_commitment(
         system::System, solver, datetimes=get_forecast_timestamps(system);
         relax_integrality=false
-    ) -> FullNetworkModel
+    ) -> FullNetworkModel{UC}
 
 Defines the unit commitment default template.
 Receives a `system` from FullNetworkDataPrep and returns a `FullNetworkModel` with a
@@ -50,7 +50,7 @@ function unit_commitment(
     relax_integrality=false
 )
     # Initialize FNM
-    fnm = FullNetworkModel{UC}(system, solver, datetimes)
+    fnm = FullNetworkModel{UC}(system, datetimes)
     # Variables
     var_thermal_generation!(fnm)
     var_commitment!(fnm)
@@ -73,6 +73,7 @@ function unit_commitment(
     if relax_integrality
         JuMP.relax_integrality(fnm.model)
     end
+    set_optimizer(fnm, solver)
     return fnm
 end
 
@@ -80,7 +81,7 @@ end
     unit_commitment_soft_ramps(
         system::System, solver, datetimes=get_forecast_timestamps(system);
         slack=1e4, relax_integrality=false
-    ) -> FullNetworkModel
+    ) -> FullNetworkModel{UC}
 
 Defines the unit commitment template with soft generation ramp constraints.
 Receives a `system` from FullNetworkDataPrep and returns a `FullNetworkModel` with a
@@ -101,7 +102,7 @@ function unit_commitment_soft_ramps(
     slack=1e4, relax_integrality=false
 )
     # Initialize FNM
-    fnm = FullNetworkModel{UC}(system, solver, datetimes)
+    fnm = FullNetworkModel{UC}(system, datetimes)
     # Variables
     var_thermal_generation!(fnm)
     var_commitment!(fnm)
@@ -124,6 +125,7 @@ function unit_commitment_soft_ramps(
     if relax_integrality
         JuMP.relax_integrality(fnm.model)
     end
+    set_optimizer(fnm, solver)
     return fnm
 end
 
@@ -131,7 +133,7 @@ end
     unit_commitment_no_ramps(
         system::System, solver, datetimes=get_forecast_timestamps(system);
         relax_integrality=false
-    ) -> FullNetworkModel
+    ) -> FullNetworkModel{UC}
 
 Defines the unit commitment template with no ramp constraints.
 Receives a `system` from FullNetworkDataPrep and returns a `FullNetworkModel` with a
@@ -151,7 +153,7 @@ function unit_commitment_no_ramps(
     relax_integrality=false
 )
     # Initialize FNM
-    fnm = FullNetworkModel{UC}(system, solver, datetimes)
+    fnm = FullNetworkModel{UC}(system, datetimes)
     # Variables
     var_thermal_generation!(fnm)
     var_commitment!(fnm)
@@ -173,5 +175,6 @@ function unit_commitment_no_ramps(
     if relax_integrality
         JuMP.relax_integrality(fnm.model)
     end
+    set_optimizer(fnm, solver)
     return fnm
 end

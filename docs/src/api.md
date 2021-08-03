@@ -1,5 +1,7 @@
 # API
 
+## Types
+
 ```@docs
 FullNetworkModel
 UCED
@@ -7,7 +9,7 @@ UC
 ED
 ```
 
-## Templates
+## [Templates](@id templates)
 
 ### Unit Commitment
 
