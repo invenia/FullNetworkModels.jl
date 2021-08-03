@@ -11,25 +11,25 @@ function _add_to_objective!(model::Model, expr)
 end
 
 """
-    _variable_cost(model::Model, names, n_periods, n_blocks, Λ, v, sense) -> AffExpr
+    _variable_cost(model::Model, names, datetimes, n_blocks, Λ, v, sense) -> AffExpr
 
 Defines the expression of a variable cost to be added in the objective function.
 
 Arguments:
  - `model::Model`: the JuMP model that contains the variables to be used.
  - `names`: the unit codes, bid names, or similar that act as indices.
- - `n_periods`: the number of time periods considered.
+ - `datetimes`: the time periods considered.
  - `Λ`: The offer/bid prices per block.
  - `v`: The name of the variable to be considered in the cost, e.g. `:p` for generation.
  - `sense`: constant multiplying the variable cost; should be 1 or -1 (i.e. if it's a
    positive or negative expression).
 """
-function _variable_cost(model::Model, names, n_periods, n_blocks, Λ, v, sense)
+function _variable_cost(model::Model, names, datetimes, n_blocks, Λ, v, sense)
     v_aux = model[Symbol(v, :_aux)]
     variable_cost = AffExpr(0.0)
-    for n in names, t in 1:n_periods, q in 1:n_blocks[n][t]
-        # Faster version of `variable_cost += Λ[n][t][q] * v_aux[n, t, q]`
-        add_to_expression!(variable_cost, Λ[n][t][q], v_aux[n, t, q])
+    for n in names, t in datetimes, q in 1:n_blocks[n, t]
+        # Faster version of `variable_cost += Λ[n, t][q] * v_aux[n, t, q]`
+        add_to_expression!(variable_cost, Λ[n, t][q], v_aux[n, t, q])
     end
     # Apply sense to expression - same as `variable_cost *= sense`
     map_coefficients_inplace!(x -> sense * x, variable_cost)
@@ -47,18 +47,16 @@ function _obj_thermal_linear_cost!(
     unit_codes=get_unit_codes(ThermalGen, fnm.system)
 )
     model = fnm.model
-    system = fnm.system
     @assert has_variable(model, var)
-    n_periods = get_forecast_horizon(system)
-    cost = f(system)
+    cost = f(fnm.system, fnm.datetimes)
     x = model[var]
-    obj_cost = sum(cost[g][t] * x[g, t] for g in unit_codes, t in 1:n_periods)
+    obj_cost = sum(cost[g, t] * x[g, t] for g in unit_codes, t in fnm.datetimes)
     _add_to_objective!(model, obj_cost)
     return fnm
 end
 
 """
-    _curve_properties(curves, n_periods; blocks=false) -> Dict, Dict, Dict
+    _curve_properties(curves; blocks=false) -> DenseAxisArray, DenseAxisArray, DenseAxisArray
 
 Returns dictionaries for several properties of offer/bid curves, namely the prices, block
 MW limits and number of blocks for each component in each time period. All dictionaries have
@@ -66,21 +64,15 @@ either the unit codes or bid names as keys, for offer and bid curves respectivel
 The kwarg `blocks` indicates if the curve is just a series of blocks, meaning the MW values
 represent the size of the blocks instead of the cumulative MW value in the curve.
 """
-function _curve_properties(curves, n_periods; blocks=false)
-    T = keytype(curves)
-    prices = Dict{T, Vector{Vector{Float64}}}()
-    limits = Dict{T, Vector{Vector{Float64}}}()
-    n_blocks = Dict{T, Vector{Int}}()
-    for (g, curve) in curves
-        prices[g] = [first.(curve[i]) for i in 1:n_periods]
-        limits[g] = [last.(curve[i]) for i in 1:n_periods]
-        n_blocks[g] = length.(limits[g])
-    end
+function _curve_properties(curves; blocks=false)
+    prices = map(x -> first.(x), curves)
+    limits = map(x -> last.(x), curves)
+    n_blocks = map(length, limits)
     if !blocks
         # Change curve MW values to block MW limits - e.g. if the MW values are
         # (50, 100, 200), the corresponding MW limits of each block are (50, 50, 100).
-        for g in keys(n_blocks), t in 1:n_periods, q in n_blocks[g][t]:-1:2
-            @inbounds limits[g][t][q] -= limits[g][t][q - 1]
+        for lim in limits, q in length(lim):-1:2
+            @inbounds lim[q] -= lim[q - 1]
         end
     end
     return prices, limits, n_blocks
@@ -145,4 +137,46 @@ Returns the time resolution of the time series in the system in minutes.
 """
 function _get_resolution_in_minutes(system::System)
     return Dates.value(Minute(get_time_series_resolution(system)))
+end
+
+"""
+    _time_series_values(device, label::AbstractString, datetimes::Vector{DateTime}) -> Vector
+
+Returns the valuesc in `device` of the time series named `label` for the time periods in
+`datetimes`.
+"""
+function _time_series_values(device, label::AbstractString, datetimes::Vector{DateTime})
+    ta = get_time_series_array(SingleTimeSeries, device, label)
+    return values(ta[datetimes])
+end
+
+"""
+    _generator_time_series_values(
+        gen, label::AbstractString, datetimes::Vector{DateTime}, suffix::Bool
+    ) -> Union{Nothing, Vector}
+
+Returns the values in `gen` of the time series named `label`, if it exists, for the time
+periods in `datetimes`. If `suffix` is set to `true`, then the reserve zone is considered.
+"""
+function _generator_time_series_values(
+    gen, label::AbstractString, datetimes::Vector{DateTime}, suffix::Bool
+)
+    # If the label is supposed to have a zone suffix, append it
+    full_label = suffix ? label * "_$(gen.ext["reserve_zone"])" : label
+    # Return values only if the unit actually has that time series
+    if full_label in get_time_series_names(SingleTimeSeries, gen)
+        return _time_series_values(gen, full_label, datetimes)
+    end
+    return nothing
+end
+
+"""
+    _load_time_series_values(load, datetimes::Vector{DateTime}) -> Vector
+
+Returns the values in `load` of the "active_power" time series for the time periods in
+`datetimes`, multiplied by the base `active_power` field value.
+"""
+function _load_time_series_values(load, datetimes::Vector{DateTime})
+    active_power = get_active_power(load)
+    return active_power .* _time_series_values(load, "active_power", datetimes)
 end

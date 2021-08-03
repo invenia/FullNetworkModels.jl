@@ -1,10 +1,10 @@
 @testset "Templates" begin
     @testset "unit_commitment" begin
         fnm = unit_commitment(TEST_SYSTEM, GLPK.Optimizer)
-        n_periods = get_forecast_horizon(fnm.system)
-        tests_thermal_variable(fnm, "p", n_periods)
-        tests_commitment(fnm, n_periods)
-        tests_startup_shutdown(fnm, n_periods)
+        datetimes = fnm.datetimes
+        tests_thermal_variable(fnm, "p")
+        tests_commitment(fnm)
+        tests_startup_shutdown(fnm)
         tests_generation_limits(fnm)
         tests_thermal_variable_cost(fnm)
         tests_thermal_noload_cost(fnm)
@@ -65,4 +65,14 @@
             @test all(==(0.0), value.(fnm_no_ramps.model[:psd]))
         end
     end
+end
+@testset "Templates defined for specific datetimes" begin
+    datetimes = get_forecast_timestamps(TEST_SYSTEM)[5:8]
+    fnm = unit_commitment(TEST_SYSTEM, GLPK.Optimizer, datetimes)
+    @test fnm.datetimes == datetimes
+    optimize!(fnm)
+    unit_codes = get_unit_codes(ThermalGen, fnm.system)
+    @test value.(fnm.model[:u]) == DenseAxisArray(
+        fill(1.0, length(unit_codes), length(datetimes)), unit_codes, datetimes,
+    )
 end

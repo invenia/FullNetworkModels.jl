@@ -6,6 +6,7 @@ using GLPK
 using FullNetworkModels
 using MathOptInterface: TerminationStatusCode
 using JuMP
+using JuMP.Containers: DenseAxisArray
 using PowerSystems
 using PowerSystemsExtras
 using Random

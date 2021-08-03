@@ -46,16 +46,16 @@ if `fnm.model` does not have commitment.
 function obj_thermal_variable_cost!(fnm::FullNetworkModel)
     model = fnm.model
     system = fnm.system
+    datetimes = fnm.datetimes
     @assert has_variable(model, "p")
     unit_codes = get_unit_codes(ThermalGen, system)
-    n_periods = get_forecast_horizon(system)
-    offer_curves = get_offer_curves(system)
+    offer_curves = get_offer_curves(system, datetimes)
     # Get properties of the offer curves: prices, block MW limits, number of blocks
-    Λ, p_aux_lims, n_blocks = _curve_properties(offer_curves, n_periods)
+    Λ, p_aux_lims, n_blocks = _curve_properties(offer_curves)
     # Add variables and constraints for thermal generation blocks
-    _var_thermal_gen_blocks!(model, unit_codes, p_aux_lims, n_periods, n_blocks)
+    _var_thermal_gen_blocks!(model, unit_codes, p_aux_lims, datetimes, n_blocks)
     # Add thermal variable cost to objective
-    _obj_thermal_variable_cost!(model, unit_codes, n_periods, n_blocks, Λ)
+    _obj_thermal_variable_cost!(model, unit_codes, datetimes, n_blocks, Λ)
     return fnm
 end
 
@@ -126,39 +126,39 @@ function obj_ancillary_costs!(fnm::FullNetworkModel)
 end
 
 function _var_thermal_gen_blocks!(
-    model::Model, unit_codes, p_aux_lims, n_periods, n_blocks
+    model::Model, unit_codes, p_aux_lims, datetimes, n_blocks
 )
     @variable(
         model,
-        p_aux[g in unit_codes, t in 1:n_periods, q in 1:n_blocks[g][t]] >= 0
+        p_aux[g in unit_codes, t in datetimes, q in 1:n_blocks[g, t]] >= 0
     )
     # Add constraints linking `p` to `p_aux`
     p = model[:p]
     @constraint(
         model,
-        generation_definition[g in unit_codes, t in 1:n_periods],
-        p[g, t] == sum(p_aux[g, t, q] for q in 1:n_blocks[g][t])
+        generation_definition[g in unit_codes, t in datetimes],
+        p[g, t] == sum(p_aux[g, t, q] for q in 1:n_blocks[g, t])
     )
     # Add upper bounds to `p_aux` - formulation changes a bit if there is commitment or not
     if has_variable(model, "u")
         u = model[:u]
         @constraint(
             model,
-            gen_block_limits[g in unit_codes, t in 1:n_periods, q in 1:n_blocks[g][t]],
-            p_aux[g, t, q] <= p_aux_lims[g][t][q] * u[g, t]
+            gen_block_limits[g in unit_codes, t in datetimes, q in 1:n_blocks[g, t]],
+            p_aux[g, t, q] <= p_aux_lims[g, t][q] * u[g, t]
         )
     else
         @constraint(
             model,
-            gen_block_limits[g in unit_codes, t in 1:n_periods, q in 1:n_blocks[g][t]],
-            p_aux[g, t, q] <= p_aux_lims[g][t][q]
+            gen_block_limits[g in unit_codes, t in datetimes, q in 1:n_blocks[g, t]],
+            p_aux[g, t, q] <= p_aux_lims[g, t][q]
         )
     end
     return model
 end
 
-function _obj_thermal_variable_cost!(model::Model, unit_codes, n_periods, n_blocks, Λ)
-    thermal_cost = _variable_cost(model, unit_codes, n_periods, n_blocks, Λ, :p, 1)
+function _obj_thermal_variable_cost!(model::Model, unit_codes, datetimes, n_blocks, Λ)
+    thermal_cost = _variable_cost(model, unit_codes, datetimes, n_blocks, Λ, :p, 1)
     _add_to_objective!(model, thermal_cost)
     return model
 end
@@ -201,21 +201,21 @@ $(_latex(_var_bid_blocks!))
 function obj_bids!(fnm::FullNetworkModel)
     model = fnm.model
     system = fnm.system
-    n_periods = get_forecast_horizon(system)
+    datetimes = fnm.datetimes
     for (bidtype, v) in ((Increment, :inc), (Decrement, :dec), (PriceSensitiveDemand, :psd))
         bid_names = get_bid_names(bidtype, system)
-        bids = get_bid_curves(bidtype, system)
+        bids = get_bid_curves(bidtype, system, datetimes)
         # Get properties of the bid curves: prices, block MW limits, number of blocks
-        Λ, block_lims, n_blocks = _curve_properties(bids, n_periods; blocks=true)
+        Λ, block_lims, n_blocks = _curve_properties(bids; blocks=true)
         # Add variables and constraints for bid blocks and cost to objective function
-        _var_bid_blocks!(model, bid_names, block_lims, n_periods, n_blocks, v)
+        _var_bid_blocks!(model, bid_names, block_lims, datetimes, n_blocks, v)
         sense = bidtype === Increment ? 1 : -1
-        _obj_bid_variable_cost!(model, bid_names, n_periods, n_blocks, Λ, v, sense)
+        _obj_bid_variable_cost!(model, bid_names, datetimes, n_blocks, Λ, v, sense)
     end
     return fnm
 end
 
-function _var_bid_blocks!(model::Model, bid_names, block_lims, n_periods, n_blocks, v)
+function _var_bid_blocks!(model::Model, bid_names, block_lims, datetimes, n_blocks, v)
     # Define variable / constraint names – this function is used for all bid types
     v_aux = Symbol(v, :_aux)
     def = Symbol(v, :_definition)
@@ -225,27 +225,27 @@ function _var_bid_blocks!(model::Model, bid_names, block_lims, n_periods, n_bloc
     # otherwise `model[:x]` is undefined.
     model[v_aux] = @variable(
         model,
-        [b in bid_names, t in 1:n_periods, q in 1:n_blocks[b][t]],
+        [b in bid_names, t in datetimes, q in 1:n_blocks[b, t]],
         lower_bound = 0,
         base_name = "$v_aux"
     )
     model[def] = @constraint(
         model,
-        [b in bid_names, t in 1:n_periods],
-        model[v][b, t] == sum(model[v_aux][b, t, q] for q in 1:n_blocks[b][t]),
+        [b in bid_names, t in datetimes],
+        model[v][b, t] == sum(model[v_aux][b, t, q] for q in 1:n_blocks[b, t]),
         base_name = "$def"
     )
     model[lims] = @constraint(
         model,
-        [b in bid_names, t in 1:n_periods, q in 1:n_blocks[b][t]],
-        model[v_aux][b, t, q] <= block_lims[b][t][q],
+        [b in bid_names, t in datetimes, q in 1:n_blocks[b, t]],
+        model[v_aux][b, t, q] <= block_lims[b, t][q],
         base_name = "$lims"
     )
     return model
 end
 
-function _obj_bid_variable_cost!(model::Model, bid_names, n_periods, n_blocks, Λ, v, sense)
-    bid_cost = _variable_cost(model, bid_names, n_periods, n_blocks, Λ, v, sense)
+function _obj_bid_variable_cost!(model::Model, bid_names, datetimes, n_blocks, Λ, v, sense)
+    bid_cost = _variable_cost(model, bid_names, datetimes, n_blocks, Λ, v, sense)
     _add_to_objective!(model, bid_cost)
     return model
 end

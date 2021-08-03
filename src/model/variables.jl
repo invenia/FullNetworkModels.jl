@@ -23,8 +23,7 @@ $(_latex(var_thermal_generation!))
 """
 function var_thermal_generation!(fnm::FullNetworkModel)
     unit_codes = get_unit_codes(ThermalGen, fnm.system)
-    n_periods = get_forecast_horizon(fnm.system)
-    @variable(fnm.model, p[g in unit_codes, t in 1:n_periods] >= 0)
+    @variable(fnm.model, p[g in unit_codes, t in fnm.datetimes] >= 0)
     return fnm
 end
 
@@ -44,8 +43,7 @@ $(_latex(var_commitment!))
 """
 function var_commitment!(fnm::FullNetworkModel)
     unit_codes = get_unit_codes(ThermalGen, fnm.system)
-    n_periods = get_forecast_horizon(fnm.system)
-    @variable(fnm.model, u[g in unit_codes, t in 1:n_periods], Bin)
+    @variable(fnm.model, u[g in unit_codes, t in fnm.datetimes], Bin)
     return fnm
 end
 
@@ -76,36 +74,38 @@ $(_latex(_var_startup_shutdown!))
 function var_startup_shutdown!(fnm::FullNetworkModel)
     model = fnm.model
     system = fnm.system
+    datetimes = fnm.datetimes
     @assert has_variable(model, "u")
     unit_codes = get_unit_codes(ThermalGen, system)
-    n_periods = get_forecast_horizon(system)
-    _var_startup_shutdown!(model, unit_codes, n_periods)
-    _con_startup_shutdown!(model, system, unit_codes, n_periods)
+    _var_startup_shutdown!(model, unit_codes, datetimes)
+    _con_startup_shutdown!(model, system, unit_codes, datetimes)
     return fnm
 end
 
-function _var_startup_shutdown!(model::Model, unit_codes, n_periods)
-    @variable(model, 0 <= v[g in unit_codes, t in 1:n_periods] <= 1)
-    @variable(model, 0 <= w[g in unit_codes, t in 1:n_periods] <= 1)
+function _var_startup_shutdown!(model::Model, unit_codes, datetimes)
+    @variable(model, 0 <= v[g in unit_codes, t in datetimes] <= 1)
+    @variable(model, 0 <= w[g in unit_codes, t in datetimes] <= 1)
     return model
 end
 
-function _con_startup_shutdown!(model::Model, system, unit_codes, n_periods)
+function _con_startup_shutdown!(model::Model, system, unit_codes, datetimes)
     # Get variables and parameters for better readability
     u = model[:u]
     v = model[:v]
     w = model[:w]
     U0 = get_initial_commitment(system)
+    Δh = Hour(_get_resolution_in_minutes(system) / 60) # assume hourly resolution
+    h1 = first(datetimes)
     # Add the constraints that model the start-up and shutdown variables
     @constraint(
         model,
-        startup_shutdown_definition[g in unit_codes, t in 2:n_periods],
-        u[g, t] - u[g, t - 1] == v[g, t] - w[g, t]
+        startup_shutdown_definition[g in unit_codes, t in datetimes[2:end]],
+        u[g, t] - u[g, t - Δh] == v[g, t] - w[g, t]
     )
     @constraint(
         model,
         startup_shutdown_definition_initial[g in unit_codes],
-        u[g, 1] - U0[g] == v[g, 1] - w[g, 1]
+        u[g, h1] - U0[g] == v[g, h1] - w[g, h1]
     )
     return model
 end
@@ -142,26 +142,25 @@ function var_ancillary_services!(fnm::FullNetworkModel)
     model = fnm.model
     @assert has_variable(model, "u")
     unit_codes = get_unit_codes(ThermalGen, fnm.system)
-    n_periods = get_forecast_horizon(fnm.system)
-    _var_ancillary_services!(model, unit_codes, n_periods)
-    _con_ancillary_services!(model, unit_codes, n_periods)
+    _var_ancillary_services!(model, unit_codes, fnm.datetimes)
+    _con_ancillary_services!(model, unit_codes, fnm.datetimes)
     return fnm
 end
 
-function _var_ancillary_services!(model::Model, unit_codes, n_periods)
-    @variable(model, r_reg[g in unit_codes, t in 1:n_periods] >= 0)
-    @variable(model, u_reg[g in unit_codes, t in 1:n_periods], Bin)
-    @variable(model, r_spin[g in unit_codes, t in 1:n_periods] >= 0)
-    @variable(model, r_on_sup[g in unit_codes, t in 1:n_periods] >= 0)
-    @variable(model, r_off_sup[g in unit_codes, t in 1:n_periods] >= 0)
+function _var_ancillary_services!(model::Model, unit_codes, datetimes)
+    @variable(model, r_reg[g in unit_codes, t in datetimes] >= 0)
+    @variable(model, u_reg[g in unit_codes, t in datetimes], Bin)
+    @variable(model, r_spin[g in unit_codes, t in datetimes] >= 0)
+    @variable(model, r_on_sup[g in unit_codes, t in datetimes] >= 0)
+    @variable(model, r_off_sup[g in unit_codes, t in datetimes] >= 0)
     return model
 end
 
-function _con_ancillary_services!(model::Model, unit_codes, n_periods)
+function _con_ancillary_services!(model::Model, unit_codes, datetimes)
     u = model[:u]
     u_reg = model[:u_reg]
     # We add a constraint here because it is part of the basic definition of `u_reg`
-    @constraint(model, [g in unit_codes, t in 1:n_periods], u_reg[g, t] <= u[g, t])
+    @constraint(model, [g in unit_codes, t in datetimes], u_reg[g, t] <= u[g, t])
     return model
 end
 
@@ -187,9 +186,8 @@ function var_bids!(fnm::FullNetworkModel)
     inc_names = get_bid_names(Increment, fnm.system)
     dec_names = get_bid_names(Decrement, fnm.system)
     psd_names = get_bid_names(PriceSensitiveDemand, fnm.system)
-    n_periods = get_forecast_horizon(fnm.system)
-    @variable(fnm.model, inc[i in inc_names, t in 1:n_periods] >= 0)
-    @variable(fnm.model, dec[d in dec_names, t in 1:n_periods] >= 0)
-    @variable(fnm.model, psd[s in psd_names, t in 1:n_periods] >= 0)
+    @variable(fnm.model, inc[i in inc_names, t in fnm.datetimes] >= 0)
+    @variable(fnm.model, dec[d in dec_names, t in fnm.datetimes] >= 0)
+    @variable(fnm.model, psd[s in psd_names, t in fnm.datetimes] >= 0)
     return fnm
 end
