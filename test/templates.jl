@@ -118,12 +118,23 @@
     end
 end
 @testset "Templates defined for specific datetimes" begin
-    datetimes = get_forecast_timestamps(TEST_SYSTEM)[5:8]
-    fnm = unit_commitment(TEST_SYSTEM, GLPK.Optimizer, datetimes)
-    @test fnm.datetimes == datetimes
-    optimize!(fnm)
-    unit_codes = get_unit_codes(ThermalGen, fnm.system)
-    @test value.(fnm.model[:u]) == DenseAxisArray(
-        fill(1.0, length(unit_codes), length(datetimes)), unit_codes, datetimes,
-    )
+    @testset "Array of datetimes" begin
+        datetimes = get_forecast_timestamps(TEST_SYSTEM)[5:8]
+        fnm = unit_commitment(TEST_SYSTEM, GLPK.Optimizer, datetimes)
+        @test fnm.datetimes == datetimes
+        optimize!(fnm)
+        unit_codes = get_unit_codes(ThermalGen, fnm.system)
+        @test value.(fnm.model[:u]) == DenseAxisArray(
+            fill(1.0, length(unit_codes), length(datetimes)), unit_codes, datetimes,
+        )
+    end
+
+    @testset "Single datetime" begin
+        datetime = first(datetimes)
+        fnm = economic_dispatch(TEST_SYSTEM, GLPK.Optimizer, datetime)
+        @test fnm.datetimes = [datetime]
+        optimize!(fnm)
+        unit_codes = get_unit_codes(ThermalGen, fnm.system)
+        @test size(fnm.model[:p]) == (length(unit_codes), 1)
+    end
 end
