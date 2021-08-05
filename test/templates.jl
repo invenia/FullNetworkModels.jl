@@ -119,21 +119,17 @@ end
 
 @testset "Templates defined for specific datetimes" begin
     datetimes = get_forecast_timestamps(TEST_SYSTEM)[5:8]
-    @testset "Array of datetimes" begin
-        fnm = unit_commitment(TEST_SYSTEM, GLPK.Optimizer, datetimes)
-        @test fnm.datetimes == datetimes
-        optimize!(fnm)
-        unit_codes = get_unit_codes(ThermalGen, fnm.system)
-        @test value.(fnm.model[:u]) == DenseAxisArray(
-            fill(1.0, length(unit_codes), length(datetimes)), unit_codes, datetimes,
-        )
+    for template in (unit_commitment, unit_commitment_no_ramps, unit_commitment_soft_ramps)
+        @test template(TEST_SYSTEM, GLPK.Optimizer, datetimes) isa FullNetworkModel
     end
-    @testset "Single datetime" begin
-        datetime = first(datetimes)
-        fnm = economic_dispatch(TEST_SYSTEM_RT, GLPK.Optimizer, datetime)
-        @test fnm.datetimes == [datetime]
-        optimize!(fnm)
-        unit_codes = get_unit_codes(ThermalGen, fnm.system)
-        @test size(fnm.model[:p]) == (length(unit_codes), 1)
+    for template in (economic_dispatch, )
+        @test template(TEST_SYSTEM_RT, GLPK.Optimizer, datetimes) isa FullNetworkModel
+    end
+    datetime = first(datetimes)
+    for template in (unit_commitment, unit_commitment_no_ramps, unit_commitment_soft_ramps)
+        @test template(TEST_SYSTEM, GLPK.Optimizer, datetime) isa FullNetworkModel
+    end
+    for template in (economic_dispatch, )
+        @test template(TEST_SYSTEM_RT, GLPK.Optimizer, datetime) isa FullNetworkModel
     end
 end
