@@ -13,7 +13,7 @@ end
 function tests_ancillary_limits(fnm::FullNetworkModel{<:UC})
     t = first(fnm.datetimes)
     @test sprint(show, constraint_by_name(fnm.model, "ancillary_max[7,$t]")) ==
-        "ancillary_max[7,$t] : p[7,$t] - 8 u[7,$t] + r_reg[7,$t] + 0.5 u_reg[7,$t] + r_spin[7,$t] + r_on_sup[7,$t] ≤ 0.0"
+        "ancillary_max[7,$t] : p[7,$t] - 8 u[7,$t] + r_reg[7,$t] + r_spin[7,$t] + r_on_sup[7,$t] + 0.5 u_reg[7,$t] ≤ 0.0"
     @test sprint(show, constraint_by_name(fnm.model, "ancillary_min[7,$t]")) ==
         "ancillary_min[7,$t] : p[7,$t] - 0.5 u[7,$t] - r_reg[7,$t] ≥ 0.0"
     @test sprint(show, constraint_by_name(fnm.model, "regulation_max[7,$t]")) ==

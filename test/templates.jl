@@ -65,6 +65,57 @@
             @test all(==(0.0), value.(fnm_no_ramps.model[:psd]))
         end
     end
+
+    @testset "economic_dispatch" begin
+        fnm = economic_dispatch(TEST_SYSTEM_RT, GLPK.Optimizer)
+        tests_thermal_variable(fnm, "p")
+        tests_generation_limits(fnm)
+        tests_thermal_variable_cost(fnm)
+        tests_ancillary_costs(fnm)
+        tests_ancillary_limits(fnm)
+        tests_regulation_requirements(fnm)
+        tests_operating_reserve_requirements(fnm)
+        tests_energy_balance(fnm)
+
+        # Solve the original ED with slack = nothing
+        system_orig = TEST_SYSTEM_RT
+        fnm = economic_dispatch(system_orig, GLPK.Optimizer; slack = nothing)
+        optimize!(fnm)
+        # Should be feasible
+        @test termination_status(fnm.model) == TerminationStatusCode(1)
+        obj_orig = objective_value(fnm.model)
+        # Solve it with slack = 1e4
+        fnm = economic_dispatch(system_orig, GLPK.Optimizer; slack = 1e4)
+        optimize!(fnm)
+        # Should be feasible with a smaller objective value.
+        @test termination_status(fnm.model) == TerminationStatusCode(1)
+        obj_slack_1e4 = objective_value(fnm.model)
+
+        # Modify system to increase Regulation requirements (infeasible system)
+        system_infeasible = deepcopy(TEST_SYSTEM_RT)
+        reg_1 = get_component(Service, system_infeasible, "regulation_1")
+        set_requirement!(reg_1, 1e3)
+        @test reg_1.requirement == 1e3
+
+        # Solve with no slack – should be infeasible
+        fnm = economic_dispatch(system_infeasible, GLPK.Optimizer; slack=nothing)
+        optimize!(fnm)
+        @test termination_status(fnm.model) == TerminationStatusCode(2)
+        # Solve with two different values of slack – should be feasible with different objectives
+        fnm = economic_dispatch(system_infeasible, GLPK.Optimizer; slack=1e2)
+        optimize!(fnm)
+        @test termination_status(fnm.model) == TerminationStatusCode(1)
+        obj_low_slack = objective_value(fnm.model)
+        fnm = economic_dispatch(system_infeasible, GLPK.Optimizer; slack=1e4)
+        optimize!(fnm)
+        @test termination_status(fnm.model) == TerminationStatusCode(1)
+        obj_high_slack = objective_value(fnm.model)
+
+        # Check if objective values make sense – higher slack should mean higher objective
+        @test obj_low_slack > obj_orig
+        @test obj_high_slack > obj_low_slack
+
+    end
 end
 @testset "Templates defined for specific datetimes" begin
     datetimes = get_forecast_timestamps(TEST_SYSTEM)[5:8]

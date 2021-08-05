@@ -29,6 +29,7 @@ include("model/variables.jl")
 
 # Templates
 include("templates/unit_commitment.jl")
+include("templates/economic_dispatch.jl")
 
 # Types
 export FullNetworkModel
@@ -102,6 +103,7 @@ export obj_thermal_variable_cost!
 export unit_commitment
 export unit_commitment_soft_ramps
 export unit_commitment_no_ramps
+export economic_dispatch
 
 # API extensions
 export optimize!
