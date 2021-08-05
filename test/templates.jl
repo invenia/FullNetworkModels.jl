@@ -117,19 +117,26 @@
     end
 end
 
-@testset "Templates defined for specific datetimes" begin
-    datetimes = get_forecast_timestamps(TEST_SYSTEM)[5:8]
+# Test that templates don't error for a given `datetimes` argument
+function test_templates(datetimes)
     for template in (unit_commitment, unit_commitment_no_ramps, unit_commitment_soft_ramps)
         @test template(TEST_SYSTEM, GLPK.Optimizer, datetimes) isa FullNetworkModel
     end
     for template in (economic_dispatch, )
         @test template(TEST_SYSTEM_RT, GLPK.Optimizer, datetimes) isa FullNetworkModel
     end
-    datetime = first(datetimes)
-    for template in (unit_commitment, unit_commitment_no_ramps, unit_commitment_soft_ramps)
-        @test template(TEST_SYSTEM, GLPK.Optimizer, datetime) isa FullNetworkModel
+    return nothing
+end
+
+@testset "Templates defined for specific datetimes" begin
+    datetimes = get_forecast_timestamps(TEST_SYSTEM)
+    @testset "Array of datetimes" begin
+        test_templates(datetimes[5:8])
     end
-    for template in (economic_dispatch, )
-        @test template(TEST_SYSTEM_RT, GLPK.Optimizer, datetime) isa FullNetworkModel
+    @testset "StepRange of datetimes" begin
+        test_templates(first(datetimes):Hour(1):last(datetimes))
+    end
+    @testset "Single datetime" begin
+        test_templates(first(datetimes))
     end
 end
