@@ -5,7 +5,8 @@ function var_thermal_generation! end
 function _var_startup_shutdown! end
 function _con_startup_shutdown! end
 function _var_ancillary_services! end
-function _con_ancillary_services! end
+function _var_reg_commitment! end
+function _con_reg_commitment! end
 
 function _latex(::typeof(var_thermal_generation!))
     return """
@@ -112,14 +113,19 @@ end
 function _latex(::typeof(_var_ancillary_services!))
     return """
         ``r^{\\text{reg}}_{g, t} \\geq 0, \\forall g \\in \\mathcal{G}, t \\in \\mathcal{T}`` \n
-        ``u^{\\text{reg}}_{g, t} \\in \\{0, 1\\}, \\forall g \\in \\mathcal{G}, t \\in \\mathcal{T}`` \n
         ``r^{\\text{spin}}_{g, t} \\geq 0, \\forall g \\in \\mathcal{G}, t \\in \\mathcal{T}`` \n
         ``r^{\\text{on-sup}}_{g, t} \\geq 0, \\forall g \\in \\mathcal{G}, t \\in \\mathcal{T}`` \n
         ``r^{\\text{off-sup}}_{g, t} \\geq 0, \\forall g \\in \\mathcal{G}, t \\in \\mathcal{T}``
         """
 end
 
-function _latex(::typeof(_con_ancillary_services!))
+function _latex(::typeof(_var_reg_commitment!))
+    return """
+        ``u^{\\text{reg}}_{g, t} \\in \\{0, 1\\}, \\forall g \\in \\mathcal{G}, t \\in \\mathcal{T}``
+        """
+end
+
+function _latex(::typeof(_con_reg_commitment!))
     return """
         ``u^{\\text{reg}}_{g, t} \\leq u_{g, t}, \\forall g \\in \\mathcal{G}, t \\in \\mathcal{T}``
         """
@@ -129,35 +135,49 @@ end
     var_ancillary_services!(fnm::FullNetworkModel)
 
 Adds the ancillary service variables indexed, respectively, by the unit codes of the thermal
-generators in `system` and by the time periods considered. The variables include regulation,
-regulation commitment, spinning, online supplemental, and offline supplemental reserves.
+generators in system and by the datetimes considered.
+
+The variables include regulation, spinning, online supplemental, and offline supplemental
+reserves, and are name `r_reg`, `r_spin`, `r_on_sup` and `r_off_sup`.
 
 $(_latex(_var_ancillary_services!))
-$(_latex(_con_ancillary_services!))
 
-The created variables are named `r_reg`, `u_reg`, `r_spin`, `r_on_sup`, and `r_off_sup`.
+For UC, there is the additional variable regulation commitment, named `u_reg`.
+
+$(_latex(_var_reg_commitment!))
+$(_latex(_con_reg_commitment!))
 """
-function var_ancillary_services!(fnm::FullNetworkModel)
-    model = fnm.model
+function var_ancillary_services!(fnm::FullNetworkModel{<:UC})
     unit_codes = get_unit_codes(ThermalGen, fnm.system)
-    _var_ancillary_services!(model, unit_codes, fnm.datetimes)
-    _con_ancillary_services!(model, unit_codes, fnm.datetimes)
+    _var_ancillary_services!(fnm.model, unit_codes, fnm.datetimes)
+    _var_reg_commitment!(fnm.model, unit_codes, fnm.datetimes)
+    _con_reg_commitment!(fnm.model, unit_codes, fnm.datetimes)
+    return fnm
+end
+
+function var_ancillary_services!(fnm::FullNetworkModel{<:ED})
+    unit_codes = get_unit_codes(ThermalGen, fnm.system)
+    _var_ancillary_services!(fnm.model, unit_codes, fnm.datetimes)
     return fnm
 end
 
 function _var_ancillary_services!(model::Model, unit_codes, datetimes)
     @variable(model, r_reg[g in unit_codes, t in datetimes] >= 0)
-    @variable(model, u_reg[g in unit_codes, t in datetimes], Bin)
     @variable(model, r_spin[g in unit_codes, t in datetimes] >= 0)
     @variable(model, r_on_sup[g in unit_codes, t in datetimes] >= 0)
     @variable(model, r_off_sup[g in unit_codes, t in datetimes] >= 0)
     return model
 end
 
-function _con_ancillary_services!(model::Model, unit_codes, datetimes)
+function _var_reg_commitment!(model::Model, unit_codes, datetimes)
+    @variable(model, u_reg[g in unit_codes, t in datetimes], Bin)
+    return model
+end
+
+function _con_reg_commitment!(model::Model, unit_codes, datetimes)
+    # We add a constraint here because it is part of the basic definition of `u_reg`
     u = model[:u]
     u_reg = model[:u_reg]
-    # We add a constraint here because it is part of the basic definition of `u_reg`
     @constraint(model, [g in unit_codes, t in datetimes], u_reg[g, t] <= u[g, t])
     return model
 end

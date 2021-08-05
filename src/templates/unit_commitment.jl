@@ -23,7 +23,7 @@ $(_write_formulation(
         _latex(con_ancillary_limits_uc!),
         _latex(con_regulation_requirements!),
         _latex(con_operating_reserve_requirements!),
-        _latex(_con_ancillary_services!),
+        _latex(_con_reg_commitment!),
         _latex(con_generation_ramp_rates!),
         _latex(con_ancillary_ramp_rates!),
         _latex(con_energy_balance_uc!),
@@ -34,6 +34,7 @@ $(_write_formulation(
         _latex(var_commitment!),
         _latex(_var_startup_shutdown!),
         _latex(_var_ancillary_services!),
+        _latex(_var_reg_commitment!),
         _latex(var_bids!),
     ]
 ))
