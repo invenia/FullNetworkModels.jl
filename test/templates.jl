@@ -114,16 +114,29 @@
         # Check if objective values make sense – higher slack should mean higher objective
         @test obj_low_slack > obj_orig
         @test obj_high_slack > obj_low_slack
-
     end
 end
+
+# Test that templates don't error for a given `datetimes` argument
+function test_templates(datetimes)
+    for template in (unit_commitment, unit_commitment_no_ramps, unit_commitment_soft_ramps)
+        @test template(TEST_SYSTEM, GLPK.Optimizer, datetimes) isa FullNetworkModel
+    end
+    for template in (economic_dispatch, )
+        @test template(TEST_SYSTEM_RT, GLPK.Optimizer, datetimes) isa FullNetworkModel
+    end
+    return nothing
+end
+
 @testset "Templates defined for specific datetimes" begin
-    datetimes = get_forecast_timestamps(TEST_SYSTEM)[5:8]
-    fnm = unit_commitment(TEST_SYSTEM, GLPK.Optimizer, datetimes)
-    @test fnm.datetimes == datetimes
-    optimize!(fnm)
-    unit_codes = get_unit_codes(ThermalGen, fnm.system)
-    @test value.(fnm.model[:u]) == DenseAxisArray(
-        fill(1.0, length(unit_codes), length(datetimes)), unit_codes, datetimes,
-    )
+    datetimes = get_forecast_timestamps(TEST_SYSTEM)
+    @testset "Array of datetimes" begin
+        test_templates(datetimes[5:8])
+    end
+    @testset "StepRange of datetimes" begin
+        test_templates(first(datetimes):Hour(1):last(datetimes))
+    end
+    @testset "Single datetime" begin
+        test_templates(first(datetimes))
+    end
 end

@@ -63,12 +63,16 @@ struct FullNetworkModel{T<:UCED}
     model::Model
     datetimes::Vector{DateTime}
     function FullNetworkModel{T}(
-        system::System,
-        model::Model,
-        datetimes::AbstractVector{<:DateTime}=get_forecast_timestamps(system)
+        system::System, model::Model, datetimes=get_forecast_timestamps(system)
     ) where T<:UCED
         new{T}(system, model, datetimes)
     end
+end
+
+function FullNetworkModel{T}(
+    system::System, model::Model, datetime::DateTime
+) where T<:UCED
+    return FullNetworkModel{T}(system, model, [datetime])
 end
 
 function FullNetworkModel{T}(
@@ -77,8 +81,12 @@ function FullNetworkModel{T}(
     return FullNetworkModel{T}(system, Model(), datetimes)
 end
 
+function FullNetworkModel{T}(system::System, datetime::DateTime) where T<:UCED
+    return FullNetworkModel{T}(system, Model(), [datetime])
+end
+
 function FullNetworkModel{T}(
-    system::System, solver, datetimes::AbstractVector{<:DateTime}=get_forecast_timestamps(system)
+    system::System, solver, datetimes=get_forecast_timestamps(system)
 ) where T<:UCED
     return FullNetworkModel{T}(system, Model(solver), datetimes)
 end
