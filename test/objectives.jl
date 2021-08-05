@@ -61,17 +61,19 @@ end
             @test objective_function(fnm.model) == AffExpr()
             @test_throws Exception obj_thermal_variable_cost!(fnm)
         end
-        @testset "Economic dispatch (just thermal generation added)" begin
+        @testset "Economic dispatch" begin
             fnm = FullNetworkModel{ED}(TEST_SYSTEM_RT, GLPK.Optimizer)
             var_thermal_generation!(fnm)
             obj_thermal_variable_cost!(fnm)
             tests_thermal_variable_cost(fnm)
+            # The output of these `sprint`s change depending on the value of U; we assume
+            # it's always 1 since that's how we're defining the test system.
             @test sprint(show, constraint_by_name(fnm.model, "gen_block_limits[7,$t,1]")) ==
-                "gen_block_limits[7,$t,1] : p_aux[7,$t,1] ≤ 0.0"
+                "gen_block_limits[7,$t,1] : p_aux[7,$t,1] ≤ 0.5"
             @test sprint(show, constraint_by_name(fnm.model, "gen_block_limits[3,$t,1]")) ==
                 "gen_block_limits[3,$t,1] : p_aux[3,$t,1] ≤ 0.5"
         end
-        @testset "unit commitment (both thermal generation and commitment added)" begin
+        @testset "Unit commitment" begin
             fnm = FullNetworkModel{UC}(TEST_SYSTEM, GLPK.Optimizer)
             var_thermal_generation!(fnm)
             var_commitment!(fnm)

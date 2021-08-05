@@ -10,7 +10,7 @@ function tests_generation_limits(fnm)
     return nothing
 end
 
-function tests_ancillary_limits_commitment(fnm)
+function tests_ancillary_limits(fnm::FullNetworkModel{<:UC})
     t = first(fnm.datetimes)
     @test sprint(show, constraint_by_name(fnm.model, "ancillary_max[7,$t]")) ==
         "ancillary_max[7,$t] : p[7,$t] - 8 u[7,$t] + r_reg[7,$t] + 0.5 u_reg[7,$t] + r_spin[7,$t] + r_on_sup[7,$t] ≤ 0.0"
@@ -30,16 +30,18 @@ function tests_ancillary_limits_commitment(fnm)
     return nothing
 end
 
-function tests_ancillary_limits_dispatch(fnm)
+# The output of these `sprint`s change depending on the value of U; we assume it's always 1
+# since that's how we're defining the test system.
+function tests_ancillary_limits(fnm::FullNetworkModel{<:ED})
     t = first(fnm.datetimes)
     @test sprint(show, constraint_by_name(fnm.model, "ancillary_max[7,$t]")) ==
-        "ancillary_max[7,$t] : p[7,$t] + r_reg[7,$t] + r_spin[7,$t] + r_on_sup[7,$t] ≤ 0.0"
+        "ancillary_max[7,$t] : p[7,$t] + r_reg[7,$t] + r_spin[7,$t] + r_on_sup[7,$t] ≤ 7.5"
     @test sprint(show, constraint_by_name(fnm.model, "ancillary_min[7,$t]")) ==
-        "ancillary_min[7,$t] : p[7,$t] - r_reg[7,$t] ≥ 0.0"
+        "ancillary_min[7,$t] : p[7,$t] - r_reg[7,$t] ≥ 0.5"
     @test sprint(show, constraint_by_name(fnm.model, "spin_and_sup_max[7,$t]")) ==
-        "spin_and_sup_max[7,$t] : r_spin[7,$t] + r_on_sup[7,$t] ≤ 0.0"
+        "spin_and_sup_max[7,$t] : r_spin[7,$t] + r_on_sup[7,$t] ≤ 7.5"
     @test sprint(show, constraint_by_name(fnm.model, "off_sup_max[7,$t]")) ==
-        "off_sup_max[7,$t] : r_off_sup[7,$t] ≤ 7.5"
+        "off_sup_max[7,$t] : r_off_sup[7,$t] ≤ 0.0"
     # Units in test system provide regulation, spinning, and on/off supplemental
     unit_codes = get_unit_codes(ThermalGen, fnm.system)
     for str in ("reg", "spin", "on_sup", "off_sup"), g in unit_codes, t in fnm.datetimes
@@ -184,7 +186,7 @@ end
         var_ancillary_services!(fnm)
         @testset "con_ancillary_limits!" begin
             con_ancillary_limits!(fnm)
-            tests_ancillary_limits_commitment(fnm)
+            tests_ancillary_limits(fnm)
         end
         @testset "con_regulation_requirements!" begin
             con_regulation_requirements!(fnm)
@@ -202,7 +204,7 @@ end
         var_ancillary_services!(fnm)
         @testset "con_ancillary_limits!" begin
             con_ancillary_limits!(fnm)
-            tests_ancillary_limits_dispatch(fnm)
+            tests_ancillary_limits(fnm)
         end
         @testset "con_regulation_requirements!" begin
             con_regulation_requirements!(fnm)
