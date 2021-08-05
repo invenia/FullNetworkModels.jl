@@ -9,7 +9,6 @@ using JuMP
 using JuMP.Containers: DenseAxisArray
 using PowerSystems
 using PowerSystemsExtras
-using Random
 using Test
 using TimeSeries
 

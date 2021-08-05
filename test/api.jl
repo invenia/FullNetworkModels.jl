@@ -38,12 +38,11 @@
             unit_codes,
             datetimes
         )
-        rng = MersenneTwister(1)
-        stat_gen3 = bitrand(rng, n_periods)
         @test get_commitment_status(system_rt) == DenseAxisArray(
-            permutedims(hcat([false; fill(true, n_periods - 1)], stat_gen3)),
-            unit_codes,
-            datetimes
+            trues(n_units, n_periods), unit_codes, datetimes
+        )
+        @test get_commitment_reg_status(system_rt) == DenseAxisArray(
+            trues(n_units, n_periods), unit_codes, datetimes
         )
         @test get_spinning_cost(system) == DenseAxisArray(
             vcat(fill(15_000, 1, n_periods), fill(30_000, 1, n_periods)),
@@ -62,8 +61,8 @@
         )
         @test get_offer_curves(system) == DenseAxisArray(
             vcat(
-                fill([(400.0, 0.5), (600.0, 1.0), (625.0, 5.0)], 1, n_periods),
-                fill([(600.0, 0.5), (800.0, 1.0), (825.0, 5.0)], 1, n_periods)
+                fill([(400.0, 0.5), (600.0, 1.0), (625.0, 8.0)], 1, n_periods),
+                fill([(600.0, 0.5), (800.0, 1.0), (825.0, 8.0)], 1, n_periods)
             ),
             unit_codes,
             datetimes
