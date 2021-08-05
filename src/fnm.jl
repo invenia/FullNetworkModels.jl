@@ -69,7 +69,7 @@ struct FullNetworkModel{T<:UCED}
     end
 end
 
- function FullNetworkModel{T}(
+function FullNetworkModel{T}(
     system::System, model::Model, datetime::DateTime
 ) where T<:UCED
     return FullNetworkModel{T}(system, model, [datetime])
