@@ -118,8 +118,8 @@
     end
 end
 @testset "Templates defined for specific datetimes" begin
+    datetimes = get_forecast_timestamps(TEST_SYSTEM)[5:8]
     @testset "Array of datetimes" begin
-        datetimes = get_forecast_timestamps(TEST_SYSTEM)[5:8]
         fnm = unit_commitment(TEST_SYSTEM, GLPK.Optimizer, datetimes)
         @test fnm.datetimes == datetimes
         optimize!(fnm)
