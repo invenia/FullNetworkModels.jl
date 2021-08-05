@@ -114,9 +114,9 @@
         # Check if objective values make sense – higher slack should mean higher objective
         @test obj_low_slack > obj_orig
         @test obj_high_slack > obj_low_slack
-
     end
 end
+
 @testset "Templates defined for specific datetimes" begin
     datetimes = get_forecast_timestamps(TEST_SYSTEM)[5:8]
     @testset "Array of datetimes" begin
@@ -128,11 +128,10 @@ end
             fill(1.0, length(unit_codes), length(datetimes)), unit_codes, datetimes,
         )
     end
-
     @testset "Single datetime" begin
         datetime = first(datetimes)
-        fnm = economic_dispatch(TEST_SYSTEM, GLPK.Optimizer, datetime)
-        @test fnm.datetimes = [datetime]
+        fnm = economic_dispatch(TEST_SYSTEM_RT, GLPK.Optimizer, datetime)
+        @test fnm.datetimes == [datetime]
         optimize!(fnm)
         unit_codes = get_unit_codes(ThermalGen, fnm.system)
         @test size(fnm.model[:p]) == (length(unit_codes), 1)
