@@ -9,6 +9,7 @@ makedocs(;
     format=Documenter.HTML(; prettyurls=false),
     pages=[
         "Home" => "index.md",
+        "Notation" => "notation.md",
         "API" => map(
             p -> first(p) => joinpath("api", last(p)),
             [
