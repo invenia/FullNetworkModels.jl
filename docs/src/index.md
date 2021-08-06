@@ -16,6 +16,7 @@ using Dates
 using ElectricityMarkets
 using FullNetworkDataPrep
 using FullNetworkModels
+using JuMP
 
 # For `build_system` we need to use an AWS profile with access to MISO NDA data.
 global_aws_config(profile="...")
