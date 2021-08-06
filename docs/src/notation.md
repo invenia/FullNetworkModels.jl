@@ -1,4 +1,4 @@
-# Notation
+# [Notation](@id notation)
 
 This is the notation used throughout the package, including in the docstrings of functions, and where possible used in the code itself.
 It should very closely match the notation used in Invenia's formulations of

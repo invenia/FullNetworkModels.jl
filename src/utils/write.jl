@@ -1,11 +1,16 @@
-"""
+@doc raw"""
     FullNetworkModels.latex(::Function) -> String
 
-An internal function which returns the mathematical formation for the given function
-in LaTeX notation. Mostly used to generate docstrings.
+An internal function which returns the mathematical formation for the given function in
+valid [LaTeX](https://en.wikipedia.org/wiki/LaTeX).
 
-```@repl
-FullNetworkModels.latex(var_commitment!)
+Should be consistent with the [notation](@ref) used throughout the package.
+
+Mostly used to generate docstrings.
+
+```jldoctest; setup = :(using FullNetworkModels)
+julia> FullNetworkModels.latex(var_commitment!)
+"``u_{g, t} \\in \\{0, 1\\}, \\forall g \\in \\mathcal{G}, t \\in \\mathcal{T}``\n"
 ```
 """
 function latex end
