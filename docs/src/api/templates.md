@@ -1,9 +1,5 @@
 # [Formulation Templates](@id templates)
 
-```@index
-Pages = ["api/templates.jl"]
-```
-
 ## Unit Commitment
 
 ```@autodocs
