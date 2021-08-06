@@ -9,20 +9,20 @@ Receives a `system` from FullNetworkDataPrep and returns a `FullNetworkModel` wi
 
 $(_write_formulation(
     objectives=[
-        _latex(_obj_thermal_variable_cost!),
-        _latex(obj_ancillary_costs!),
+        latex(_obj_thermal_variable_cost!),
+        latex(obj_ancillary_costs!),
     ],
     constraints=[
-        _latex(_var_thermal_gen_blocks_ed!),
-        _latex(_con_generation_limits_ed!),
-        _latex(con_ancillary_limits_ed!),
-        _latex(con_regulation_requirements!),
-        _latex(con_operating_reserve_requirements!),
-        _latex(con_energy_balance_ed!),
+        latex(_var_thermal_gen_blocks_ed!),
+        latex(_con_generation_limits_ed!),
+        latex(con_ancillary_limits_ed!),
+        latex(con_regulation_requirements!),
+        latex(con_operating_reserve_requirements!),
+        latex(con_energy_balance_ed!),
     ],
     variables=[
-        _latex(var_thermal_generation!),
-        _latex(_var_ancillary_services!),
+        latex(var_thermal_generation!),
+        latex(_var_ancillary_services!),
     ]
 ))
 

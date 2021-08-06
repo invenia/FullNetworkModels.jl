@@ -1,3 +1,15 @@
+"""
+    FullNetworkModels.latex(::Function) -> String
+
+An internal function which returns the mathematical formation for the given function
+in LaTeX notation. Mostly used to generate docstrings.
+
+```@repl
+FullNetworkModels.latex(var_commitment!)
+```
+"""
+function latex end
+
 function _write_formulation(; objectives, constraints, variables)
     obj = _write_objective(objectives)
     exprs = join(vcat(constraints, variables), "\n")

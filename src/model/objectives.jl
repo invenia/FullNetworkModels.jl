@@ -1,4 +1,4 @@
-# Define functions so that `_latex` can be dispatched over them
+# Define functions so that `latex` can be dispatched over them
 function _obj_bid_variable_cost! end
 function _obj_thermal_variable_cost! end
 function _var_bid_blocks! end
@@ -8,19 +8,19 @@ function obj_ancillary_costs! end
 function obj_thermal_noload_cost! end
 function obj_thermal_startup_cost! end
 
-function _latex(::typeof(_obj_thermal_variable_cost!))
+function latex(::typeof(_obj_thermal_variable_cost!))
     return """
     ``\\sum_{t \\in \\mathcal{T}} \\sum_{g \\in \\mathcal{G}} \\sum_{q \\in \\mathcal{Q}_{g, t}} p^{\\text{aux}}_{g, t, q} \\Lambda^{\\text{offer}}_{g, t, q}``
     """
 end
 
-function _latex(::typeof(_var_thermal_gen_blocks_uc!))
+function latex(::typeof(_var_thermal_gen_blocks_uc!))
     return """
         ``0 \\leq p^{\\text{aux}}_{g, t, q} \\leq \\bar{P}_{g, t, q} u_{g, t}, \\forall g \\in \\mathcal{G}, t \\in \\mathcal{T}, q \\in \\mathcal{Q}_{g, t}`` \n
         ``p_{g, t} = \\sum_{q \\in \\mathcal{Q}_{g, t}} p^{\\text{aux}}_{g, t, q}, \\forall g \\in \\mathcal{G}, t \\in \\mathcal{T}``
         """
 end
-function _latex(::typeof(_var_thermal_gen_blocks_ed!))
+function latex(::typeof(_var_thermal_gen_blocks_ed!))
     return """
         ``0 \\leq p^{\\text{aux}}_{g, t, q} \\leq \\bar{P}_{g, t, q} U_{g, t}, \\forall g \\in \\mathcal{G}, t \\in \\mathcal{T}, q \\in \\mathcal{Q}_{g, t}`` \n
         ``p_{g, t} = \\sum_{q \\in \\mathcal{Q}_{g, t}} p^{\\text{aux}}_{g, t, q}, \\forall g \\in \\mathcal{G}, t \\in \\mathcal{T}``
@@ -37,15 +37,15 @@ offer block number.
 
 Adds to the objective function:
 
-$(_latex(_obj_thermal_variable_cost!))
+$(latex(_obj_thermal_variable_cost!))
 
 And adds the following constraints to a `UC` model:
 
-$(_latex(_var_thermal_gen_blocks_uc!))
+$(latex(_var_thermal_gen_blocks_uc!))
 
 Or if a `ED` model, adds the constraints:
 
-$(_latex(_var_thermal_gen_blocks_ed!))
+$(latex(_var_thermal_gen_blocks_ed!))
 """
 function obj_thermal_variable_cost!(fnm::FullNetworkModel{T}) where T
     model = fnm.model
@@ -63,7 +63,7 @@ function obj_thermal_variable_cost!(fnm::FullNetworkModel{T}) where T
     return fnm
 end
 
-function _latex(::typeof(obj_thermal_noload_cost!))
+function latex(::typeof(obj_thermal_noload_cost!))
     return """
         ``\\sum_{t \\in \\mathcal{T}} \\sum_{g \\in \\mathcal{G}} C^{\\text{nl}}_{g, t} u_{g, t}``
         """
@@ -74,13 +74,13 @@ end
 
 Adds the no-load cost of thermal generators to the model formulation:
 
-$(_latex(obj_thermal_noload_cost!))
+$(latex(obj_thermal_noload_cost!))
 """
 function obj_thermal_noload_cost!(fnm::FullNetworkModel)
     return _obj_thermal_linear_cost!(fnm, :u, get_noload_cost)
 end
 
-function _latex(::typeof(obj_thermal_startup_cost!))
+function latex(::typeof(obj_thermal_startup_cost!))
     return """
         ``\\sum_{t \\in \\mathcal{T}} \\sum_{g \\in \\mathcal{G}} C^{\\text{st}}_{g, t} v_{g, t}``
         """
@@ -91,13 +91,13 @@ end
 
 Adds the start-up cost of thermal generators to the model formulation:
 
-$(_latex(obj_thermal_startup_cost!))
+$(latex(obj_thermal_startup_cost!))
 """
 function obj_thermal_startup_cost!(fnm::FullNetworkModel)
     return _obj_thermal_linear_cost!(fnm, :v, get_startup_cost)
 end
 
-function _latex(::typeof(obj_ancillary_costs!))
+function latex(::typeof(obj_ancillary_costs!))
     return """
         ``\\sum_{g \\in \\mathcal{G}} \\sum_{t \\in \\mathcal{T}} (C^{\\text{reg}}_{g, t} r^{\\text{reg}}_{g, t} + C^{\\text{spin}}_{g, t} r^{\\text{spin}}_{g, t} + C^{\\text{on-sup}}_{g, t} r^{\\text{on-sup}}_{g, t} + C^{\\text{off-sup}}_{g, t} r^{\\text{off-sup}}_{g, t})``
         """
@@ -111,7 +111,7 @@ online supplemental, and offline supplemental reserves.
 
 Adds to the objective function:
 
-$(_latex(obj_ancillary_costs!))
+$(latex(obj_ancillary_costs!))
 """
 function obj_ancillary_costs!(fnm::FullNetworkModel)
     _obj_thermal_linear_cost!(
@@ -157,7 +157,7 @@ function _obj_thermal_variable_cost!(model::Model, unit_codes, datetimes, n_bloc
     return model
 end
 
-function _latex(::typeof(_obj_bid_variable_cost!))
+function latex(::typeof(_obj_bid_variable_cost!))
     return """
     ``\\sum_{t \\in \\mathcal{T}} \\sum_{i \\in \\mathcal{I}} \\sum_{q \\in \\mathcal{Q}_{i, t}} inc^{\\text{aux}}_{i, t, q} \\Lambda^{\\text{inc}}_{i, t, q}``
     `` - \\sum_{t \\in \\mathcal{T}} \\sum_{d \\in \\mathcal{D}} \\sum_{q \\in \\mathcal{Q}_{d, t}} dec^{\\text{aux}}_{d, t, q} \\Lambda^{\\text{dec}}_{d, t, q}``
@@ -165,7 +165,7 @@ function _latex(::typeof(_obj_bid_variable_cost!))
     """
 end
 
-function _latex(::typeof(_var_bid_blocks!))
+function latex(::typeof(_var_bid_blocks!))
     return """
     ``0 \\leq inc^{\\text{aux}}_{i, t, q} \\leq \\bar{P}^{\\text{inc}}_{i, t, q}, \\forall i \\in \\mathcal{I}, t \\in \\mathcal{T}, q \\in \\mathcal{Q}_{i, t}`` \n
     ``inc_{i, t} = \\sum_{q \\in \\mathcal{Q}_{i, t}} inc^{\\text{aux}}_{i, t, q}, \\forall i \\in \\mathcal{I}, t \\in \\mathcal{T}`` \n
@@ -186,11 +186,11 @@ and by the bid block number.
 
 Adds to the objective function:
 
-$(_latex(_obj_bid_variable_cost!))
+$(latex(_obj_bid_variable_cost!))
 
 And adds the following constraints:
 
-$(_latex(_var_bid_blocks!))
+$(latex(_var_bid_blocks!))
 """
 function obj_bids!(fnm::FullNetworkModel)
     model = fnm.model

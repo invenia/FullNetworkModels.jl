@@ -1,4 +1,4 @@
-# Types
+# [Types](@id types)
 
 ```@docs
 FullNetworkModel

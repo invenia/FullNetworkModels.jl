@@ -1,4 +1,4 @@
-# Define functions so that `_latex` can be dispatched over them
+# Define functions so that `latex` can be dispatched over them
 function var_bids! end
 function var_commitment! end
 function var_thermal_generation! end
@@ -8,7 +8,7 @@ function _var_ancillary_services! end
 function _var_reg_commitment! end
 function _con_reg_commitment! end
 
-function _latex(::typeof(var_thermal_generation!))
+function latex(::typeof(var_thermal_generation!))
     return """
     ``p_{g, t} \\geq 0, \\forall g \\in \\mathcal{G}, t \\in \\mathcal{T}``
     """
@@ -20,7 +20,7 @@ end
 Adds the thermal generation variables `p` indexed, respectively, by the unit codes of the
 thermal generators in `system` and by the time periods considered:
 
-$(_latex(var_thermal_generation!))
+$(latex(var_thermal_generation!))
 """
 function var_thermal_generation!(fnm::FullNetworkModel)
     unit_codes = get_unit_codes(ThermalGen, fnm.system)
@@ -28,7 +28,7 @@ function var_thermal_generation!(fnm::FullNetworkModel)
     return fnm
 end
 
-function _latex(::typeof(var_commitment!))
+function latex(::typeof(var_commitment!))
     return """
     ``u_{g, t} \\in \\{0, 1\\}, \\forall g \\in \\mathcal{G}, t \\in \\mathcal{T}``
     """
@@ -40,7 +40,7 @@ end
 Adds the binary commitment variables `u` indexed, respectively, by the unit codes of the
 thermal generators in `system` and by the time periods considered:
 
-$(_latex(var_commitment!))
+$(latex(var_commitment!))
 """
 function var_commitment!(fnm::FullNetworkModel)
     unit_codes = get_unit_codes(ThermalGen, fnm.system)
@@ -48,14 +48,14 @@ function var_commitment!(fnm::FullNetworkModel)
     return fnm
 end
 
-function _latex(::typeof(_var_startup_shutdown!))
+function latex(::typeof(_var_startup_shutdown!))
     return """
         ``0 \\leq v_{g, t} \\leq 1, \\forall g \\in \\mathcal{G}, t \\in \\mathcal{T}`` \n
         ``0 \\leq w_{g, t} \\leq 1, \\forall g \\in \\mathcal{G}, t \\in \\mathcal{T}``
         """
 end
 
-function _latex(::typeof(_con_startup_shutdown!))
+function latex(::typeof(_con_startup_shutdown!))
     return """
         ``u_{g, t} - u_{g, t - 1} = v_{g, t} - w_{g, t}, \\forall g \\in \\mathcal{G}, t \\in \\mathcal{T} \\setminus \\{1\\}`` \n
         ``u_{g, 1} - U^{0}_{g} = v_{g, 1} - w_{g, 1}, \\forall g \\in \\mathcal{G}``
@@ -69,8 +69,8 @@ Adds the variables `v` and `w` representing the start-up and shutdown of generat
 respectively, indexed by the unit codes of the thermal generators in `system` and by the
 time periods considered:
 
-$(_latex(_con_startup_shutdown!))
-$(_latex(_var_startup_shutdown!))
+$(latex(_con_startup_shutdown!))
+$(latex(_var_startup_shutdown!))
 """
 function var_startup_shutdown!(fnm::FullNetworkModel)
     model = fnm.model
@@ -110,7 +110,7 @@ function _con_startup_shutdown!(model::Model, system, unit_codes, datetimes)
     return model
 end
 
-function _latex(::typeof(_var_ancillary_services!))
+function latex(::typeof(_var_ancillary_services!))
     return """
         ``r^{\\text{reg}}_{g, t} \\geq 0, \\forall g \\in \\mathcal{G}, t \\in \\mathcal{T}`` \n
         ``r^{\\text{spin}}_{g, t} \\geq 0, \\forall g \\in \\mathcal{G}, t \\in \\mathcal{T}`` \n
@@ -119,13 +119,13 @@ function _latex(::typeof(_var_ancillary_services!))
         """
 end
 
-function _latex(::typeof(_var_reg_commitment!))
+function latex(::typeof(_var_reg_commitment!))
     return """
         ``u^{\\text{reg}}_{g, t} \\in \\{0, 1\\}, \\forall g \\in \\mathcal{G}, t \\in \\mathcal{T}``
         """
 end
 
-function _latex(::typeof(_con_reg_commitment!))
+function latex(::typeof(_con_reg_commitment!))
     return """
         ``u^{\\text{reg}}_{g, t} \\leq u_{g, t}, \\forall g \\in \\mathcal{G}, t \\in \\mathcal{T}``
         """
@@ -140,12 +140,12 @@ generators in system and by the datetimes considered.
 The variables include regulation, spinning, online supplemental, and offline supplemental
 reserves, and are name `r_reg`, `r_spin`, `r_on_sup` and `r_off_sup`.
 
-$(_latex(_var_ancillary_services!))
+$(latex(_var_ancillary_services!))
 
 For UC, there is the additional variable regulation commitment, named `u_reg`.
 
-$(_latex(_var_reg_commitment!))
-$(_latex(_con_reg_commitment!))
+$(latex(_var_reg_commitment!))
+$(latex(_con_reg_commitment!))
 """
 function var_ancillary_services!(fnm::FullNetworkModel{<:UC})
     unit_codes = get_unit_codes(ThermalGen, fnm.system)
@@ -182,7 +182,7 @@ function _con_reg_commitment!(model::Model, unit_codes, datetimes)
     return model
 end
 
-function _latex(::typeof(var_bids!))
+function latex(::typeof(var_bids!))
     return """
     ``inc_{g, t} \\geq 0, \\forall i \\in \\mathcal{I}, t \\in \\mathcal{T}`` \n
     ``dec_{g, t} \\geq 0, \\forall d \\in \\mathcal{D}, t \\in \\mathcal{T}`` \n
@@ -196,7 +196,7 @@ end
 Adds the virtual and price-sensitive demand bid variables indexed, respectively, by the bid
 names and time periods.
 
-$(_latex(var_bids!))
+$(latex(var_bids!))
 
 The created variables are named `inc`, `dec`, `psd`.
 """

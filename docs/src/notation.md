@@ -1,10 +1,9 @@
 # Notation
 
-
 This is the notation used throughout the package, including in the docstrings of functions, and where possible used in the code itself.
 It should very closely match the notation used in Invenia's formulations of
 MISO day-ahead market clearing ([PDF](https://drive.google.com/file/d/1ruSRtcLl9oicaJtZqWPI8S28sHW2C8Ji/view), [Overleaf](https://www.overleaf.com/project/5f2453fd81a39d000135af50)) and
-MISO real-time market clearing ([PDF](https://drive.google.com/drive/folders/1z9zvkUI93sI2n83fcx1i3HqAP2_CYpGe), [Overleaf](https://www.overleaf.com/project/609119ba802ae360964406ba)).
+MISO real-time market clearing ([PDF](https://drive.google.com/file/d/1IhAv-Djqc72RPXsB3JBzWYYYbcpw8_0q/view), [Overleaf](https://www.overleaf.com/project/609119ba802ae360964406ba)).
 
 ## Sets
 

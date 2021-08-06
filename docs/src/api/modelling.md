@@ -1,4 +1,4 @@
-# Modelling functions
+# [Modelling functions](@id modelling)
 
 ## Variables
 
