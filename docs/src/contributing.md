@@ -1,13 +1,17 @@
-# Contributing guidelines
+# Contributing
 
-FullNetworkModels.jl aims to make it easy for researchers to contribute.
+
+**FullNetworkModels.jl aims to make it easy for researchers to contribute.**
+
 We want to prioritise transparency and flexibility of modelling by:
 - writing code that closely resembles the mathematical expressions,
 - writing one function per mathematical expression or expression group (e.g. one function for generation limits, one function for ancillary limits),
 - writing documentation containing the ``\LaTeX``-formatted mathematical expression.
 
+## Guidelines
+
 New contributors should make sure to follow the advice in the [ColPrac Contributor Guide](https://github.com/SciML/ColPrac).
-In particular, contributions should be made via [merge requests](https://gitlab.invenia.ca/invenia/research/FullNetworkModels.jl/-/merge_requests), match the existing code style, and include documentation and tests. 
+In particular, contributions should be made via [merge requests](https://gitlab.invenia.ca/invenia/research/FullNetworkModels.jl/-/merge_requests), match the existing code style, and include documentation and tests.
 To discuss changes before a opening a merge request, please [open an issue](https://gitlab.invenia.ca/invenia/research/FullNetworkModels.jl/-/issues).
 
 ## Functions
@@ -19,9 +23,9 @@ Functions of the package, other than the basic struct definitions, fall mainly u
 Accessor functions, located in `src/utils/accessors.jl`, are aimed at retrieving data from the PowerSystems.jl system so that it can be used when defining the JuMP.jl problem formulation.
 These functions generally have the prefix `get_` to follow the convention of PowerSystems.jl.
 
-### Model functions
+### Modelling functions
 
-Model functions, which are located in `src/model/`, are the functions that actually build the JuMP.jl problem formulation.
+Modelling functions, which are located in `src/model/`, are the functions that actually build the JuMP.jl problem formulation.
 They are classified in _variable_, _constraint_, or _objective_ functions, and should have a prefix indicating in which category they belong (`var_`, `con_`, and `obj_`, respectively).
 
 Note that sometimes expressions from another category might be added as part of a function, e.g., some variable functions might add constraints.

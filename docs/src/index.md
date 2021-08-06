@@ -11,6 +11,14 @@ Please check the [Contributing guidelines](contributing.md) for an overview on t
 
 ## Contents
 ```@contents
-Pages = ["api.md", "contributing.md"]
 Depth = 3
+Pages = [
+    "api/types.md",
+    "api/templates.md",
+    "api/modelling.md",
+    "api/feasibility.md",
+    "api/accessors.md",
+    "api/internals.md",
+    "contributing.md",
+]
 ```
