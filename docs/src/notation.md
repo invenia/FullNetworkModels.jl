@@ -49,7 +49,7 @@ MISO real-time market clearing ([PDF](https://drive.google.com/file/d/1IhAv-Djqc
 |$C^{on-sup}_{g,t}$ | Online supplemental reserve cost of generator $g$ at time $t$ in $\text{MW}$. |
 |$C^{reg}_{g,t}$ | Regulation reserve cost of generator $g$ at time $t$ in $\text{MW}$. |
 |$C^{spin}_{g,t}$ | Spinning reserve cost of generator $g$ at time $t$ in $\text{MW}$. |
-|$C^{st}_{g,t}$ | Start-up cost of generator $g$ at time $t$ in $\$$. |
+|$C^{st}_{g,t}$ | Start-up cost of generator $g$ at time $t$ in \$. |
 |$DT^0_{g}$ | Number of time periods the unit has been off prior to the first time period of generator $g$ in hours. |
 |$DT_{g}$ | Minimum down-time of generator $g$ in hours. |
 |$D_{f,t}$ | Fixed demand $f$ at time $t$ in $\text{MW}$. |
@@ -104,10 +104,10 @@ MISO real-time market clearing ([PDF](https://drive.google.com/file/d/1IhAv-Djqc
 
 |**Notation** | **Description**|
 | :------------ | :-----------|
-|$c_{d,t}(.)$ | Variable cost function of virtual demand $d$ at time $t$ in $\$$. |
-|$c_{g,t}(.)$ | Variable cost function of generator $g$ at time $t$ in $\$$. |
-|$c_{i,t}(.)$ | Variable cost function of virtual supply $i$ at time $t$ in $\$$. |
-|$c_{s,t}(.)$ | Variable cost function of price-sensitive demand $s$ at time $t$ in $\$$. |
+|$c_{d,t}(.)$ | Variable cost function of virtual demand $d$ at time $t$ in \$. |
+|$c_{g,t}(.)$ | Variable cost function of generator $g$ at time $t$ in \$. |
+|$c_{i,t}(.)$ | Variable cost function of virtual supply $i$ at time $t$ in \$. |
+|$c_{s,t}(.)$ | Variable cost function of price-sensitive demand $s$ at time $t$ in \$. |
 |$d_{d,t,q}$ | Energy dispatch of virtual demand $d$ at time $t$ for block $q$ in $\text{MW}$. |
 |$d_{d,t}$ | Energy dispatch of virtual demand $d$ at time $t$ in $\text{MW}$. |
 |$d_{s,t,q}$ | Energy dispatch of price-sensitive demand $s$ at time $t$ for block $q$ in $\text{MW}$. |
