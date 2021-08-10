@@ -49,7 +49,10 @@ function _obj_thermal_linear_cost!(
     model = fnm.model
     cost = f(fnm.system, fnm.datetimes)
     x = model[var]
-    obj_cost = sum(cost[g, t] * x[g, t] for g in unit_codes, t in fnm.datetimes)
+    obj_cost = AffExpr()
+    for g in unit_codes, t in fnm.datetimes
+        add_to_expression!(obj_cost, cost[g, t], x[g, t])
+    end
     _add_to_objective!(model, obj_cost)
     return fnm
 end
