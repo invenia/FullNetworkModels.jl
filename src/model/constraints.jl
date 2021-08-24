@@ -1,4 +1,4 @@
-# Define functions so that `_latex` can be dispatched over them
+# Define functions so that `latex` can be dispatched over them
 function con_ancillary_limits_ed! end
 function con_ancillary_limits_uc! end
 function con_energy_balance_ed! end
@@ -10,13 +10,13 @@ function con_regulation_requirements! end
 function con_ancillary_ramp_rates! end
 function con_generation_ramp_rates! end
 
-function _latex(::typeof(_con_generation_limits_uc!))
+function latex(::typeof(_con_generation_limits_uc!))
     return """
         ``P^{\\min}_{g, t} u_{g, t} \\leq p_{g, t} \\leq P^{\\max}_{g, t} u_{g, t}, \\forall g \\in \\mathcal{G}, t \\in \\mathcal{T}``
         """
 end
 
-function _latex(::typeof(_con_generation_limits_ed!))
+function latex(::typeof(_con_generation_limits_ed!))
     return """
         ``P^{\\min}_{g, t} U_{g, t} \\leq p_{g, t} \\leq P^{\\max}_{g, t} U_{g, t}, \\forall g \\in \\mathcal{G}, t \\in \\mathcal{T}``
         """
@@ -27,7 +27,7 @@ end
 
 Add generation limit constraints to the full network model:
 
-$(_latex(_con_generation_limits_uc!))
+$(latex(_con_generation_limits_uc!))
 
 The constraints added are named `generation_min` and `generation_max`.
 """
@@ -60,7 +60,7 @@ end
 
 Add generation limit constraints to the full network model:
 
-$(_latex(_con_generation_limits_ed!))
+$(latex(_con_generation_limits_ed!))
 
 The constraints added are named `generation_min` and `generation_max`.
 """
@@ -88,7 +88,7 @@ function con_generation_limits!(fnm::FullNetworkModel{<:ED})
     return fnm
 end
 
-function _latex(::typeof(con_ancillary_limits_uc!))
+function latex(::typeof(con_ancillary_limits_uc!))
     return """
         ``p_{g, t} + r^{\\text{reg}}_{g, t} + r^{\\text{spin}}_{g, t} + r^{\\text{on-sup}}_{g, t} \\leq P^{\\max}_{g, t} (u_{g, t} - u^{\\text{reg}}_{g, t}) + P^{\\text{reg-max}}_{g, t} u^{\\text{reg}}_{g, t}, \\forall g \\in \\mathcal{G}, \\forall t \\in \\mathcal{T}`` \n
         ``p_{g, t} - r^{\\text{reg}}_{g, t} \\geq P^{\\min}_{g, t} (u_{g, t} - u^{\\text{reg}}_{g, t}) + P^{\\text{reg-min}}_{g, t} u^{\\text{reg}}_{g, t}, \\forall g \\in \\mathcal{G}, \\forall t \\in \\mathcal{T}`` \n
@@ -97,7 +97,7 @@ function _latex(::typeof(con_ancillary_limits_uc!))
         ``r^{\\text{off-sup}}_{g, t} \\leq (P^{\\max}_{g, t} - P^{\\min}_{g, t}) (1 - u_{g, t}), \\forall g \\in \\mathcal{G}, \\forall t \\in \\mathcal{T}``
         """
 end
-function _latex(::typeof(con_ancillary_limits_ed!))
+function latex(::typeof(con_ancillary_limits_ed!))
     return """
         ``p_{g, t} + r^{\\text{reg}}_{g, t} + r^{\\text{spin}}_{g, t} + r^{\\text{on-sup}}_{g, t} \\leq P^{\\max}_{g, t} (U_{g, t} - U^{\\text{reg}}_{g, t}) + P^{\\text{reg-max}}_{g, t} U^{\\text{reg}}_{g, t}, \\forall g \\in \\mathcal{G}, \\forall t \\in \\mathcal{T}`` \n
         ``p_{g, t} - r^{\\text{reg}}_{g, t} \\geq P^{\\min}_{g, t} (U_{g, t} - U^{\\text{reg}}_{g, t}) + P^{\\text{reg-min}}_{g, t} U^{\\text{reg}}_{g, t}, \\forall g \\in \\mathcal{G}, \\forall t \\in \\mathcal{T}`` \n
@@ -111,7 +111,7 @@ end
 
 Add ancillary service limit constraints to the full network model:
 
-$(_latex(con_ancillary_limits_uc!))
+$(latex(con_ancillary_limits_uc!))
 
 The constraints added are named, respectively, `ancillary_max`, `ancillary_min`,
 `regulation_max`, `spin_and_sup_max`, and `off_sup_max`.
@@ -143,7 +143,7 @@ end
 
 Add ancillary service limit constraints to the full network model:
 
-$(_latex(con_ancillary_limits_ed!))
+$(latex(con_ancillary_limits_ed!))
 
 The constraints added are named, respectively, `ancillary_max`, `ancillary_min`,
 `spin_and_sup_max`, and `off_sup_max`.
@@ -168,7 +168,7 @@ function con_ancillary_limits!(fnm::FullNetworkModel{<:ED})
     return fnm
 end
 
-function _latex(::typeof(con_regulation_requirements!))
+function latex(::typeof(con_regulation_requirements!))
     return """
         ``\\sum_{g \\in \\mathcal{G}_{z}} r^{\\text{reg}}_{g, t} \\geq R^{\\text{reg-req}}_{z}, \\forall z \\in \\mathcal{Z}, \\forall t \\in \\mathcal{T}``
         """
@@ -179,7 +179,7 @@ end
 
 Adds zonal and market-wide regulation requirements to the full network model:
 
-$(_latex(con_regulation_requirements!))
+$(latex(con_regulation_requirements!))
 
 Note:
     - For `fnm::FullNetworkModel{<:ED}` this defaults to a soft constraint (`slack=1e4`).
@@ -208,17 +208,17 @@ function con_regulation_requirements!(fnm::FullNetworkModel, slack)
     )
     if slack !== nothing
         # Soft constraints, add slacks
-        @variable(model, s_reg_req[z in reserve_zones, t in datetimes] >= 0)
+        @variable(model, Γ_reg_req[z in reserve_zones, t in datetimes] >= 0)
         for z in reserve_zones, t in datetimes
-            set_normalized_coefficient(regulation_requirements[z, t], s_reg_req[z, t], 1.0)
+            set_normalized_coefficient(regulation_requirements[z, t], Γ_reg_req[z, t], 1.0)
             # Add slack penalty to the objective
-            set_objective_coefficient(model, s_reg_req[z, t], slack)
+            set_objective_coefficient(model, Γ_reg_req[z, t], slack)
         end
     end
     return fnm
 end
 
-function _latex(::typeof(con_operating_reserve_requirements!))
+function latex(::typeof(con_operating_reserve_requirements!))
     return """
         ``\\sum_{g \\in \\mathcal{G}_{z}} (r^{\\text{reg}}_{g, t} + r^{\\text{spin}}_{g, t} + r^{\\text{on-sup}}_{g, t} + r^{\\text{off-sup}}_{g, t}) \\geq R^{\\text{OR-req}}_{z}, \\forall z \\in \\mathcal{Z}, \\forall t \\in \\mathcal{T}``
         """
@@ -229,7 +229,7 @@ end
 
 Adds zonal and market-wide operating reserve requirements to the full network model:
 
-$(_latex(con_operating_reserve_requirements!))
+$(latex(con_operating_reserve_requirements!))
 """
 function con_operating_reserve_requirements!(fnm::FullNetworkModel{<:UC}; slack=nothing)
     return con_operating_reserve_requirements!(fnm, slack)
@@ -260,24 +260,24 @@ function con_operating_reserve_requirements!(fnm::FullNetworkModel, slack)
     )
     if slack !== nothing
         # Soft constraints, add slacks
-        @variable(model, s_or_req[z in reserve_zones, t in datetimes] >= 0)
+        @variable(model, Γ_or_req[z in reserve_zones, t in datetimes] >= 0)
         for z in reserve_zones, t in datetimes
-            set_normalized_coefficient(operating_reserve_requirements[z, t], s_or_req[z, t], 1.0)
+            set_normalized_coefficient(operating_reserve_requirements[z, t], Γ_or_req[z, t], 1.0)
             # Add slack penalty to the objective
-            set_objective_coefficient(model, s_or_req[z, t], slack)
+            set_objective_coefficient(model, Γ_or_req[z, t], slack)
         end
     end
     return fnm
 end
 
-function _latex(::typeof(con_ancillary_ramp_rates!))
+function latex(::typeof(con_ancillary_ramp_rates!))
     return """
         ``r^{\\text{reg}}_{g, t} \\leq 5 RR_{g}, \\forall g \\in \\mathcal{G}, t \\in \\mathcal{T}`` \n
         ``r^{\\text{spin}}_{g, t} + r^{\\text{on-sup}}_{g, t} + r^{\\text{off-sup}}_{g, t} \\leq 10 RR_{g}, \\forall g \\in \\mathcal{G}, t \\in \\mathcal{T}``
         """
 end
 
-function _latex(::typeof(con_generation_ramp_rates!))
+function latex(::typeof(con_generation_ramp_rates!))
     return """
         ``p_{g, t} - p_{g, t - 1} \\leq \\Delta t RR_{g} u_{g, t - 1} + SU_{g} v_{g, t}, \\forall g \\in \\mathcal{G}, t \\in \\mathcal{T} \\setminus \\{1\\}`` \n
         ``p_{g, 1} - P^{0}_{g} \\leq \\Delta t RR_{g} U^{0}_{g} + SU_{g} v_{g, 1}, \\forall g \\in \\mathcal{G}`` \n
@@ -286,13 +286,13 @@ function _latex(::typeof(con_generation_ramp_rates!))
         """
 end
 
-function _latex(::typeof(con_energy_balance_ed!))
+function latex(::typeof(con_energy_balance_ed!))
     return """
         ``\\sum_{g \\in \\mathcal{G}} p_{g, t} =
         \\sum_{f \\in \\mathcal{F}} D_{f, t}, \\forall t \\in \\mathcal{T}``
         """
 end
-function _latex(::typeof(con_energy_balance_uc!))
+function latex(::typeof(con_energy_balance_uc!))
     return """
         ``\\sum_{g \\in \\mathcal{G}} p_{g, t} + \\sum_{i \\in \\mathcal{I}} inc_{i, t} =
         \\sum_{f \\in \\mathcal{F}} D_{f, t} + \\sum_{d \\in \\mathcal{D}} dec_{d, t} + \\sum_{s \\in \\mathcal{S}} psd_{s, t}, \\forall t \\in \\mathcal{T}``
@@ -305,7 +305,7 @@ end
 Adds the energy balance constraints to the full network model. The constraints ensure that
 the total generation in the system meets the demand in each time period, assuming no loss:
 
-$(_latex(con_energy_balance_ed!))
+$(latex(con_energy_balance_ed!))
 
 The constraint is named `energy_balance`.
 """
@@ -331,7 +331,7 @@ Adds the energy balance constraints to the full network model. The constraints e
 the total generation in the system meets the demand in each time period, including bids such
 as increments, decrements, and price-sensitive demands, assuming no loss:
 
-$(_latex(con_energy_balance_uc!))
+$(latex(con_energy_balance_uc!))
 
 The constraint is named `energy_balance`.
 """
@@ -476,7 +476,7 @@ end
 
 Adds ancillary service ramp rate constraints to the full network model.
 
-$(_latex(con_ancillary_ramp_rates!))
+$(latex(con_ancillary_ramp_rates!))
 
 The constraints are named `ramp_regulation` and `ramp_spin_sup`.
 """
@@ -511,7 +511,7 @@ end
 
 Adds generation ramp rate constraints to the full network model.
 
-$(_latex(con_generation_ramp_rates!))
+$(latex(con_generation_ramp_rates!))
 
 The constraints are named `ramp_up`, `ramp_up_initial`, `ramp_down`, and `ramp_down_initial`.
 """
@@ -557,19 +557,19 @@ function con_generation_ramp_rates!(fnm::FullNetworkModel; slack=nothing)
 
     # If the constraints are supposed to be soft constraints, add slacks
     if slack !== nothing
-        @variable(model, s_ramp[g in unit_codes, t in datetimes] >= 0)
+        @variable(model, Γ_ramp[g in unit_codes, t in datetimes] >= 0)
         for g in unit_codes
-            set_normalized_coefficient(ramp_up_initial[g], s_ramp[g, h1], -1.0)
-            set_normalized_coefficient(ramp_down_initial[g], s_ramp[g, h1], -1.0)
+            set_normalized_coefficient(ramp_up_initial[g], Γ_ramp[g, h1], -1.0)
+            set_normalized_coefficient(ramp_down_initial[g], Γ_ramp[g, h1], -1.0)
             for t in datetimes[2:end]
-                set_normalized_coefficient(ramp_up[g, t], s_ramp[g, t], -1.0)
-                set_normalized_coefficient(ramp_down[g, t], s_ramp[g, t], -1.0)
+                set_normalized_coefficient(ramp_up[g, t], Γ_ramp[g, t], -1.0)
+                set_normalized_coefficient(ramp_down[g, t], Γ_ramp[g, t], -1.0)
             end
         end
 
         # Add slack penalty to the objective
         for g in unit_codes, t in datetimes
-            set_objective_coefficient(model, s_ramp[g, t], slack)
+            set_objective_coefficient(model, Γ_ramp[g, t], slack)
         end
     end
 
