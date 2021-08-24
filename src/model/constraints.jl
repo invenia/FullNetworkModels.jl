@@ -208,11 +208,11 @@ function con_regulation_requirements!(fnm::FullNetworkModel, slack)
     )
     if slack !== nothing
         # Soft constraints, add slacks
-        @variable(model, s_reg_req[z in reserve_zones, t in datetimes] >= 0)
+        @variable(model, Γ_reg_req[z in reserve_zones, t in datetimes] >= 0)
         for z in reserve_zones, t in datetimes
-            set_normalized_coefficient(regulation_requirements[z, t], s_reg_req[z, t], 1.0)
+            set_normalized_coefficient(regulation_requirements[z, t], Γ_reg_req[z, t], 1.0)
             # Add slack penalty to the objective
-            set_objective_coefficient(model, s_reg_req[z, t], slack)
+            set_objective_coefficient(model, Γ_reg_req[z, t], slack)
         end
     end
     return fnm
@@ -260,11 +260,11 @@ function con_operating_reserve_requirements!(fnm::FullNetworkModel, slack)
     )
     if slack !== nothing
         # Soft constraints, add slacks
-        @variable(model, s_or_req[z in reserve_zones, t in datetimes] >= 0)
+        @variable(model, Γ_or_req[z in reserve_zones, t in datetimes] >= 0)
         for z in reserve_zones, t in datetimes
-            set_normalized_coefficient(operating_reserve_requirements[z, t], s_or_req[z, t], 1.0)
+            set_normalized_coefficient(operating_reserve_requirements[z, t], Γ_or_req[z, t], 1.0)
             # Add slack penalty to the objective
-            set_objective_coefficient(model, s_or_req[z, t], slack)
+            set_objective_coefficient(model, Γ_or_req[z, t], slack)
         end
     end
     return fnm
@@ -557,19 +557,19 @@ function con_generation_ramp_rates!(fnm::FullNetworkModel; slack=nothing)
 
     # If the constraints are supposed to be soft constraints, add slacks
     if slack !== nothing
-        @variable(model, s_ramp[g in unit_codes, t in datetimes] >= 0)
+        @variable(model, Γ_ramp[g in unit_codes, t in datetimes] >= 0)
         for g in unit_codes
-            set_normalized_coefficient(ramp_up_initial[g], s_ramp[g, h1], -1.0)
-            set_normalized_coefficient(ramp_down_initial[g], s_ramp[g, h1], -1.0)
+            set_normalized_coefficient(ramp_up_initial[g], Γ_ramp[g, h1], -1.0)
+            set_normalized_coefficient(ramp_down_initial[g], Γ_ramp[g, h1], -1.0)
             for t in datetimes[2:end]
-                set_normalized_coefficient(ramp_up[g, t], s_ramp[g, t], -1.0)
-                set_normalized_coefficient(ramp_down[g, t], s_ramp[g, t], -1.0)
+                set_normalized_coefficient(ramp_up[g, t], Γ_ramp[g, t], -1.0)
+                set_normalized_coefficient(ramp_down[g, t], Γ_ramp[g, t], -1.0)
             end
         end
 
         # Add slack penalty to the objective
         for g in unit_codes, t in datetimes
-            set_objective_coefficient(model, s_ramp[g, t], slack)
+            set_objective_coefficient(model, Γ_ramp[g, t], slack)
         end
     end
 
