@@ -16,7 +16,7 @@
         @test objective_function(model) == sum(x) + expr
     end
     @testset "_variable_cost" begin
-        system = fake_3bus_system(MISO, DA; n_periods=2)
+        system, _ = fake_3bus_system(MISO, DA; n_periods=2)
         fnm = unit_commitment(system, GLPK.Optimizer)
         unit_codes = get_unit_codes(ThermalGen, fnm.system)
         offer_curves = get_offer_curves(fnm.system)

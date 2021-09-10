@@ -9,6 +9,11 @@ function con_operating_reserve_requirements! end
 function con_regulation_requirements! end
 function con_ancillary_ramp_rates! end
 function con_generation_ramp_rates! end
+function _con_nodal_net_injection_ed! end
+function _con_nodal_net_injection_uc! end
+function _con_branch_flows! end
+function _con_branch_flow_limits! end
+function con_thermal_branch! end
 
 function latex(::typeof(_con_generation_limits_uc!))
     return """
@@ -356,6 +361,193 @@ function con_energy_balance!(fnm::FullNetworkModel{<:UC})
             sum(D[f, t] for f in load_names) + sum(dec[d, t] for d in dec_names) +
             sum(psd[s, t] for s in psd_names)
     )
+    return fnm
+end
+
+function latex(::typeof(_con_nodal_net_injection_ed!))
+    return """
+        ``p^{net}_{n, t} = \\sum_{g \\in \\mathcal{G}_n} p_{g, t} +
+        \\sum_{f \\in \\mathcal{F}_n} D_{f, t}, \\forall n \\in \\mathcal{V}, t \\in \\mathcal{T}``
+        """
+end
+function latex(::typeof(_con_nodal_net_injection_uc!))
+    return """
+        ``p^{net}_{n, t} = \\sum_{g \\in \\mathcal{G_n}} p_{g, t} + \\sum_{i \\in \\mathcal{I}_n} inc_{i, t}
+        - \\sum_{f \\in \\mathcal{F}_n} D_{f, t} - \\sum_{d \\in \\mathcal{D}_n} dec_{d, t}
+        - \\sum_{s \\in \\mathcal{S}_n} psd_{s, t}, \\forall n \\in \\mathcal{V}, t \\in \\mathcal{T}``
+        """
+end
+
+"""
+    _con_nodal_net_injection!(fnm::FullNetworkModel{ED}, bus_numbers, D, unit_codes_perbus, load_names_perbus)
+
+Adds the Net Nodal Injection constraints to the full network model. The constraints calculate
+the net injection per node for all the buses of the system.
+
+The Net Nodal Injection for the Economic Dispatch is formulated as:
+
+$(latex(_con_nodal_net_injection_ed!))
+
+The constraint is named `nodal_net_injection`.
+"""
+function _con_nodal_net_injection!(fnm::FullNetworkModel{<:ED}, bus_numbers, D, unit_codes_perbus, load_names_perbus)
+    model = fnm.model
+    @variable(model, p_net[n in bus_numbers, t in fnm.datetimes])
+    p = model[:p]
+    p_net = model[:p_net]
+    @constraint(
+        model,
+        nodal_net_injection[n in bus_numbers, t in fnm.datetimes],
+        p_net[n, t] ==
+            sum(p[g, t] for g in unit_codes_perbus[n]) -
+            sum(D[f, t] for f in load_names_perbus[n])
+    )
+    return fnm
+end
+
+"""
+_con_nodal_net_injection!(fnm::FullNetworkModel{UC}, bus_numbers, D, unit_codes_perbus, load_names_perbus)
+
+Adds the Net Nodal Injection constraints to the full network model. The constraints calculate
+the net injection per node for all the buses of the system.
+
+The Net Nodal Injection for the Unit Commitment is formulated as:
+
+$(latex(_con_nodal_net_injection_uc!))
+
+The constraint is named `nodal_net_injection`.
+"""
+function _con_nodal_net_injection!(fnm::FullNetworkModel{<:UC}, bus_numbers, D, unit_codes_perbus, load_names_perbus)
+    model = fnm.model
+    system = fnm.system
+    inc_names_perbus = get_bid_names_perbus(Increment, system)
+    dec_names_perbus = get_bid_names_perbus(Decrement, system)
+    psd_names_perbus = get_bid_names_perbus(PriceSensitiveDemand, system)
+    @variable(model, p_net[n in bus_numbers, t in fnm.datetimes])
+    p = model[:p]
+    p_net = model[:p_net]
+    inc = model[:inc]
+    dec = model[:dec]
+    psd = model[:psd]
+    @constraint(
+        model,
+        nodal_net_injection[n in bus_numbers, t in fnm.datetimes],
+        p_net[n, t] ==
+        sum(p[g, t] for g in unit_codes_perbus[n]) +
+            sum(inc[i, t] for i in inc_names_perbus[n]) -
+            sum(D[f, t] for f in load_names_perbus[n]) -
+            sum(dec[d, t] for d in dec_names_perbus[n]) -
+            sum(psd[s, t] for s in psd_names_perbus[n])
+    )
+    return fnm
+end
+
+function latex(::typeof(_con_branch_flows!))
+    return """
+        ``fl^{0}_{m, t} = \\sum_{n \\in \\mathcal{N}_m} PTDF_{m, n} p^{net}_{n, t},
+        \\forall m \\in \\mathcal{M}_0, t \\in \\mathcal{T}``
+        """
+end
+
+"""
+    _con_branch_flows!(fnm::FullNetworkModel, sys_ptdf)
+
+Adds the branch power flow constraints to the full network model. The constraints calculates
+the power flow trough the "m" monitored Lines and transformers.
+
+The branch power flows are calculated as:
+
+$(latex(_con_branch_flows!))
+
+The constraint is named `branch_flows`.
+"""
+function _con_branch_flows!(fnm::FullNetworkModel, bus_numbers, mon_branches, sys_ptdf)
+    model = fnm.model
+    @variable(model, fl0[m in mon_branches, t in fnm.datetimes])
+    p_net = model[:p_net]
+    @constraint(
+        model,
+        branch_flows[m in mon_branches, t in fnm.datetimes],
+        fl0[m, t] == sum(sys_ptdf[m, n] * p_net[n, t] for n in bus_numbers)
+    )
+    return fnm
+end
+
+function latex(::typeof(_con_branch_flow_limits!))
+    return """
+        ``-FL^{rate_a}_{m, t} <= fl^0_{m, t} <= FL^{rate_a}_{m, t}``
+        """
+end
+
+"""
+    _con_branch_flow_limits!(fnm::FullNetworkModel)
+
+Adds the thermal branch constraints to the full network model. The constraints ensure that
+the power flow trough the "m" monitored lines and transformers is smaller than the
+transmission limit in both directions (Power flowing from bus "i" to bus "j" and from bus
+"j" to bus "i").
+
+The thermal branch constraint is formulated as:
+
+$(latex(_con_branch_flow_limits!))
+
+The constraint is named `branch_flow_max` for the high boundary and `branch_flow_min`
+for the lower boundary.
+"""
+function _con_branch_flow_limits!(fnm::FullNetworkModel, mon_branches, mon_branches_rates)
+    model = fnm.model
+    p = model[:p]
+    fl0 = model[:fl0]
+    @constraint(
+        model,
+        branch_flow_max[m in mon_branches, t in fnm.datetimes],
+        fl0[m, t] <= mon_branches_rates[m]
+    )
+    @constraint(
+        model,
+        branch_flow_min[m in mon_branches, t in fnm.datetimes],
+        fl0[m, t] >= -mon_branches_rates[m]
+    )
+    return fnm
+end
+
+"""
+    con_thermal_branch!(fnm::FullNetworkModel, sys_ptdf)
+
+Adds the nodal net injections, branch flows, and branch flow limits constraints to the full
+model. The nodal net injection is formulated different for the Unit Commitment and for the
+Economic Dispatch.
+
+The constraints avobe are formulated as:
+
+The Net Nodal Injection for the Economic Dispatch is formulated as:
+$(latex(_con_nodal_net_injection_ed!))
+
+The Net Nodal Injection for the Unit Commitment is formulated as:
+$(latex(_con_nodal_net_injection_uc!))
+
+Branch Flows are formulated as:
+$(latex(_con_branch_flows!))
+
+Branch Flows Limits are formulated as:
+$(latex(_con_branch_flow_limits!))
+
+The constraints are named `nodal_net_injection`, `branch_flows`, `branch_flow_max` (for the
+high boundary) and `branch_flow_min` (for the lower boundary) respectively.
+"""
+function con_thermal_branch!(fnm::FullNetworkModel, sys_ptdf)
+    #Shared Data
+    system = fnm.system
+    bus_numbers = get_bus_numbers(system)
+    D = get_fixed_loads(system)
+    unit_codes_perbus = get_unit_codes_perbus(ThermalStandard, system)
+    load_names_perbus = get_load_names_perbus(PowerLoad, system)
+    mon_branches = get_branch_names(Branch, system) #<- TODO: Make function to give a subset of monitored branches, for now all lines are considered
+    mon_branches_rates = get_branch_rates(Branch, system) #<- TODO: Make function to give a subset of the rates for monitored branches, for now all lines are considered
+    #Add Constraints
+    _con_nodal_net_injection!(fnm, bus_numbers, D, unit_codes_perbus, load_names_perbus)
+    _con_branch_flows!(fnm, bus_numbers, mon_branches, sys_ptdf)
+    _con_branch_flow_limits!(fnm, mon_branches, mon_branches_rates)
     return fnm
 end
 

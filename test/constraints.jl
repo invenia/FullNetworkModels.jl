@@ -163,6 +163,84 @@ function tests_energy_balance(fnm::FullNetworkModel{<:UC})
     return nothing
 end
 
+function tests_branch_flow_limits(T, fnm::FullNetworkModel, sys_ptdf)
+    @testset "All branch constraints were added" begin
+        @test has_constraint(fnm.model, "nodal_net_injection")
+        @test has_constraint(fnm.model, "branch_flows")
+        @test has_constraint(fnm.model, "branch_flow_max")
+        @test has_constraint(fnm.model, "branch_flow_min")
+    end
+    system = fnm.system
+    mon_branches = get_branch_names(Branch, system) #<- TODO: Make function to give a subset of monitored branches, for now all lines are considered
+    bus_numbers = get_bus_numbers(system)
+    load_names_perbus = get_load_names_perbus(PowerLoad, system)
+    D = get_fixed_loads(system)
+    pg = Array{String}(undef, 3)
+    if T == UC
+        inc_names_perbus = get_bid_names_perbus(Increment, system)
+        dec_names_perbus = get_bid_names_perbus(Decrement, system)
+        psd_names_perbus = get_bid_names_perbus(PriceSensitiveDemand, system)
+        @testset "Nodal net injection" for t in fnm.datetimes
+            d_net = 0.0
+            pg[1] = " -p[3,$t]"
+            pg[2] = " -p[7,$t] +"
+            pg[3] = ""
+            for n in bus_numbers
+                if n !== 1
+                    d_net = -sum(D[f, t] for f in load_names_perbus[n])
+                    inc_aux = ""
+                    dec_aux = ""
+                    psd_aux = ""
+                else
+                    inc_names_aux = inc_names_perbus[n][1]
+                    dec_names_aux = dec_names_perbus[n][1]
+                    psd_names_aux = psd_names_perbus[n][1]
+                    inc_aux = " - inc[$inc_names_aux,$t] +"
+                    dec_aux = " dec[$dec_names_aux,$t] +"
+                    psd_aux = " psd[$psd_names_aux,$t] +"
+                end
+                pg_aux = pg[n]
+                @test sprint(show, constraint_by_name(fnm.model, "nodal_net_injection[$n,$t]")) ==
+                "nodal_net_injection[$n,$t] :$pg_aux$inc_aux$dec_aux$psd_aux p_net[$n,$t] = $d_net"
+            end
+        end
+    else #ED
+        @testset "Nodal net injection" for t in fnm.datetimes
+            d_net = 0.0
+            pg[1] = " -p[3,$t] +"
+            pg[2] = " -p[7,$t] +"
+            pg[3] = ""
+            for n in bus_numbers
+                if n !== 1
+                    d_net = -sum(D[f, t] for f in load_names_perbus[n])
+                end
+                pg_aux = pg[n]
+                @test sprint(show, constraint_by_name(fnm.model, "nodal_net_injection[$n,$t]")) ==
+                "nodal_net_injection[$n,$t] :$pg_aux p_net[$n,$t] = $d_net"
+            end
+        end
+    end
+    @testset "Branch flows" for t in fnm.datetimes
+        for m in mon_branches
+            ptdf_aux2 = -sys_ptdf[m,2]
+            ptdf_aux3 = -sys_ptdf[m,3]
+            @test sprint(show, constraint_by_name(fnm.model, "branch_flows[$m,$t]")) ==
+            "branch_flows[$m,$t] : $ptdf_aux2 p_net[2,$t] + $ptdf_aux3 p_net[3,$t] + fl0[$m,$t] = 0.0"
+        end
+    end
+    mon_branches_rates = get_branch_rates(Branch, system) #<- TODO: Make function to give a subset of the rates for monitored branches, for now all lines are considered
+    @testset "Thermal Branch Limits" for t in fnm.datetimes
+        for m in mon_branches
+            rate = mon_branches_rates[m]
+            @test sprint(show, constraint_by_name(fnm.model, "branch_flow_max[$m,$t]")) ==
+            "branch_flow_max[$m,$t] : fl0[$m,$t] ≤ $rate"
+            @test sprint(show, constraint_by_name(fnm.model, "branch_flow_min[$m,$t]")) ==
+            "branch_flow_min[$m,$t] : fl0[$m,$t] ≥ -$rate"
+        end
+    end
+    return nothing
+end
+
 @testset "Constraints" begin
     @testset "con_generation_limits!" begin
         @testset "ED with gen generator status as a parameter" begin
@@ -247,4 +325,16 @@ end
             tests_energy_balance(fnm)
         end
     end
+
+    @testset "Thermal branch constraints $T" for (T, t_system, t_ptdf) in
+        ((UC, TEST_SYSTEM, TEST_PTDF), (ED, TEST_SYSTEM_RT, TEST_PTDF))
+        @testset "_con_branch_flow_limits!" begin
+            fnm = FullNetworkModel{T}(t_system, GLPK.Optimizer)
+            var_thermal_generation!(fnm)
+            T == UC && var_bids!(fnm)
+            con_thermal_branch!(fnm, t_ptdf)
+            tests_branch_flow_limits(T, fnm, t_ptdf)
+        end
+    end
+
 end

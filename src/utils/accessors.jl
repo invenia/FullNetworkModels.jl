@@ -44,12 +44,43 @@ function get_unit_codes(gentype::Type{<:Generator}, system::System)
 end
 
 """
+    get_unit_codes_perbus(gentype::Type{<:Generator}, system::System) -> Dict
+
+Returns the unit codes of all generators per bus in `system` under type `gentype`.
+"""
+function get_unit_codes_perbus(gentype::Type{<:Generator}, system::System)
+    bus_numbers = get_bus_numbers(system)
+    unit_codes_perbus = Dict{Int, Vector{Int}}()
+    for i in bus_numbers
+        unit_codes_perbus[i] = parse.(
+            Int, get_name.(get_components(gentype, system, x -> x.bus.number == i))
+        )
+    end
+    return unit_codes_perbus
+end
+
+"""
     get_bid_names(bidtype::Type{<:Device}, system::System)
 
 Returns the names of the bids in `system` that are of type `bidtype`.
 """
 function get_bid_names(bidtype::Type{<:Device}, system::System)
     return map(get_name, get_components(bidtype, system))
+end
+
+
+"""
+    get_bid_names_perbus(bidtype::Type{<:Device}, system::System) -> Dict
+
+Returns the names of the bids in `system` that are of type `bidtype`.
+"""
+function get_bid_names_perbus(bidtype::Type{<:Device}, system::System)
+    bus_numbers = get_bus_numbers(system)
+    bid_names_perbus = Dict{Int, Vector{String}}()
+    for i in bus_numbers
+        bid_names_perbus[i] = map(get_name, get_components(bidtype, system, x -> x.bus.number == i))
+    end
+    return bid_names_perbus
 end
 
 """
@@ -59,6 +90,20 @@ Returns the names of all loads in `system` under type `loadtype`.
 """
 function get_load_names(loadtype::Type{<:StaticLoad}, system::System)
     return get_name.(get_components(loadtype, system))
+end
+
+"""
+    get_load_names_perbus(loadtype::Type{<:StaticLoad}, system::System) -> Dict
+
+Returns the names of all loads per bus in `system` under type `loadtype`.
+"""
+function get_load_names_perbus(loadtype::Type{<:StaticLoad}, system::System)
+    bus_numbers = get_bus_numbers(system)
+    load_names_perbus = Dict{Int, Vector{String}}()
+    for i in bus_numbers
+        load_names_perbus[i] = get_name.(get_components(loadtype, system, x -> x.bus.number == i))
+    end
+    return load_names_perbus
 end
 
 """
@@ -490,4 +535,27 @@ function get_bid_curves(
         permutedims(reduce(hcat, time_series_values)), bid_names, datetimes
     )
     return output
+end
+
+"""
+    get_branch_names(branchtype::Type{<:Branch}, system::System) -> Vector{String}
+
+Returns the names of all branches in `system` under type `branchtype`.
+"""
+function get_branch_names(branchtype::Type{<:Branch}, system::System)
+    return get_name.(get_components(branchtype, system))
+end
+
+"""
+    get_branch_rates(branchtype::Type{<:Branch}, system::System) -> Dict
+
+Returns the Rates of all branches in `system` under type `branchtype`.
+"""
+function get_branch_rates(branchtype::Type{<:Branch}, system::System)
+    branch_names = get_branch_names(Branch, system)
+    branch_rates = Dict{String, Float64}()
+    for name in branch_names
+        branch_rates[name] = get_rate(get_component(branchtype, system, name))
+    end
+    return branch_rates
 end
