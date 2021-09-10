@@ -65,6 +65,45 @@
             @test all(==(0.0), value.(fnm_no_ramps.model[:psd]))
         end
     end
+    @testset "unit_commitment_branch_flow_limits" begin
+        fnm = unit_commitment_branch_flow_limits(TEST_SYSTEM, GLPK.Optimizer, TEST_PTDF)
+        tests_branch_flow_limits(UC, fnm, TEST_PTDF)
+
+        # Solve the original ED with thermal branch constraints
+        system_orig = deepcopy(TEST_SYSTEM)
+        fnm = unit_commitment_branch_flow_limits(system_orig, GLPK.Optimizer, TEST_PTDF)
+        optimize!(fnm)
+        # Should be feasible
+        @test termination_status(fnm.model) == TerminationStatusCode(1)
+
+        # Verify that the branch flows are within bounds
+        Line1 = get_component(Branch, system_orig, "Line1")
+        Line2 = get_component(Branch, system_orig, "Line2")
+        Line3 = get_component(Branch, system_orig, "Line3")
+        @test value.(fnm.model[:fl0]["Line1",fnm.datetimes[1]]) <= Line1.rate
+        @test value.(fnm.model[:fl0]["Line2",fnm.datetimes[1]]) <= Line2.rate
+        @test value.(fnm.model[:fl0]["Line3",fnm.datetimes[1]]) <= Line3.rate
+        @test value.(fnm.model[:fl0]["Line1",fnm.datetimes[1]]) >= -Line1.rate
+        @test value.(fnm.model[:fl0]["Line2",fnm.datetimes[1]]) >= -Line2.rate
+        @test value.(fnm.model[:fl0]["Line3",fnm.datetimes[1]]) >= -Line3.rate
+
+        # Modify the branch limits of the system to overload the Branches (infeasible system)
+        system_infeasible = deepcopy(TEST_SYSTEM)
+        Line1 = get_component(Branch, system_infeasible, "Line1")
+        Line2 = get_component(Branch, system_infeasible, "Line2")
+        Line3 = get_component(Branch, system_infeasible, "Line3")
+        set_rate!(Line1, 0.1)
+        set_rate!(Line2, 0.1)
+        set_rate!(Line3, 0.1)
+        @test Line1.rate == 0.1
+        @test Line2.rate == 0.1
+        @test Line2.rate == 0.1
+
+        # Solve – should be infeasible
+        fnm = unit_commitment_branch_flow_limits(system_infeasible, GLPK.Optimizer, TEST_PTDF)
+        optimize!(fnm)
+        @test termination_status(fnm.model) == TerminationStatusCode(2)
+    end
 
     @testset "economic_dispatch" begin
         fnm = economic_dispatch(TEST_SYSTEM_RT, GLPK.Optimizer)
@@ -114,6 +153,47 @@
         # Check if objective values make sense – higher slack should mean higher objective
         @test obj_low_slack > obj_orig
         @test obj_high_slack > obj_low_slack
+    end
+    @testset "economic_dispatch_branch_flow_limits" begin
+        fnm = economic_dispatch_branch_flow_limits(TEST_SYSTEM_RT, GLPK.Optimizer, TEST_PTDF)
+        tests_branch_flow_limits(ED, fnm, TEST_PTDF)
+
+        # Solve the original ED with thermal branch constraints
+        system_orig = TEST_SYSTEM_RT
+        fnm = economic_dispatch_branch_flow_limits(system_orig, GLPK.Optimizer, TEST_PTDF)
+        optimize!(fnm)
+        # Should be feasible
+        @test termination_status(fnm.model) == TerminationStatusCode(1)
+        obj_orig = objective_value(fnm.model)
+
+        # Verify that the branch flows are within bounds
+        Line1 = get_component(Branch, system_orig, "Line1")
+        Line2 = get_component(Branch, system_orig, "Line2")
+        Line3 = get_component(Branch, system_orig, "Line3")
+        @test value.(fnm.model[:fl0]["Line1",fnm.datetimes[1]]) <= Line1.rate
+        @test value.(fnm.model[:fl0]["Line2",fnm.datetimes[1]]) <= Line2.rate
+        @test value.(fnm.model[:fl0]["Line3",fnm.datetimes[1]]) <= Line3.rate
+        @test value.(fnm.model[:fl0]["Line1",fnm.datetimes[1]]) >= -Line1.rate
+        @test value.(fnm.model[:fl0]["Line2",fnm.datetimes[1]]) >= -Line2.rate
+        @test value.(fnm.model[:fl0]["Line3",fnm.datetimes[1]]) >= -Line3.rate
+
+
+        # Modify the branch limits of the system to overload the Branches (infeasible system)
+        system_infeasible = deepcopy(TEST_SYSTEM_RT)
+        Line1 = get_component(Branch, system_infeasible, "Line1")
+        Line2 = get_component(Branch, system_infeasible, "Line2")
+        Line3 = get_component(Branch, system_infeasible, "Line3")
+        set_rate!(Line1, 0.1)
+        set_rate!(Line2, 0.1)
+        set_rate!(Line3, 0.1)
+        @test Line1.rate == 0.1
+        @test Line2.rate == 0.1
+        @test Line2.rate == 0.1
+
+        # Solve – should be infeasible
+        fnm = economic_dispatch_branch_flow_limits(system_infeasible, GLPK.Optimizer, TEST_PTDF)
+        optimize!(fnm)
+        @test termination_status(fnm.model) == TerminationStatusCode(2)
     end
 end
 
