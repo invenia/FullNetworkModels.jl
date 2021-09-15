@@ -114,6 +114,29 @@
                 datetimes
             )
         end
+        @testset "Get monitored data" begin
+            branches_mon_stat = get_branch_monitored_status(Branch, system)
+            branches_break_points = get_branch_break_points(Branch, system)
+            branches_penalties = get_branch_penalties(Branch, system)
+            @test branches_mon_stat == Dict(
+                "Transformer1" => true,
+                "Line1" => true,
+                "Line2" => false,
+                "Line3" => true,
+            )
+            @test branches_break_points == Dict(
+                "Transformer1" => [100.0, 110.0],
+                "Line1" => [100.0, 110.0],
+                "Line2" => [100.0, 110.0],
+                "Line3" => [100.0, 110.0],
+            )
+            @test branches_penalties == Dict(
+                "Transformer1" => [1e3, 2e3],
+                "Line1" => [1e3, 2e3],
+                "Line2" => [1e3, 2e3],
+                "Line3" => [1e3, 2e3],
+            )
+        end
     end
 
     @testset "API extensions" begin

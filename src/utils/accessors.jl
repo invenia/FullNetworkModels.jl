@@ -559,3 +559,61 @@ function get_branch_rates(branchtype::Type{<:Branch}, system::System)
     end
     return branch_rates
 end
+
+"""
+    get_branch_monitored_status(branchtype::Type{<:Branch}, system::System) -> Dict
+
+Returns the Monitored Status of all branches in `system` under type `branchtype`.
+"""
+function get_branch_monitored_status(branchtype::Type{<:Branch}, system::System)
+    branch_names = get_branch_names(Branch, system)
+    branch_monitored_status = Dict{String, Float64}()
+    for name in branch_names
+        branch_monitored_status[name] = get_component(branchtype, system, name).ext["is_monitored"]
+    end
+    return branch_monitored_status
+end
+
+"""
+    get_branch_break_points(branchtype::Type{<:Branch}, system::System) -> Dict
+
+Returns the Break Points of all branches in `system` under type `branchtype`.
+
+Note: The Breakpoints are the percentage value of the Branch Rate in which the penalty for
+branch flow changes. For example a Branch of 75MW rate with Breakpoints [100%, 110%] will have
+a penalty "Penalty1" for any flow in betweeen 100% (75MW) and 110% (82.5MW), and for any MW
+avobe the 110% of the branch rate, the penalty will be "Penalty2"
+
+See also [`get_branch_penalties`](@ref)
+"""
+function get_branch_break_points(branchtype::Type{<:Branch}, system::System)
+    branch_names = get_branch_names(Branch, system)
+    branch_break_points = Dict{String, Float64}()
+    for name in branch_names
+        branch_break_points[name] = get_component(branchtype, system, name).ext["break_points"]
+    end
+    return branch_break_points
+end
+
+
+"""
+    get_branch_penalties(branchtype::Type{<:Branch}, system::System) -> Dict
+
+Returns the penalties of all branches in `system` under type `branchtype`.
+
+Note: The penalties correspond to a particular break point. Breakpoints are the percentage
+value of the Branch Rate in which the penalty for branch flow changes. For example a Branch
+of 75MW rate with penalties [1e3, 2e3] and breakpoints [100%, 110%] will have
+a penalty of 1e3 for any flow in betweeen 100% (75MW) and 110% (82.5MW), and for any MW
+avobe the 110% of the branch rate, the penalty will be 2e3
+
+See also [`get_branch_break_points`](@ref)
+"""
+function get_branch_penalties(branchtype::Type{<:Branch}, system::System)
+    branch_names = get_branch_names(Branch, system)
+    branch_penalties = Dict{String, Float64}()
+    for name in branch_names
+        branch_penalties[name] = get_component(branchtype, system, name).ext["penalties"]
+    end
+    return branch_penalties
+end
