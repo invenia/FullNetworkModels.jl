@@ -582,7 +582,7 @@ avobe the 110% of the branch rate, the penalty will be "Penalty2"
 See also [`get_branch_penalties`](@ref)
 """
 function get_branch_break_points(monitored_branches_names, system::System)
-    branch_break_points = Dict{String, Float64}()
+    branch_penalties = Dict{String, Vector{Float64}}()
     for name in monitored_branches_names
         branch_break_points[name] = get_component(Branch, system, name).ext["break_points"]
     end
@@ -604,7 +604,7 @@ avobe the 110% of the branch rate, the penalty will be 2e3
 See also [`get_branch_break_points`](@ref)
 """
 function get_branch_penalties(monitored_branches_names, system::System)
-    branch_penalties = Dict{String, Float64}()
+    branch_penalties = Dict{String, Vector{Float64}}()
     for name in monitored_branches_names
         branch_penalties[name] = get_component(Branch, system, name).ext["penalties"]
     end
