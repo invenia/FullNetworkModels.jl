@@ -561,11 +561,11 @@ function get_branch_rates(branchtype::Type{<:Branch}, system::System)
 end
 
 """
-    get_monitored_branches(branchtype::Type{<:Branch}, system::System) -> Vector
+    get_monitored_branch_names(branchtype::Type{<:Branch}, system::System) -> Vector
 
 Returns the names of all the monitored branches in `system` under type `branchtype`.
 """
-function get_monitored_branches(branchtype::Type{<:Branch}, system::System)
+function get_monitored_branch_names(branchtype::Type{<:Branch}, system::System)
     return get_name.(get_components(branchtype, system, x -> x.ext["is_monitored"] == true))
 end
 

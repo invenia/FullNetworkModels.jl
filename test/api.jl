@@ -115,7 +115,7 @@
             )
         end
         @testset "Get monitored data" begin
-            monitored_branches_names = get_monitored_branches(Branch, system)
+            monitored_branches_names = get_monitored_branch_names(Branch, system)
             branches_break_points = get_branch_break_points(monitored_branches_names, system)
             branches_penalties = get_branch_penalties(monitored_branches_names, system)
             @test monitored_branches_names == ["Line1"; "Line3"; "Transformer1"]

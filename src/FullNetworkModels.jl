@@ -58,7 +58,7 @@ export get_load_names
 export get_load_names_perbus
 export get_minimum_downtime
 export get_minimum_uptime
-export get_monitored_branches
+export get_monitored_branch_names
 export get_noload_cost
 export get_off_sup_cost
 export get_off_sup_providers
