@@ -41,7 +41,9 @@ export ED
 export get_bid_curves
 export get_bid_names
 export get_bid_names_perbus
+export get_branch_break_points
 export get_branch_names
+export get_branch_penalties
 export get_branch_rates
 export get_commitment_reg_status
 export get_commitment_status
@@ -56,6 +58,7 @@ export get_load_names
 export get_load_names_perbus
 export get_minimum_downtime
 export get_minimum_uptime
+export get_monitored_branch_names
 export get_noload_cost
 export get_off_sup_cost
 export get_off_sup_providers

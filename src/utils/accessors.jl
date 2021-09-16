@@ -559,3 +559,54 @@ function get_branch_rates(branchtype::Type{<:Branch}, system::System)
     end
     return branch_rates
 end
+
+"""
+    get_monitored_branch_names(branchtype::Type{<:Branch}, system::System) -> Vector
+
+Returns the names of all the monitored branches in `system` under type `branchtype`.
+"""
+function get_monitored_branch_names(branchtype::Type{<:Branch}, system::System)
+    return get_name.(get_components(branchtype, system, x -> x.ext["is_monitored"] == true))
+end
+
+"""
+    get_branch_break_points(monitored_branches_names, system::System) -> Dict
+
+Returns the Break Points of the monitored branches names in `system`.
+
+Note: The Breakpoints are the percentage value of the Branch Rate in which the penalty for
+branch flow changes. For example a Branch of 75MW rate with Breakpoints [100%, 110%] will have
+a penalty "Penalty1" for any flow in betweeen 100% (75MW) and 110% (82.5MW), and for any MW
+avobe the 110% of the branch rate, the penalty will be "Penalty2"
+
+See also [`get_branch_penalties`](@ref)
+"""
+function get_branch_break_points(monitored_branches_names, system::System)
+    branch_break_points = Dict{String, Vector{Float64}}()
+    for name in monitored_branches_names
+        branch_break_points[name] = get_component(Branch, system, name).ext["break_points"]
+    end
+    return branch_break_points
+end
+
+
+"""
+    get_branch_penalties(monitored_branches_names, system::System) -> Dict
+
+Returns the penalties of the monitored branches names in `system`.
+
+Note: The penalties correspond to a particular break point. Breakpoints are the percentage
+value of the Branch Rate in which the penalty for branch flow changes. For example a Branch
+of 75MW rate with penalties [1e3, 2e3] and breakpoints [100%, 110%] will have
+a penalty of 1e3 for any flow in betweeen 100% (75MW) and 110% (82.5MW), and for any MW
+avobe the 110% of the branch rate, the penalty will be 2e3
+
+See also [`get_branch_break_points`](@ref)
+"""
+function get_branch_penalties(monitored_branches_names, system::System)
+    branch_penalties = Dict{String, Vector{Float64}}()
+    for name in monitored_branches_names
+        branch_penalties[name] = get_component(Branch, system, name).ext["penalties"]
+    end
+    return branch_penalties
+end
