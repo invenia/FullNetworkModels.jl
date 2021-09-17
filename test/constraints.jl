@@ -169,6 +169,8 @@ function tests_branch_flow_limits(T, fnm::FullNetworkModel, sys_ptdf)
         @test has_constraint(fnm.model, "branch_flows")
         @test has_constraint(fnm.model, "branch_flow_max")
         @test has_constraint(fnm.model, "branch_flow_min")
+        @test has_constraint(fnm.model, "branch_flow_sl1")
+        @test has_constraint(fnm.model, "branch_flow_sl2")
     end
     system = fnm.system
     mon_branches_names = get_monitored_branch_names(Branch, system)
