@@ -87,6 +87,8 @@ $(_write_formulation(
         latex(_con_nodal_net_injection_ed!),
         latex(_con_branch_flows!),
         latex(_con_branch_flow_limits!)
+        latex(_con_branch_flow_slack1!)
+        latex(_con_branch_flow_slack2!)
     ],
     variables=[
         latex(var_thermal_generation!),
