@@ -78,19 +78,15 @@
 
         # Verify that the branch flows are within bounds
         Line1 = get_component(Branch, system_orig, "Line1")
-        Line2 = get_component(Branch, system_orig, "Line2")
         Line3 = get_component(Branch, system_orig, "Line3")
         @test value.(fnm.model[:fl0]["Line1",fnm.datetimes[1]]) <= Line1.rate
-        @test value.(fnm.model[:fl0]["Line2",fnm.datetimes[1]]) <= Line2.rate
         @test value.(fnm.model[:fl0]["Line3",fnm.datetimes[1]]) <= Line3.rate
         @test value.(fnm.model[:fl0]["Line1",fnm.datetimes[1]]) >= -Line1.rate
-        @test value.(fnm.model[:fl0]["Line2",fnm.datetimes[1]]) >= -Line2.rate
         @test value.(fnm.model[:fl0]["Line3",fnm.datetimes[1]]) >= -Line3.rate
 
         # Modify the branch limits of the system to overload the Branches (infeasible system)
         system_infeasible = deepcopy(TEST_SYSTEM)
         Line1 = get_component(Branch, system_infeasible, "Line1")
-        Line2 = get_component(Branch, system_infeasible, "Line2")
         Line3 = get_component(Branch, system_infeasible, "Line3")
         set_rate!(Line1, 0.1)
         set_rate!(Line2, 0.1)
@@ -168,20 +164,16 @@
 
         # Verify that the branch flows are within bounds
         Line1 = get_component(Branch, system_orig, "Line1")
-        Line2 = get_component(Branch, system_orig, "Line2")
         Line3 = get_component(Branch, system_orig, "Line3")
         @test value.(fnm.model[:fl0]["Line1",fnm.datetimes[1]]) <= Line1.rate
-        @test value.(fnm.model[:fl0]["Line2",fnm.datetimes[1]]) <= Line2.rate
         @test value.(fnm.model[:fl0]["Line3",fnm.datetimes[1]]) <= Line3.rate
         @test value.(fnm.model[:fl0]["Line1",fnm.datetimes[1]]) >= -Line1.rate
-        @test value.(fnm.model[:fl0]["Line2",fnm.datetimes[1]]) >= -Line2.rate
         @test value.(fnm.model[:fl0]["Line3",fnm.datetimes[1]]) >= -Line3.rate
 
 
         # Modify the branch limits of the system to overload the Branches (infeasible system)
         system_infeasible = deepcopy(TEST_SYSTEM_RT)
         Line1 = get_component(Branch, system_infeasible, "Line1")
-        Line2 = get_component(Branch, system_infeasible, "Line2")
         Line3 = get_component(Branch, system_infeasible, "Line3")
         set_rate!(Line1, 0.1)
         set_rate!(Line2, 0.1)
