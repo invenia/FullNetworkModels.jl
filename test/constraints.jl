@@ -237,6 +237,8 @@ function tests_branch_flow_limits(T, fnm::FullNetworkModel, sys_ptdf)
             @test sprint(show, constraint_by_name(fnm.model, "branch_flow_min[$m,$t]")) ==
             "branch_flow_min[$m,$t] : fl0[$m,$t] ≥ -$rate"
         end
+        @test sprint(show, constraint_by_name(fnm.model, "branch_flow_max[\"Line2\",$t]")) === nothing
+        @test sprint(show, constraint_by_name(fnm.model, "branch_flow_min[\"Line2\",$t]")) === nothing
     end
     return nothing
 end
