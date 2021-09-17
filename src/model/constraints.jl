@@ -560,6 +560,7 @@ function _con_branch_flow_slacks!(
     )
 
     model = fnm.model
+    datetimes = fnm.datetimes
     # Slacks
     @variable(model, sl1_fl0[m in mon_branches_names, t in datetimes] >= 0)
     @variable(model, sl2_fl0[m in mon_branches_names, t in datetimes] >= 0)
@@ -567,12 +568,12 @@ function _con_branch_flow_slacks!(
     # Constraints
     @constraint(
         model,
-        branch_flow_sl1[m in mon_branches_names, t in fnm.datetimes],
+        branch_flow_sl1[m in mon_branches_names, t in datetimes],
         sl1_fl0[m, t] <= (mon_branches_break_points[m][2]-mon_branches_break_points[m][1])*(mon_branches_rates[m]/100)
     )
     @constraint(
         model,
-        branch_flow_sl2[m in mon_branches_names, t in fnm.datetimes],
+        branch_flow_sl2[m in mon_branches_names, t in datetimes],
         0 <= sl2_fl0[m, t]
     )
     for m in mon_branches_names, t in datetimes
