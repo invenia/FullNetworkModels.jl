@@ -89,11 +89,9 @@
         Line1 = get_component(Branch, system_infeasible, "Line1")
         Line3 = get_component(Branch, system_infeasible, "Line3")
         set_rate!(Line1, 0.1)
-        set_rate!(Line2, 0.1)
         set_rate!(Line3, 0.1)
         @test Line1.rate == 0.1
-        @test Line2.rate == 0.1
-        @test Line2.rate == 0.1
+        @test Line3.rate == 0.1
 
         # Solve – should be infeasible
         fnm = unit_commitment_branch_flow_limits(system_infeasible, GLPK.Optimizer, TEST_PTDF)
@@ -176,11 +174,9 @@
         Line1 = get_component(Branch, system_infeasible, "Line1")
         Line3 = get_component(Branch, system_infeasible, "Line3")
         set_rate!(Line1, 0.1)
-        set_rate!(Line2, 0.1)
         set_rate!(Line3, 0.1)
         @test Line1.rate == 0.1
-        @test Line2.rate == 0.1
-        @test Line2.rate == 0.1
+        @test Line3.rate == 0.1
 
         # Solve – should be infeasible
         fnm = economic_dispatch_branch_flow_limits(system_infeasible, GLPK.Optimizer, TEST_PTDF)
