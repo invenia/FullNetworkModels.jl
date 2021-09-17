@@ -171,7 +171,7 @@ function tests_branch_flow_limits(T, fnm::FullNetworkModel, sys_ptdf)
         @test has_constraint(fnm.model, "branch_flow_min")
     end
     system = fnm.system
-    mon_branches = get_branch_names(Branch, system) #<- TODO: Make function to give a subset of monitored branches, for now all lines are considered
+    mon_branches_names = get_monitored_branch_names(Branch, system)
     bus_numbers = get_bus_numbers(system)
     load_names_perbus = get_load_names_perbus(PowerLoad, system)
     D = get_fixed_loads(system)
@@ -221,22 +221,24 @@ function tests_branch_flow_limits(T, fnm::FullNetworkModel, sys_ptdf)
         end
     end
     @testset "Branch flows" for t in fnm.datetimes
-        for m in mon_branches
+        for m in mon_branches_names
             ptdf_aux2 = -sys_ptdf[m,2]
             ptdf_aux3 = -sys_ptdf[m,3]
             @test sprint(show, constraint_by_name(fnm.model, "branch_flows[$m,$t]")) ==
             "branch_flows[$m,$t] : $ptdf_aux2 p_net[2,$t] + $ptdf_aux3 p_net[3,$t] + fl0[$m,$t] = 0.0"
         end
     end
-    mon_branches_rates = get_branch_rates(Branch, system) #<- TODO: Make function to give a subset of the rates for monitored branches, for now all lines are considered
+    mon_branches_rates = get_branch_rates(mon_branches_names, system)
     @testset "Thermal Branch Limits" for t in fnm.datetimes
-        for m in mon_branches
+        for m in mon_branches_names
             rate = mon_branches_rates[m]
             @test sprint(show, constraint_by_name(fnm.model, "branch_flow_max[$m,$t]")) ==
             "branch_flow_max[$m,$t] : fl0[$m,$t] ≤ $rate"
             @test sprint(show, constraint_by_name(fnm.model, "branch_flow_min[$m,$t]")) ==
             "branch_flow_min[$m,$t] : fl0[$m,$t] ≥ -$rate"
         end
+        @test constraint_by_name(fnm.model, "branch_flow_max[\"Line2\",$t]") === nothing
+        @test constraint_by_name(fnm.model, "branch_flow_min[\"Line2\",$t]") === nothing
     end
     return nothing
 end
@@ -336,5 +338,4 @@ end
             tests_branch_flow_limits(T, fnm, t_ptdf)
         end
     end
-
 end

@@ -450,7 +450,7 @@ function latex(::typeof(_con_branch_flows!))
 end
 
 """
-    _con_branch_flows!(fnm::FullNetworkModel, sys_ptdf)
+    _con_branch_flows!(fnm::FullNetworkModel, bus_numbers, mon_branches_names, sys_ptdf)
 
 Adds the branch power flow constraints to the full network model. The constraints calculates
 the power flow trough the "m" monitored Lines and transformers.
@@ -461,13 +461,13 @@ $(latex(_con_branch_flows!))
 
 The constraint is named `branch_flows`.
 """
-function _con_branch_flows!(fnm::FullNetworkModel, bus_numbers, mon_branches, sys_ptdf)
+function _con_branch_flows!(fnm::FullNetworkModel, bus_numbers, mon_branches_names, sys_ptdf)
     model = fnm.model
-    @variable(model, fl0[m in mon_branches, t in fnm.datetimes])
+    @variable(model, fl0[m in mon_branches_names, t in fnm.datetimes])
     p_net = model[:p_net]
     @constraint(
         model,
-        branch_flows[m in mon_branches, t in fnm.datetimes],
+        branch_flows[m in mon_branches_names, t in fnm.datetimes],
         fl0[m, t] == sum(sys_ptdf[m, n] * p_net[n, t] for n in bus_numbers)
     )
     return fnm
@@ -494,18 +494,18 @@ $(latex(_con_branch_flow_limits!))
 The constraint is named `branch_flow_max` for the high boundary and `branch_flow_min`
 for the lower boundary.
 """
-function _con_branch_flow_limits!(fnm::FullNetworkModel, mon_branches, mon_branches_rates)
+function _con_branch_flow_limits!(fnm::FullNetworkModel, mon_branches_names, mon_branches_rates)
     model = fnm.model
     p = model[:p]
     fl0 = model[:fl0]
     @constraint(
         model,
-        branch_flow_max[m in mon_branches, t in fnm.datetimes],
+        branch_flow_max[m in mon_branches_names, t in fnm.datetimes],
         fl0[m, t] <= mon_branches_rates[m]
     )
     @constraint(
         model,
-        branch_flow_min[m in mon_branches, t in fnm.datetimes],
+        branch_flow_min[m in mon_branches_names, t in fnm.datetimes],
         fl0[m, t] >= -mon_branches_rates[m]
     )
     return fnm
@@ -542,12 +542,12 @@ function con_thermal_branch!(fnm::FullNetworkModel, sys_ptdf)
     D = get_fixed_loads(system)
     unit_codes_perbus = get_unit_codes_perbus(ThermalStandard, system)
     load_names_perbus = get_load_names_perbus(PowerLoad, system)
-    mon_branches = get_branch_names(Branch, system) #<- TODO: Make function to give a subset of monitored branches, for now all lines are considered
-    mon_branches_rates = get_branch_rates(Branch, system) #<- TODO: Make function to give a subset of the rates for monitored branches, for now all lines are considered
+    mon_branches_names = get_monitored_branch_names(Branch, system)
+    mon_branches_rates = get_branch_rates(mon_branches_names, system)
     #Add Constraints
     _con_nodal_net_injection!(fnm, bus_numbers, D, unit_codes_perbus, load_names_perbus)
-    _con_branch_flows!(fnm, bus_numbers, mon_branches, sys_ptdf)
-    _con_branch_flow_limits!(fnm, mon_branches, mon_branches_rates)
+    _con_branch_flows!(fnm, bus_numbers, mon_branches_names, sys_ptdf)
+    _con_branch_flow_limits!(fnm, mon_branches_names, mon_branches_rates)
     return fnm
 end
 
