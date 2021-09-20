@@ -569,15 +569,41 @@ function _con_branch_flow_slacks!(
     @variable(model, sl1_fl0[m in mon_branches_names, t in datetimes] >= 0)
     @variable(model, sl2_fl0[m in mon_branches_names, t in datetimes] >= 0)
 
-    # Constraints
+    (branches_zero_break_points,
+    branches_one_break_points,
+    branches_two_break_points) = get_branches_num_break_points(Branch, system)
+
+    # Constraints Zero Break points
     @constraint(
         model,
-        branch_flow_sl1[m in mon_branches_names, t in datetimes],
+        branch_flow_sl1[m in branches_zero_break_points, t in datetimes],
+        sl1_fl0[m, t] == 0
+    )
+    @constraint(
+        model,
+        branch_flow_sl2[m in branches_zero_break_points, t in datetimes],
+        sl2_fl0[m, t] == 0
+    )
+    # Constraints One Break Point
+    @constraint(
+        model,
+        branch_flow_sl1[m in branches_one_break_points, t in datetimes],
+        sl1_fl0[m, t] == 0
+    )
+    @constraint(
+        model,
+        branch_flow_sl2[m in branches_one_break_points, t in datetimes],
+        0 <= sl2_fl0[m, t]
+    )
+    # Constraints Two Break Points
+    @constraint(
+        model,
+        branch_flow_sl1[m in branches_two_break_points, t in datetimes],
         sl1_fl0[m, t] <= (mon_branches_break_points[m][2]-mon_branches_break_points[m][1])*(mon_branches_rates[m]/100)
     )
     @constraint(
         model,
-        branch_flow_sl2[m in mon_branches_names, t in datetimes],
+        branch_flow_sl2[m in branches_two_break_points, t in datetimes],
         0 <= sl2_fl0[m, t]
     )
     for m in mon_branches_names, t in datetimes
@@ -622,9 +648,6 @@ function con_thermal_branch!(fnm::FullNetworkModel, sys_ptdf)
     unit_codes_perbus = get_unit_codes_perbus(ThermalStandard, system)
     load_names_perbus = get_load_names_perbus(PowerLoad, system)
     mon_branches_names = get_monitored_branch_names(Branch, system)
-    (branches_zero_break_points,
-        branches_one_break_points,
-        branches_two_break_points) = get_branches_num_break_points(Branch, system)
     mon_branches_rates = get_branch_rates(mon_branches_names, system)
     mon_branches_break_points = get_branch_break_points(mon_branches_names, system)
     mon_branches_penalties = get_branch_penalties(mon_branches_names, system)
