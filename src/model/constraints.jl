@@ -13,8 +13,7 @@ function _con_nodal_net_injection_ed! end
 function _con_nodal_net_injection_uc! end
 function _con_branch_flows! end
 function _con_branch_flow_limits! end
-function _con_branch_flow_slack1! end
-function _con_branch_flow_slack2! end
+function _con_branch_flow_slacks! end
 function con_thermal_branch! end
 
 function latex(::typeof(_con_generation_limits_uc!))
@@ -515,15 +514,11 @@ function _con_branch_flow_limits!(fnm::FullNetworkModel, mon_branches_names, mon
     return fnm
 end
 
-function latex(::typeof(_con_branch_flow_slack1!))
+function latex(::typeof(_con_branch_flow_slacks!))
     return """
-        ``0 <= sl1^{fl0}_{m, t} <= (bp2 - bp1)*Rate/100``
-        """
-end
-function latex(::typeof(_con_branch_flow_slack2!))
-    return """
-        ``0 <= sl2^{fl0}_{m, t}``
-        """
+    ``0 <= sl1^{fl0}_{m, t} <= \\bar{SL1}^{fl0}_{m, t}`` \n
+    ``0 <= sl2^{fl0}_{m, t}``
+    """
 end
 """
     _con_branch_flow_slacks!(fnm::FullNetworkModel, mon_branches_names, mon_branches_rates)
@@ -534,17 +529,26 @@ according to the branch breaking points and penalties.
 
 The power flow slack penalty constraints are formulated as:
 
-$(latex(_con_branch_flow_slack1!))
-
-and
-
-$(latex(_con_branch_flow_slack2!))
+$(latex(_con_branch_flow_slacks!))
 
 The Breakpoints are the percentage value of the Branch Rate in which the penalty for branch
-flow changes. For example a Branch of 75MW rate with Breakpoints [100%, 110%] will have a
-penalty "Penalty1" for any flow in betweeen 100% (75MW) and 110% (82.5MW), and for any MW
-avobe the 110% of the branch rate, the penalty will be "Penalty2". Thus, the slacks should be:
+flow changes. A branch could have one, two or no breakpoints. For example a Branch of 75MW
+rate (FL) with one breakpoint at [100%] of the line rate will have a corresponding penalty
+"Penalty1 for any flow avobe 100% (75MW). For a branch with two breakpoints [100%, 110%] will
+have a penalty "Penalty1" for any flow in betweeen 100% (75MW) and 110% (82.5MW), and for any
+MW avobe the 110% of the branch rate, the penalty will be "Penalty2". Finally a branch with no
+breakpoints, the constraint should be a hard constraint. Thus, the slacks for each case should
+be:
 
+No breakpoints:
+sl1^{fl0}_{m, t} = 0
+sl2^{fl0}_{m, t} = 0
+
+One breakpoints:
+sl1^{fl0}_{m, t} = 0
+0 <= sl2^{fl0}_{m, t}
+
+Two breakpoints:
 0 <= sl1^{fl0}_{m, t} <= (110% - 100%)*75MW/(100*Sbase)
 0 <= sl2^{fl0}_{m, t}
 
