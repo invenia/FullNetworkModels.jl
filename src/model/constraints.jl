@@ -622,6 +622,9 @@ function con_thermal_branch!(fnm::FullNetworkModel, sys_ptdf)
     unit_codes_perbus = get_unit_codes_perbus(ThermalStandard, system)
     load_names_perbus = get_load_names_perbus(PowerLoad, system)
     mon_branches_names = get_monitored_branch_names(Branch, system)
+    (branches_zero_break_points,
+        branches_one_break_points,
+        branches_two_break_points) = get_branches_num_break_points(Branch, system)
     mon_branches_rates = get_branch_rates(mon_branches_names, system)
     mon_branches_break_points = get_branch_break_points(mon_branches_names, system)
     mon_branches_penalties = get_branch_penalties(mon_branches_names, system)
