@@ -119,17 +119,15 @@
             branches_break_points = get_branch_break_points(monitored_branches_names, system)
             branches_penalties = get_branch_penalties(monitored_branches_names, system)
             @test issetequal(monitored_branches_names, ("Line1", "Line3", "Transformer1"))
-            @test issetequal(branches_break_points, Dict(
+            @test branches_break_points == Dict(
                 "Transformer1" => [100.0, 110.0],
                 "Line1" => [100.0, 110.0],
                 "Line3" => [100.0, 110.0],
-                )
             )
-            @test issetequal(branches_penalties, Dict(
+            @test branches_penalties == Dict(
                 "Transformer1" => [1e3, 2e3],
                 "Line1" => [1e3, 2e3],
                 "Line3" => [1e3, 2e3],
-                )
             )
         end
     end
