@@ -564,6 +564,7 @@ function _con_branch_flow_slacks!(
     )
 
     model = fnm.model
+    system = fnm.system
     datetimes = fnm.datetimes
     # Slacks
     @variable(model, sl1_fl0[m in mon_branches_names, t in datetimes] >= 0)
