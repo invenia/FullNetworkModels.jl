@@ -534,7 +534,7 @@ $(latex(_con_branch_flow_slacks!))
 The Breakpoints are the percentage value of the Branch Rate in which the penalty for branch
 flow changes. A branch could have one, two or no breakpoints. For example a Branch of 75MW
 rate (FL) with one breakpoint at [100%] of the line rate will have a corresponding penalty
-"Penalty1 for any flow avobe 100% (75MW). For a branch with two breakpoints [100%, 110%] will
+"Penalty1" for any flow above 100% (75MW). For a branch with two breakpoints [100%, 110%] will
 have a penalty "Penalty1" for any flow in betweeen 100% (75MW) and 110% (82.5MW), and for any
 MW avobe the 110% of the branch rate, the penalty will be "Penalty2". Finally a branch with no
 breakpoints, the constraint should be a hard constraint. Thus, the slacks for each case should
