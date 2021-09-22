@@ -521,7 +521,13 @@ function latex(::typeof(_con_branch_flow_slacks!))
     """
 end
 """
-    _con_branch_flow_slacks!(fnm::FullNetworkModel, mon_branches_names, mon_branches_rates)
+     _con_branch_flow_slacks!(
+         fnm::FullNetworkModel,
+         mon_branches_names,
+         mon_branches_rates,
+         mon_branches_break_points,
+         mon_branches_penalties
+    )
 
 Adds the power flow slack penalty constraints to the full network model. The constraints
 ensure that the power flow trough the "m" monitored lines and transformers is penalised
