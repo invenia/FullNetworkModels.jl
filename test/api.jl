@@ -120,7 +120,7 @@
             branches_penalties = get_branch_penalties(monitored_branches_names, system)
             (branches_zero_break_points,
                 branches_one_break_points,
-                branches_two_break_points) = get_branch_num_break_points_names(Branch, system)
+                branches_two_break_points) = FullNetworkModels._get_branch_num_break_points_names(Branch, system)
             @test issetequal(monitored_branches_names, ("Line1", "Line3", "Transformer1"))
             @test branches_break_points == Dict(
                 "Transformer1" => [100.0, 110.0],

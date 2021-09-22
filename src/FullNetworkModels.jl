@@ -43,7 +43,6 @@ export get_bid_names
 export get_bid_names_perbus
 export get_branch_break_points
 export get_branch_names
-export get_branch_num_break_points_names
 export get_branch_penalties
 export get_branch_rates
 export get_commitment_reg_status

@@ -572,7 +572,7 @@ function _con_branch_flow_slacks!(
 
     (branches_zero_break_points,
     branches_one_break_points,
-    branches_two_break_points) = get_branch_num_break_points_names(Branch, system)
+    branches_two_break_points) = _get_branch_num_break_points_names(Branch, system)
 
     # Constraints Zero Break points
     @constraint(

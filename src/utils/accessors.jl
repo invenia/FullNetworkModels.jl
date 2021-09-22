@@ -625,14 +625,14 @@ function get_branch_penalties(monitored_branches_names, system::System)
 end
 
 """
-    get_branch_num_break_points_names(branchtype::Type{<:Branch}, system::System) -> Vector{String}
+    _get_branch_num_break_points_names(branchtype::Type{<:Branch}, system::System) -> Vector{String}
 
 Returns three string vectors with the names of the branches with one, two and no Break Points
 in the set of of the monitored branches names in `system`.
 
 See also [`get_branch_break_points`](@ref)
 """
-function get_branch_num_break_points_names(branchtype::Type{<:Branch}, system::System)
+function _get_branch_num_break_points_names(branchtype::Type{<:Branch}, system::System)
     branches_zero_break_points = get_name.(get_components(branchtype, system, x -> length(x.ext["break_points"]) == 0 && x.ext["is_monitored"] == true))
     branches_one_break_points = get_name.(get_components(branchtype, system, x -> length(x.ext["break_points"]) == 1 && x.ext["is_monitored"] == true))
     branches_two_break_points = get_name.(get_components(branchtype, system, x -> length(x.ext["break_points"]) == 2 && x.ext["is_monitored"] == true))
