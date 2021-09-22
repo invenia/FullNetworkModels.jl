@@ -588,13 +588,8 @@ function _con_branch_flow_slacks!(
     # Constraints One Break Point
     @constraint(
         model,
-        branch_flow_sl1_one[m in branches_one_break_points, t in datetimes],
-        sl1_fl0[m, t] == 0
-    )
-    @constraint(
-        model,
         branch_flow_sl2_one[m in branches_one_break_points, t in datetimes],
-        0 <= sl2_fl0[m, t]
+        sl2_fl0[m, t] == 0
     )
     # Constraints Two Break Points
     @constraint(
@@ -602,11 +597,7 @@ function _con_branch_flow_slacks!(
         branch_flow_sl1_two[m in branches_two_break_points, t in datetimes],
         sl1_fl0[m, t] <= (mon_branches_break_points[m][2]-mon_branches_break_points[m][1])*(mon_branches_rates[m]/100)
     )
-    @constraint(
-        model,
-        branch_flow_sl2_two[m in branches_two_break_points, t in datetimes],
-        0 <= sl2_fl0[m, t]
-    )
+
     for m in branches_zero_break_points, t in datetimes
         set_normalized_coefficient(branch_flow_sl1_zero[m, t], sl1_fl0[m, t], 1.0)
         set_normalized_coefficient(branch_flow_sl2_zero[m, t], sl2_fl0[m, t], 1.0)
