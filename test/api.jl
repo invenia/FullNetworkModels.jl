@@ -128,9 +128,9 @@
                 "Line3" => [100.0, 110.0],
             )
             @test branches_penalties == Dict(
-                "Transformer1" => [1e3, 2e3],
-                "Line1" => [1e3, 2e3],
-                "Line3" => [1e3, 2e3],
+                "Transformer1" => [1e5, 2e5],
+                "Line1" => [1e5, 2e5],
+                "Line3" => [1e5, 2e5],
             )
             @test issetequal(branches_zero_break_points, Any[])
             @test issetequal(branches_one_break_points, Any[])
