@@ -126,8 +126,6 @@
         obj_sl2 = objective_value(fnm.model)
 
         # Verify that the branch flows are higher than the line rate, SL1 and SL2 are active
-        Line1 = get_component(Branch, system_sl2, "Line1")
-        Line3 = get_component(Branch, system_sl2, "Line3")
         @test value.(fnm.model[:fl0]["Line1",fnm.datetimes[1]]) > Line1.rate
         @test value.(fnm.model[:fl0]["Line3",fnm.datetimes[1]]) > Line3.rate
         @test value.(fnm.model[:sl1_fl0]["Line1",fnm.datetimes[1]]) > 0.0
@@ -135,7 +133,7 @@
         @test value.(fnm.model[:sl2_fl0]["Line1",fnm.datetimes[1]]) > 0.0
         @test value.(fnm.model[:sl2_fl0]["Line3",fnm.datetimes[1]]) > 0.0
 
-        #Compare objectives
+        # Compare objectives - the use of slacks increases the objective value
         @test obj < obj_sl1
         @test obj_sl1 < obj_sl2
     end
@@ -225,8 +223,6 @@
         obj_sl1 = objective_value(fnm.model)
 
         # Verify that the branch flows are higher than the line rate, and SL1 is active
-        Line1 = get_component(Branch, system_sl1, "Line1")
-        Line3 = get_component(Branch, system_sl1, "Line3")
         @test value.(fnm.model[:fl0]["Line1",fnm.datetimes[1]]) > Line1.rate
         @test value.(fnm.model[:fl0]["Line3",fnm.datetimes[1]]) > Line3.rate
         @test value.(fnm.model[:sl1_fl0]["Line1",fnm.datetimes[1]]) > 0
