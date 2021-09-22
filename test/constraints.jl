@@ -171,10 +171,8 @@ function tests_branch_flow_limits(T, fnm::FullNetworkModel, sys_ptdf)
         @test has_constraint(fnm.model, "branch_flow_min")
         @test has_constraint(fnm.model, "branch_flow_sl1_zero")
         @test has_constraint(fnm.model, "branch_flow_sl2_zero")
-        @test has_constraint(fnm.model, "branch_flow_sl1_one")
         @test has_constraint(fnm.model, "branch_flow_sl2_one")
         @test has_constraint(fnm.model, "branch_flow_sl1_two")
-        @test has_constraint(fnm.model, "branch_flow_sl2_two")
     end
     system = fnm.system
     mon_branches_names = get_monitored_branch_names(Branch, system)
