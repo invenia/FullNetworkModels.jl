@@ -556,12 +556,12 @@ The constraint is named `branch_flow_sl1` for the first step slack and `branch_f
 for the second step slack.
 """
 function _con_branch_flow_slacks!(
-        fnm::FullNetworkModel,
-        mon_branches_names,
-        mon_branches_rates,
-        mon_branches_break_points,
-        mon_branches_penalties
-    )
+    fnm::FullNetworkModel,
+    mon_branches_names,
+    mon_branches_rates,
+    mon_branches_break_points,
+    mon_branches_penalties
+)
 
     model = fnm.model
     system = fnm.system
