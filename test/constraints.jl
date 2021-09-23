@@ -169,6 +169,10 @@ function tests_branch_flow_limits(T, fnm::FullNetworkModel, sys_ptdf)
         @test has_constraint(fnm.model, "branch_flows")
         @test has_constraint(fnm.model, "branch_flow_max")
         @test has_constraint(fnm.model, "branch_flow_min")
+        @test has_constraint(fnm.model, "branch_flow_sl1_zero")
+        @test has_constraint(fnm.model, "branch_flow_sl2_zero")
+        @test has_constraint(fnm.model, "branch_flow_sl2_one")
+        @test has_constraint(fnm.model, "branch_flow_sl1_two")
     end
     system = fnm.system
     mon_branches_names = get_monitored_branch_names(Branch, system)
@@ -233,9 +237,9 @@ function tests_branch_flow_limits(T, fnm::FullNetworkModel, sys_ptdf)
         for m in mon_branches_names
             rate = mon_branches_rates[m]
             @test sprint(show, constraint_by_name(fnm.model, "branch_flow_max[$m,$t]")) ==
-            "branch_flow_max[$m,$t] : fl0[$m,$t] ≤ $rate"
+            "branch_flow_max[$m,$t] : fl0[$m,$t] - sl1_fl0[$m,$t] - sl2_fl0[$m,$t] ≤ $rate"
             @test sprint(show, constraint_by_name(fnm.model, "branch_flow_min[$m,$t]")) ==
-            "branch_flow_min[$m,$t] : fl0[$m,$t] ≥ -$rate"
+            "branch_flow_min[$m,$t] : fl0[$m,$t] + sl1_fl0[$m,$t] + sl2_fl0[$m,$t] ≥ -$rate"
         end
         @test constraint_by_name(fnm.model, "branch_flow_max[\"Line2\",$t]") === nothing
         @test constraint_by_name(fnm.model, "branch_flow_min[\"Line2\",$t]") === nothing

@@ -13,6 +13,7 @@ function _con_nodal_net_injection_ed! end
 function _con_nodal_net_injection_uc! end
 function _con_branch_flows! end
 function _con_branch_flow_limits! end
+function _con_branch_flow_slacks! end
 function con_thermal_branch! end
 
 function latex(::typeof(_con_generation_limits_uc!))
@@ -475,12 +476,12 @@ end
 
 function latex(::typeof(_con_branch_flow_limits!))
     return """
-        ``-FL^{rate_a}_{m, t} <= fl^0_{m, t} <= FL^{rate_a}_{m, t}``
+        ``-FL^{rate_a}_{m, t} -sl1^{fl0}_{m, t} -sl2^{fl0}_{m, t} <= fl^0_{m, t} <= FL^{rate_a}_{m, t} +sl1^{fl0}_{m, t} +sl2^{fl0}_{m, t}``
         """
 end
 
 """
-    _con_branch_flow_limits!(fnm::FullNetworkModel)
+    _con_branch_flow_limits!(fnm::FullNetworkModel, mon_branches_names, mon_branches_rates)
 
 Adds the thermal branch constraints to the full network model. The constraints ensure that
 the power flow trough the "m" monitored lines and transformers is smaller than the
@@ -498,16 +499,118 @@ function _con_branch_flow_limits!(fnm::FullNetworkModel, mon_branches_names, mon
     model = fnm.model
     p = model[:p]
     fl0 = model[:fl0]
+    sl1_fl0 = model[:sl1_fl0]
+    sl2_fl0 = model[:sl2_fl0]
     @constraint(
         model,
         branch_flow_max[m in mon_branches_names, t in fnm.datetimes],
-        fl0[m, t] <= mon_branches_rates[m]
+        fl0[m, t] <= mon_branches_rates[m] + sl1_fl0[m, t] + sl2_fl0[m, t]
     )
     @constraint(
         model,
         branch_flow_min[m in mon_branches_names, t in fnm.datetimes],
-        fl0[m, t] >= -mon_branches_rates[m]
+        fl0[m, t] >= - mon_branches_rates[m] - sl1_fl0[m, t] - sl2_fl0[m, t]
     )
+    return fnm
+end
+
+function latex(::typeof(_con_branch_flow_slacks!))
+    return """
+    ``0 <= sl1^{fl0}_{m, t} <= \\bar{SL1}^{fl0}_{m, t}`` \n
+    ``0 <= sl2^{fl0}_{m, t}``
+    """
+end
+"""
+     _con_branch_flow_slacks!(
+         fnm::FullNetworkModel,
+         mon_branches_names,
+         mon_branches_rates,
+         mon_branches_break_points,
+         mon_branches_penalties
+    )
+
+Adds the power flow slack penalty constraints to the full network model. The constraints
+ensure that the power flow trough the "m" monitored lines and transformers is penalised
+according to the branch breaking points and penalties.
+
+The power flow slack penalty constraints are formulated as:
+
+$(latex(_con_branch_flow_slacks!))
+
+The Breakpoints are the percentage value of the Branch Rate in which the penalty for branch
+flow changes. A branch could have one, two or no breakpoints. For example a Branch of 75MW
+rate (FL) with one breakpoint at [100%] of the line rate will have a corresponding penalty
+"Penalty1" for any flow above 100% (75MW). For a branch with two breakpoints [100%, 110%] will
+have a penalty "Penalty1" for any flow in betweeen 100% (75MW) and 110% (82.5MW), and for any
+MW avobe the 110% of the branch rate, the penalty will be "Penalty2". Finally a branch with no
+breakpoints, the constraint should be a hard constraint. Thus, the slacks for each case should
+be:
+
+No breakpoints:
+sl1^{fl0}_{m, t} = 0
+sl2^{fl0}_{m, t} = 0
+
+One breakpoints:
+sl1^{fl0}_{m, t} = 0
+0 <= sl2^{fl0}_{m, t}
+
+Two breakpoints:
+0 <= sl1^{fl0}_{m, t} <= (110% - 100%)*75MW/(100*Sbase)
+0 <= sl2^{fl0}_{m, t}
+
+The constraint is named `branch_flow_sl1_max` for the first step slack and `branch_flow_sl2_max`
+for the second step slack.
+"""
+function _con_branch_flow_slacks!(
+    fnm::FullNetworkModel,
+    mon_branches_names,
+    mon_branches_rates,
+    mon_branches_break_points,
+    mon_branches_penalties
+)
+
+    model = fnm.model
+    system = fnm.system
+    datetimes = fnm.datetimes
+    # Slacks
+    @variable(model, sl1_fl0[m in mon_branches_names, t in datetimes] >= 0)
+    @variable(model, sl2_fl0[m in mon_branches_names, t in datetimes] >= 0)
+
+    (branches_zero_break_points,
+    branches_one_break_points,
+    branches_two_break_points) = _get_branch_num_break_points_names(Branch, system)
+
+    # Constraints Zero Break points
+    @constraint(
+        model,
+        branch_flow_sl1_zero[m in branches_zero_break_points, t in datetimes],
+        sl1_fl0[m, t] == 0
+    )
+    @constraint(
+        model,
+        branch_flow_sl2_zero[m in branches_zero_break_points, t in datetimes],
+        sl2_fl0[m, t] == 0
+    )
+    # Constraints One Break Point
+    @constraint(
+        model,
+        branch_flow_sl2_one[m in branches_one_break_points, t in datetimes],
+        sl2_fl0[m, t] == 0
+    )
+    # Constraints Two Break Points
+    @constraint(
+        model,
+        branch_flow_sl1_two[m in branches_two_break_points, t in datetimes],
+        sl1_fl0[m, t] <= (mon_branches_break_points[m][2]-mon_branches_break_points[m][1])*(mon_branches_rates[m]/100)
+    )
+    # Add slacks penalties to the objective
+    for m in branches_one_break_points, t in datetimes
+        set_objective_coefficient(model, sl1_fl0[m, t], mon_branches_penalties[m][1])
+    end
+    for m in branches_two_break_points, t in datetimes
+        set_objective_coefficient(model, sl1_fl0[m, t], mon_branches_penalties[m][1])
+        set_objective_coefficient(model, sl2_fl0[m, t], mon_branches_penalties[m][2])
+    end
     return fnm
 end
 
@@ -544,9 +647,18 @@ function con_thermal_branch!(fnm::FullNetworkModel, sys_ptdf)
     load_names_perbus = get_load_names_perbus(PowerLoad, system)
     mon_branches_names = get_monitored_branch_names(Branch, system)
     mon_branches_rates = get_branch_rates(mon_branches_names, system)
+    mon_branches_break_points = get_branch_break_points(mon_branches_names, system)
+    mon_branches_penalties = get_branch_penalties(mon_branches_names, system)
     #Add Constraints
     _con_nodal_net_injection!(fnm, bus_numbers, D, unit_codes_perbus, load_names_perbus)
     _con_branch_flows!(fnm, bus_numbers, mon_branches_names, sys_ptdf)
+    _con_branch_flow_slacks!(
+        fnm,
+        mon_branches_names,
+        mon_branches_rates,
+        mon_branches_break_points,
+        mon_branches_penalties
+    )
     _con_branch_flow_limits!(fnm, mon_branches_names, mon_branches_rates)
     return fnm
 end

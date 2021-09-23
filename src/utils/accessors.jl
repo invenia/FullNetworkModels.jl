@@ -547,11 +547,11 @@ function get_branch_names(branchtype::Type{<:Branch}, system::System)
 end
 
 """
-    get_branch_rates(branch_names, system::System) -> Dict
+    get_branch_rates(branch_names::Vector{String, system::System) -> Dict
 
 Returns the Rates of the branches in the list of branch_names of the `system`.
 """
-function get_branch_rates(branch_names, system::System)
+function get_branch_rates(branch_names::Vector{String}, system::System)
     branch_rates = Dict{String, Float64}()
     for name in branch_names
         branch_rates[name] = get_rate(get_component(Branch, system, name))

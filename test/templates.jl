@@ -69,12 +69,13 @@
         fnm = unit_commitment_branch_flow_limits(TEST_SYSTEM, GLPK.Optimizer, TEST_PTDF)
         tests_branch_flow_limits(UC, fnm, TEST_PTDF)
 
-        # Solve the original ED with thermal branch constraints
+        # Solve the original UC with thermal branch constraints
         system_orig = deepcopy(TEST_SYSTEM)
         fnm = unit_commitment_branch_flow_limits(system_orig, GLPK.Optimizer, TEST_PTDF)
         optimize!(fnm)
         # Should be feasible
         @test termination_status(fnm.model) == TerminationStatusCode(1)
+        obj = objective_value(fnm.model)
 
         # Verify that the branch flows are within bounds
         Line1 = get_component(Branch, system_orig, "Line1")
@@ -84,19 +85,54 @@
         @test value.(fnm.model[:fl0]["Line1",fnm.datetimes[1]]) >= -Line1.rate
         @test value.(fnm.model[:fl0]["Line3",fnm.datetimes[1]]) >= -Line3.rate
 
-        # Modify the branch limits of the system to overload the Branches (infeasible system)
-        system_infeasible = deepcopy(TEST_SYSTEM)
-        Line1 = get_component(Branch, system_infeasible, "Line1")
-        Line3 = get_component(Branch, system_infeasible, "Line3")
-        set_rate!(Line1, 0.1)
-        set_rate!(Line3, 0.1)
-        @test Line1.rate == 0.1
-        @test Line3.rate == 0.1
+        # Modify the branch limits of the system slightly to activate the slack 1
+        system_sl1 = deepcopy(TEST_SYSTEM)
+        Line1 = get_component(Branch, system_sl1, "Line1")
+        Line3 = get_component(Branch, system_sl1, "Line3")
+        set_rate!(Line1, 0.23) #Original flow 0.3
+        set_rate!(Line3, 0.54) #Original flow 0.58
 
-        # Solve – should be infeasible
-        fnm = unit_commitment_branch_flow_limits(system_infeasible, GLPK.Optimizer, TEST_PTDF)
+        # Solve, slack 1 should be active
+        fnm = unit_commitment_branch_flow_limits(system_sl1, GLPK.Optimizer, TEST_PTDF)
         optimize!(fnm)
-        @test termination_status(fnm.model) == TerminationStatusCode(2)
+        @test termination_status(fnm.model) == TerminationStatusCode(1)
+        obj_sl1 = objective_value(fnm.model)
+
+        # Verify that the branch flows are higher than the line rate, and SL1 is active
+        @test value.(fnm.model[:fl0]["Line1",fnm.datetimes[1]]) > Line1.rate
+        @test value.(fnm.model[:fl0]["Line3",fnm.datetimes[1]]) > Line3.rate
+        @test value.(fnm.model[:sl1_fl0]["Line1",fnm.datetimes[1]]) > 0
+        @test value.(fnm.model[:sl1_fl0]["Line3",fnm.datetimes[1]]) > 0
+        @test value.(fnm.model[:sl2_fl0]["Line1",fnm.datetimes[1]]) == 0
+        @test value.(fnm.model[:sl2_fl0]["Line3",fnm.datetimes[1]]) == 0
+
+        # Modify the branch limits of the system slightly more to activate the slack 2
+        system_sl2 = deepcopy(TEST_SYSTEM)
+        Line1 = get_component(Branch, system_sl2, "Line1")
+        Line3 = get_component(Branch, system_sl2, "Line3")
+        set_rate!(Line1, 0.1) #Original flow 0.3
+        set_rate!(Line3, 0.3) #Original flow 0.58
+
+        # Solve, slack 2 should be active
+        fnm = unit_commitment_branch_flow_limits(system_sl2, GLPK.Optimizer, TEST_PTDF)
+        optimize!(fnm)
+        @test termination_status(fnm.model) == TerminationStatusCode(1)
+        obj_sl2 = objective_value(fnm.model)
+
+        # Verify that the branch flows are higher than the line rate, SL1 and SL2 are active
+        Line1_sl1_max = (Line1.ext["break_points"][2]-Line1.ext["break_points"][1])*(Line1.rate/100)
+        Line3_sl1_max = (Line3.ext["break_points"][2]-Line3.ext["break_points"][1])*(Line3.rate/100)
+        @test value.(fnm.model[:fl0]["Line1",fnm.datetimes[1]]) > Line1.rate
+        @test value.(fnm.model[:fl0]["Line3",fnm.datetimes[1]]) > Line3.rate
+        @test value.(fnm.model[:sl1_fl0]["Line1",fnm.datetimes[1]]) == Line1_sl1_max
+        @test value.(fnm.model[:sl1_fl0]["Line3",fnm.datetimes[1]]) == Line3_sl1_max
+        @test value.(fnm.model[:sl2_fl0]["Line1",fnm.datetimes[1]]) > 0.0
+        @test value.(fnm.model[:sl2_fl0]["Line3",fnm.datetimes[1]]) > 0.0
+
+        # Compare objectives - the use of slacks increases the objective value
+        @test obj < obj_sl1
+        @test obj_sl1 < obj_sl2
+
     end
 
     @testset "economic_dispatch" begin
@@ -158,7 +194,7 @@
         optimize!(fnm)
         # Should be feasible
         @test termination_status(fnm.model) == TerminationStatusCode(1)
-        obj_orig = objective_value(fnm.model)
+        obj = objective_value(fnm.model)
 
         # Verify that the branch flows are within bounds
         Line1 = get_component(Branch, system_orig, "Line1")
@@ -168,20 +204,116 @@
         @test value.(fnm.model[:fl0]["Line1",fnm.datetimes[1]]) >= -Line1.rate
         @test value.(fnm.model[:fl0]["Line3",fnm.datetimes[1]]) >= -Line3.rate
 
+        # Modify the branch limits of the system slightly to activate the slack 1
+        system_sl1 = deepcopy(TEST_SYSTEM_RT)
+        Line1 = get_component(Branch, system_sl1, "Line1")
+        Line3 = get_component(Branch, system_sl1, "Line3")
+        set_rate!(Line1, 0.06) #Original flow 0.25
+        set_rate!(Line3, 0.43) #Original flow 0.55
 
-        # Modify the branch limits of the system to overload the Branches (infeasible system)
-        system_infeasible = deepcopy(TEST_SYSTEM_RT)
-        Line1 = get_component(Branch, system_infeasible, "Line1")
-        Line3 = get_component(Branch, system_infeasible, "Line3")
-        set_rate!(Line1, 0.1)
-        set_rate!(Line3, 0.1)
-        @test Line1.rate == 0.1
-        @test Line3.rate == 0.1
+        # Solve, slack 1 should be active
+        fnm = economic_dispatch_branch_flow_limits(system_sl1, GLPK.Optimizer, TEST_PTDF)
+        optimize!(fnm)
+        @test termination_status(fnm.model) == TerminationStatusCode(1)
+        obj_sl1 = objective_value(fnm.model)
 
-        # Solve – should be infeasible
-        fnm = economic_dispatch_branch_flow_limits(system_infeasible, GLPK.Optimizer, TEST_PTDF)
+        # Verify that the branch flows are higher than the line rate, and SL1 is active
+        @test value.(fnm.model[:fl0]["Line1",fnm.datetimes[1]]) > Line1.rate
+        @test value.(fnm.model[:fl0]["Line3",fnm.datetimes[1]]) > Line3.rate
+        @test value.(fnm.model[:sl1_fl0]["Line1",fnm.datetimes[1]]) > 0
+        @test value.(fnm.model[:sl1_fl0]["Line3",fnm.datetimes[1]]) > 0
+        @test value.(fnm.model[:sl2_fl0]["Line1",fnm.datetimes[1]]) == 0
+        @test value.(fnm.model[:sl2_fl0]["Line3",fnm.datetimes[1]]) == 0
+
+        # Modify the branch limits of the system slightly more to activate the slack 2
+        system_sl2 = deepcopy(TEST_SYSTEM_RT)
+        Line1 = get_component(Branch, system_sl2, "Line1")
+        Line3 = get_component(Branch, system_sl2, "Line3")
+        set_rate!(Line1, 0.045) #Original flow 0.25
+        set_rate!(Line3, 0.3) #Original flow 0.55
+
+        # Solve, slack 2 should be active
+        fnm = economic_dispatch_branch_flow_limits(system_sl2, GLPK.Optimizer, TEST_PTDF)
+        optimize!(fnm)
+        @test termination_status(fnm.model) == TerminationStatusCode(1)
+        obj_sl2 = objective_value(fnm.model)
+
+        # Verify that the branch flows are higher than the line rate, SL1 and SL2 are active
+        Line1 = get_component(Branch, system_sl2, "Line1")
+        Line3 = get_component(Branch, system_sl2, "Line3")
+        @test value.(fnm.model[:fl0]["Line1",fnm.datetimes[1]]) > Line1.rate
+        @test value.(fnm.model[:fl0]["Line3",fnm.datetimes[1]]) > Line3.rate
+        @test value.(fnm.model[:sl1_fl0]["Line1",fnm.datetimes[1]]) > 0.0
+        @test value.(fnm.model[:sl1_fl0]["Line3",fnm.datetimes[1]]) > 0.0
+        @test value.(fnm.model[:sl2_fl0]["Line1",fnm.datetimes[1]]) > 0.0
+        @test value.(fnm.model[:sl2_fl0]["Line3",fnm.datetimes[1]]) > 0.0
+
+        #Compare objectives
+        @test obj < obj_sl1
+        @test obj_sl1 < obj_sl2
+
+        # Modify the branch breakpoints to one breakpoint only and activate slack 1
+        system_bkpt_one = deepcopy(TEST_SYSTEM_RT)
+        Line1 = get_component(Branch, system_bkpt_one, "Line1")
+        Line3 = get_component(Branch, system_bkpt_one, "Line3")
+        set_rate!(Line1, 0.045) #Original flow 0.25
+        set_rate!(Line3, 0.3) #Original flow 0.55
+        Line1.ext["break_points"] = [100.0]
+        Line1.ext["penalties"] = [100000.0]
+        Line3.ext["break_points"] = [100.0]
+        Line3.ext["penalties"] = [100000.0]
+
+        # Solve, slack 1 should be active
+        fnm = economic_dispatch_branch_flow_limits(system_bkpt_one, GLPK.Optimizer, TEST_PTDF)
+        optimize!(fnm)
+        @test termination_status(fnm.model) == TerminationStatusCode(1)
+        obj_bkpt_one = objective_value(fnm.model)
+
+        @test value.(fnm.model[:fl0]["Line1",fnm.datetimes[1]]) > Line1.rate
+        @test value.(fnm.model[:fl0]["Line3",fnm.datetimes[1]]) > Line3.rate
+        @test value.(fnm.model[:sl1_fl0]["Line1",fnm.datetimes[1]]) > 0.0
+        @test value.(fnm.model[:sl1_fl0]["Line3",fnm.datetimes[1]]) > 0.0
+        @test value.(fnm.model[:sl2_fl0]["Line1",fnm.datetimes[1]]) == 0.0
+        @test value.(fnm.model[:sl2_fl0]["Line3",fnm.datetimes[1]]) == 0.0
+
+        # Modify the branch breakpoints to zero breakpoints
+        system_bkpt_zero = deepcopy(TEST_SYSTEM_RT)
+        Line1 = get_component(Branch, system_bkpt_zero, "Line1")
+        Line3 = get_component(Branch, system_bkpt_zero, "Line3")
+        Line1.ext["break_points"] = []
+        Line1.ext["penalties"] = []
+        Line3.ext["break_points"] = []
+        Line3.ext["penalties"] = []
+
+        # Solve, should be feasible
+        fnm = economic_dispatch_branch_flow_limits(system_bkpt_zero, GLPK.Optimizer, TEST_PTDF)
+        optimize!(fnm)
+        @test termination_status(fnm.model) == TerminationStatusCode(1)
+        obj_bkpt_zero = objective_value(fnm.model)
+
+        @test value.(fnm.model[:fl0]["Line1",fnm.datetimes[1]]) <= Line1.rate
+        @test value.(fnm.model[:fl0]["Line3",fnm.datetimes[1]]) <= Line3.rate
+        @test value.(fnm.model[:sl1_fl0]["Line1",fnm.datetimes[1]]) == 0.0
+        @test value.(fnm.model[:sl1_fl0]["Line3",fnm.datetimes[1]]) == 0.0
+        @test value.(fnm.model[:sl2_fl0]["Line1",fnm.datetimes[1]]) == 0.0
+        @test value.(fnm.model[:sl2_fl0]["Line3",fnm.datetimes[1]]) == 0.0
+
+        # Modify the branch rate and zero break points to make it infeasible
+        system_bkpt_inf = deepcopy(TEST_SYSTEM_RT)
+        Line1 = get_component(Branch, system_bkpt_inf, "Line1")
+        Line3 = get_component(Branch, system_bkpt_inf, "Line3")
+        set_rate!(Line1, 0.045) #Original flow 0.25
+        set_rate!(Line3, 0.3) #Original flow 0.55
+        Line1.ext["break_points"] = []
+        Line1.ext["penalties"] = []
+        Line3.ext["break_points"] = []
+        Line3.ext["penalties"] = []
+
+        # Solve, should be infeasible
+        fnm = economic_dispatch_branch_flow_limits(system_bkpt_inf, GLPK.Optimizer, TEST_PTDF)
         optimize!(fnm)
         @test termination_status(fnm.model) == TerminationStatusCode(2)
+
     end
 end
 
