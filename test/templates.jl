@@ -309,7 +309,7 @@
         Line3.ext["break_points"] = []
         Line3.ext["penalties"] = []
 
-        # Solve, should be feasible
+        # Solve, should be infeasible
         fnm = economic_dispatch_branch_flow_limits(system_bkpt_inf, GLPK.Optimizer, TEST_PTDF)
         optimize!(fnm)
         @test termination_status(fnm.model) == TerminationStatusCode(2)
