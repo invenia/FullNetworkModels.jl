@@ -251,6 +251,69 @@
         #Compare objectives
         @test obj < obj_sl1
         @test obj_sl1 < obj_sl2
+
+        # Modify the branch breakpoints to one breakpoint only and activate slack 1
+        system_bkpt_one = deepcopy(TEST_SYSTEM_RT)
+        Line1 = get_component(Branch, system_bkpt_one, "Line1")
+        Line3 = get_component(Branch, system_bkpt_one, "Line3")
+        set_rate!(Line1, 0.045) #Original flow 0.25
+        set_rate!(Line3, 0.3) #Original flow 0.55
+        Line1.ext["break_points"] = [100.0]
+        Line1.ext["penalties"] = [100000.0]
+        Line3.ext["break_points"] = [100.0]
+        Line3.ext["penalties"] = [100000.0]
+
+        # Solve, slack 1 should be active
+        fnm = economic_dispatch_branch_flow_limits(system_bkpt_one, GLPK.Optimizer, TEST_PTDF)
+        optimize!(fnm)
+        @test termination_status(fnm.model) == TerminationStatusCode(1)
+        obj_bkpt_one = objective_value(fnm.model)
+
+        @test value.(fnm.model[:fl0]["Line1",fnm.datetimes[1]]) > Line1.rate
+        @test value.(fnm.model[:fl0]["Line3",fnm.datetimes[1]]) > Line3.rate
+        @test value.(fnm.model[:sl1_fl0]["Line1",fnm.datetimes[1]]) > 0.0
+        @test value.(fnm.model[:sl1_fl0]["Line3",fnm.datetimes[1]]) > 0.0
+        @test value.(fnm.model[:sl2_fl0]["Line1",fnm.datetimes[1]]) == 0.0
+        @test value.(fnm.model[:sl2_fl0]["Line3",fnm.datetimes[1]]) == 0.0
+
+        # Modify the branch breakpoints to zero breakpoints
+        system_bkpt_zero = deepcopy(TEST_SYSTEM_RT)
+        Line1 = get_component(Branch, system_bkpt_zero, "Line1")
+        Line3 = get_component(Branch, system_bkpt_zero, "Line3")
+        Line1.ext["break_points"] = []
+        Line1.ext["penalties"] = []
+        Line3.ext["break_points"] = []
+        Line3.ext["penalties"] = []
+
+        # Solve, should be feasible
+        fnm = economic_dispatch_branch_flow_limits(system_bkpt_zero, GLPK.Optimizer, TEST_PTDF)
+        optimize!(fnm)
+        @test termination_status(fnm.model) == TerminationStatusCode(1)
+        obj_bkpt_zero = objective_value(fnm.model)
+
+        @test value.(fnm.model[:fl0]["Line1",fnm.datetimes[1]]) <= Line1.rate
+        @test value.(fnm.model[:fl0]["Line3",fnm.datetimes[1]]) <= Line3.rate
+        @test value.(fnm.model[:sl1_fl0]["Line1",fnm.datetimes[1]]) == 0.0
+        @test value.(fnm.model[:sl1_fl0]["Line3",fnm.datetimes[1]]) == 0.0
+        @test value.(fnm.model[:sl2_fl0]["Line1",fnm.datetimes[1]]) == 0.0
+        @test value.(fnm.model[:sl2_fl0]["Line3",fnm.datetimes[1]]) == 0.0
+
+        # Modify the branch rate and zero break points to make it infeasible
+        system_bkpt_inf = deepcopy(TEST_SYSTEM_RT)
+        Line1 = get_component(Branch, system_bkpt_inf, "Line1")
+        Line3 = get_component(Branch, system_bkpt_inf, "Line3")
+        set_rate!(Line1, 0.045) #Original flow 0.25
+        set_rate!(Line3, 0.3) #Original flow 0.55
+        Line1.ext["break_points"] = []
+        Line1.ext["penalties"] = []
+        Line3.ext["break_points"] = []
+        Line3.ext["penalties"] = []
+
+        # Solve, should be feasible
+        fnm = economic_dispatch_branch_flow_limits(system_bkpt_inf, GLPK.Optimizer, TEST_PTDF)
+        optimize!(fnm)
+        @test termination_status(fnm.model) == TerminationStatusCode(2)
+
     end
 end
 
