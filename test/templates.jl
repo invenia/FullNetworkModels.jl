@@ -91,8 +91,6 @@
         Line3 = get_component(Branch, system_sl1, "Line3")
         set_rate!(Line1, 0.23) #Original flow 0.3
         set_rate!(Line3, 0.54) #Original flow 0.58
-        @test Line1.rate == 0.23
-        @test Line3.rate == 0.54
 
         # Solve, slack 1 should be active
         fnm = unit_commitment_branch_flow_limits(system_sl1, GLPK.Optimizer, TEST_PTDF)
@@ -114,8 +112,6 @@
         Line3 = get_component(Branch, system_sl2, "Line3")
         set_rate!(Line1, 0.1) #Original flow 0.3
         set_rate!(Line3, 0.3) #Original flow 0.58
-        @test Line1.rate == 0.1
-        @test Line3.rate == 0.3
 
         # Solve, slack 2 should be active
         fnm = unit_commitment_branch_flow_limits(system_sl2, GLPK.Optimizer, TEST_PTDF)
@@ -214,8 +210,6 @@
         Line3 = get_component(Branch, system_sl1, "Line3")
         set_rate!(Line1, 0.06) #Original flow 0.25
         set_rate!(Line3, 0.43) #Original flow 0.55
-        @test Line1.rate == 0.06
-        @test Line3.rate == 0.43
 
         # Solve, slack 1 should be active
         fnm = economic_dispatch_branch_flow_limits(system_sl1, GLPK.Optimizer, TEST_PTDF)
@@ -237,8 +231,6 @@
         Line3 = get_component(Branch, system_sl2, "Line3")
         set_rate!(Line1, 0.045) #Original flow 0.25
         set_rate!(Line3, 0.3) #Original flow 0.55
-        @test Line1.rate == 0.045
-        @test Line3.rate == 0.3
 
         # Solve, slack 2 should be active
         fnm = economic_dispatch_branch_flow_limits(system_sl2, GLPK.Optimizer, TEST_PTDF)
