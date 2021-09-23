@@ -583,24 +583,24 @@ function _con_branch_flow_slacks!(
     # Constraints Zero Break points
     @constraint(
         model,
-        branch_flow_sl1_max_zero[m in branches_zero_break_points, t in datetimes],
+        branch_flow_sl1_zero[m in branches_zero_break_points, t in datetimes],
         sl1_fl0[m, t] == 0
     )
     @constraint(
         model,
-        branch_flow_sl2_max_zero[m in branches_zero_break_points, t in datetimes],
+        branch_flow_sl2_zero[m in branches_zero_break_points, t in datetimes],
         sl2_fl0[m, t] == 0
     )
     # Constraints One Break Point
     @constraint(
         model,
-        branch_flow_sl2_max_one[m in branches_one_break_points, t in datetimes],
+        branch_flow_sl2_one[m in branches_one_break_points, t in datetimes],
         sl2_fl0[m, t] == 0
     )
     # Constraints Two Break Points
     @constraint(
         model,
-        branch_flow_sl1_max_two[m in branches_two_break_points, t in datetimes],
+        branch_flow_sl1_two[m in branches_two_break_points, t in datetimes],
         sl1_fl0[m, t] <= (mon_branches_break_points[m][2]-mon_branches_break_points[m][1])*(mon_branches_rates[m]/100)
     )
     # Add slacks penalties to the objective
