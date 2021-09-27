@@ -260,7 +260,11 @@ See also [`unit_commitment_soft_ramps_branch_flow_limits`](@ref) and
  - `relax_integrality=false`: If set to `true`, binary variables will be relaxed.
 """
 function unit_commitment_branch_flow_limits(
-    system::System, solver, sys_ptdf, datetimes=get_forecast_timestamps(system);
+    system::System,
+    solver,
+    sys_ptdf,
+    lodfs = Dict("base_case" => DenseAxisArray(Matrix{Float64}(undef, 0, 0), String[], Int[])),
+    datetimes=get_forecast_timestamps(system);
     relax_integrality=false
 )
     # Initialize FNM
@@ -279,7 +283,7 @@ function unit_commitment_branch_flow_limits(
     con_generation_ramp_rates!(fnm)
     con_ancillary_ramp_rates!(fnm)
     con_energy_balance!(fnm)
-    con_thermal_branch!(fnm, sys_ptdf)
+    con_thermal_branch!(fnm, sys_ptdf, lodfs)
     # Objectives
     obj_thermal_variable_cost!(fnm)
     obj_thermal_noload_cost!(fnm)
@@ -317,8 +321,13 @@ See also [`unit_commitment_branch_flow_limits`](@ref) and [`unit_commitment_soft
  - `relax_integrality=false`: If set to `true`, binary variables will be relaxed.
 """
 function unit_commitment_soft_ramps_branch_flow_limits(
-    system::System, solver, sys_ptdf, datetimes=get_forecast_timestamps(system);
-    slack=1e4, relax_integrality=false
+    system::System,
+    solver,
+    sys_ptdf,
+    lodfs = Dict("base_case" => DenseAxisArray(Matrix{Float64}(undef, 0, 0), String[], Int[])),
+    datetimes=get_forecast_timestamps(system);
+    slack=1e4,
+    relax_integrality=false
 )
     # Initialize FNM
     fnm = FullNetworkModel{UC}(system, datetimes)
@@ -336,7 +345,7 @@ function unit_commitment_soft_ramps_branch_flow_limits(
     con_generation_ramp_rates!(fnm; slack=slack)
     con_ancillary_ramp_rates!(fnm)
     con_energy_balance!(fnm)
-    con_thermal_branch!(fnm, sys_ptdf)
+    con_thermal_branch!(fnm, sys_ptdf, lodfs)
     # Objectives
     obj_thermal_variable_cost!(fnm)
     obj_thermal_noload_cost!(fnm)
@@ -373,7 +382,11 @@ See also [`unit_commitment_branch_flow_limits`](@ref) and [`unit_commitment_no_r
  - `relax_integrality=false`: If set to `true`, binary variables will be relaxed.
 """
 function unit_commitment_no_ramps_branch_flow_limits(
-    system::System, solver, sys_ptdf, datetimes=get_forecast_timestamps(system);
+    system::System,
+    solver,
+    sys_ptdf,
+    lodfs = Dict("base_case" => DenseAxisArray(Matrix{Float64}(undef, 0, 0), String[], Int[])),
+    datetimes=get_forecast_timestamps(system);
     relax_integrality=false
 )
     # Initialize FNM
@@ -390,7 +403,7 @@ function unit_commitment_no_ramps_branch_flow_limits(
     con_regulation_requirements!(fnm)
     con_operating_reserve_requirements!(fnm)
     con_energy_balance!(fnm)
-    con_thermal_branch!(fnm, sys_ptdf)
+    con_thermal_branch!(fnm, sys_ptdf, lodfs)
     # Objectives
     obj_thermal_variable_cost!(fnm)
     obj_thermal_noload_cost!(fnm)

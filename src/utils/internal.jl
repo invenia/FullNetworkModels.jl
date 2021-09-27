@@ -197,3 +197,17 @@ function _get_branch_num_break_points_names(branchtype::Type{<:Branch}, system::
     branches_two_break_points = get_name.(get_components(branchtype, system, x -> length(x.ext["break_points"]) == 2 && x.ext["is_monitored"] == true))
     return branches_zero_break_points, branches_one_break_points, branches_two_break_points
 end
+
+"""
+    _get_branches_out_per_scenario_names(lodfs) -> Dict{String, Vector{String}}
+
+Returns a dictionary with the names of the branches on outage for each one of the lodfs
+
+"""
+function _get_branches_out_per_scenario_names(lodfs)
+    branches_out_per_scenario_names = Dict{String, Vector{String}}()
+    for (k, v) in lodfs
+        branches_out_per_scenario_names[k] = axes(v, 2)
+    end
+    return branches_out_per_scenario_names
+end

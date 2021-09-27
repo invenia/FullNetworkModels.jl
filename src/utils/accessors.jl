@@ -549,7 +549,7 @@ end
 """
     get_branch_rates(branch_names::Vector{String, system::System) -> Dict
 
-Returns the Rates of the branches in the list of branch_names of the `system`.
+Returns the Rates A of the branches in the list of branch_names of the `system`.
 """
 function get_branch_rates(branch_names::Vector{String}, system::System)
     branch_rates = Dict{String, Float64}()
@@ -560,9 +560,22 @@ function get_branch_rates(branch_names::Vector{String}, system::System)
 end
 
 """
+    get_branch_rates_b(branch_names::Vector{String, system::System) -> Dict
+
+Returns the Rate B (i.e., contingency rate) of the branches in the list of branch_names of the `system`.
+"""
+function get_branch_rates_b(branch_names::Vector{String}, system::System)
+    branch_rates_b = Dict{String, Float64}()
+    for name in branch_names
+        branch_rates_b[name] = get_component(Branch, system, name).ext["rate_b"]
+    end
+    return branch_rates_b
+end
+
+"""
     get_branch_rates(branchtype::Type{<:Branch}, system::System) -> Dict
 
-Returns the Rates of all the branches in the `system`under type `branchtype`.
+Returns the Rate A (i.e., base case rate) of the branches in the list of branch_names of the `system`.
 """
 function get_branch_rates(branchtype::Type{<:Branch}, system::System)
     branch_names = get_name.(get_components(branchtype, system))
@@ -610,7 +623,7 @@ Returns the penalties of the monitored branches names in `system`.
 
 Note: The penalties correspond to a particular break point. Breakpoints are the percentage
 value of the Branch Rate in which the penalty for branch flow changes. For example a Branch
-of 75MW rate with penalties [1e3, 2e3] and breakpoints [100%, 110%] will have
+of 75MW rate with penalties [1e3, 2e3] and break-points [100%, 110%] will have
 a penalty of 1e3 for any flow in betweeen 100% (75MW) and 110% (82.5MW), and for any MW
 avobe the 110% of the branch rate, the penalty will be 2e3
 

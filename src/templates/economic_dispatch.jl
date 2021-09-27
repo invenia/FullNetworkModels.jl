@@ -110,7 +110,12 @@ Keyword arguments:
 
 """
 function economic_dispatch_branch_flow_limits(
-    system::System, solver, sys_ptdf, datetimes=get_forecast_timestamps(system); slack = 1e4
+    system::System,
+    solver,
+    sys_ptdf,
+    lodfs = Dict("base_case" => DenseAxisArray(Matrix{Float64}(undef, 0, 0), String[], Int[])),
+    datetimes=get_forecast_timestamps(system);
+    slack = 1e4
 )
     # Initialize FNM
     fnm = FullNetworkModel{ED}(system, datetimes)
@@ -123,7 +128,7 @@ function economic_dispatch_branch_flow_limits(
     con_regulation_requirements!(fnm; slack)
     con_operating_reserve_requirements!(fnm; slack)
     con_energy_balance!(fnm)
-    con_thermal_branch!(fnm, sys_ptdf)
+    con_thermal_branch!(fnm, sys_ptdf, lodfs)
     # Objectives
     obj_thermal_variable_cost!(fnm)
     obj_ancillary_costs!(fnm)

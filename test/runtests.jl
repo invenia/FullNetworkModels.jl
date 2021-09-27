@@ -1,6 +1,7 @@
 using Dates
 using ElectricityMarkets
-using FullNetworkDataPrep: DA, RT, ptdf
+using FullNetworkDataPrep: DA, RT, ptdf, lodf
+using FullNetworkDataPrep: _compute_contingency_lodfs
 using FullNetworkDataPrep.TestUtils: fake_3bus_system
 using GLPK
 using FullNetworkModels
