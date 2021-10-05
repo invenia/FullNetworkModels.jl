@@ -367,7 +367,7 @@ end
         gen3 = get_component(ThermalGen, system, "3")
         remove_time_series!(system, SingleTimeSeries, gen3, "offer_curve")
         cheap_offer_curve = [(0.1, 200.0), (0.5, 800.0)]
-        datetimes = get_forecast_timestamps(system_cheap_gen3)
+        datetimes = get_forecast_timestamps(system)
         ta = TimeArray(datetimes, fill(cheap_offer_curve, 24))
         add_time_series!(system, gen3, SingleTimeSeries("offer_curve", ta))
 
