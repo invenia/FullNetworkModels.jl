@@ -15,6 +15,7 @@ function _con_branch_flows! end
 function _con_branch_flow_limits! end
 function _con_branch_flow_slacks! end
 function con_thermal_branch! end
+function con_must_run! end
 
 function latex(::typeof(_con_generation_limits_uc!))
     return """
@@ -877,5 +878,22 @@ function con_generation_ramp_rates!(fnm::FullNetworkModel; slack=nothing)
         end
     end
 
+    return fnm
+end
+
+"""
+    con_must_run!(fnm::FullNetworkModel)
+
+Ensure that the units with must run flag set to 1 are committed.
+"""
+function con_must_run!(fnm::FullNetworkModel)
+    unit_codes = get_unit_codes(ThermalGen, fnm.system)
+    MR = get_must_run(fnm.system, fnm.datetimes)
+    u = fnm.model[:u]
+    # We constrain the commitment variable to be >= the must run flag, this way if the flag
+    # is zero it has no impact, and if it is 1 it forces the commitment to be 1.
+    @constraint(
+        fnm.model, must_run[g in unit_codes, t in fnm.datetimes], u[g, t] >= MR[g, t]
+    )
     return fnm
 end

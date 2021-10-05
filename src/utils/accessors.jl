@@ -623,3 +623,16 @@ function get_branch_penalties(monitored_branches_names, system::System)
     end
     return branch_penalties
 end
+
+"""
+    get_must_run(
+        system::System, datetimes::Vector{DateTime}=get_forecast_timestamps(system)
+    ) -> DenseAxisArray
+
+Returns the must run flag of the generators in `system` for the periods in `datetimes`.
+"""
+function get_must_run(
+    system::System, datetimes::Vector{DateTime}=get_forecast_timestamps(system)
+)
+    return get_generator_time_series(system, "must_run", datetimes)
+end
