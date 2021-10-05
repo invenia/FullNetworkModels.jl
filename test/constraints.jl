@@ -247,6 +247,24 @@ function tests_branch_flow_limits(T, fnm::FullNetworkModel, sys_ptdf)
     return nothing
 end
 
+# A simple unit commitment with no ancillary services for the sake of tests.
+function _simple_unit_commitment(
+    system::System, solver, datetimes=get_forecast_timestamps(system)
+)
+    fnm = FullNetworkModel{UC}(system, datetimes)
+    var_thermal_generation!(fnm)
+    var_commitment!(fnm)
+    var_bids!(fnm)
+    con_generation_limits!(fnm)
+    con_energy_balance!(fnm)
+    con_must_run!(fnm)
+    obj_thermal_variable_cost!(fnm)
+    obj_thermal_noload_cost!(fnm)
+    obj_bids!(fnm)
+    set_optimizer(fnm, solver)
+    return fnm
+end
+
 @testset "Constraints" begin
     @testset "con_generation_limits!" begin
         @testset "ED with gen generator status as a parameter" begin
@@ -341,5 +359,34 @@ end
             con_thermal_branch!(fnm, t_ptdf)
             tests_branch_flow_limits(T, fnm, t_ptdf)
         end
+    end
+
+    @testset "con_must_run!" begin
+        # Create a system with a very cheap generator
+        system = deepcopy(TEST_SYSTEM)
+        gen3 = get_component(ThermalGen, system, "3")
+        remove_time_series!(system, SingleTimeSeries, gen3, "offer_curve")
+        cheap_offer_curve = [(0.1, 200.0), (0.5, 800.0)]
+        datetimes = get_forecast_timestamps(system_cheap_gen3)
+        ta = TimeArray(datetimes, fill(cheap_offer_curve, 24))
+        add_time_series!(system, gen3, SingleTimeSeries("offer_curve", ta))
+
+        # Check that the more expensive generator is not committed
+        fnm = _simple_unit_commitment(system, GLPK.Optimizer)
+        optimize!(fnm)
+        u = value.(fnm.model[:u])
+        @test u[7, :].data == zeros(24)
+
+        # Now replace the must run flag of the more expensive generator with 1's
+        gen7 = get_component(ThermalGen, system, "7")
+        remove_time_series!(system, SingleTimeSeries, gen7, "must_run")
+        ta = TimeArray(datetimes, fill(1, 24))
+        add_time_series!(system, gen7, SingleTimeSeries("must_run", ta))
+
+        # Check that generator 7 is now committed throughout the day
+        fnm = _simple_unit_commitment(system, GLPK.Optimizer)
+        optimize!(fnm)
+        u = value.(fnm.model[:u])
+        @test u[7, :].data == ones(24)
     end
 end

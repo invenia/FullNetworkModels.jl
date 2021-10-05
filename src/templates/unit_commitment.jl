@@ -27,6 +27,7 @@ $(_write_formulation(
         latex(con_generation_ramp_rates!),
         latex(con_ancillary_ramp_rates!),
         latex(con_energy_balance_uc!),
+        latex(con_must_run!),
         latex(_var_bid_blocks!),
     ],
     variables=[
@@ -71,6 +72,7 @@ function unit_commitment(
     con_generation_ramp_rates!(fnm)
     con_ancillary_ramp_rates!(fnm)
     con_energy_balance!(fnm)
+    con_must_run!(fnm)
     # Objectives
     obj_thermal_variable_cost!(fnm)
     obj_thermal_noload_cost!(fnm)
@@ -128,6 +130,7 @@ function unit_commitment_soft_ramps(
     con_generation_ramp_rates!(fnm; slack=slack)
     con_ancillary_ramp_rates!(fnm)
     con_energy_balance!(fnm)
+    con_must_run!(fnm)
     # Objectives
     obj_thermal_variable_cost!(fnm)
     obj_thermal_noload_cost!(fnm)
@@ -182,6 +185,7 @@ function unit_commitment_no_ramps(
     con_regulation_requirements!(fnm)
     con_operating_reserve_requirements!(fnm)
     con_energy_balance!(fnm)
+    con_must_run!(fnm)
     # Objectives
     obj_thermal_variable_cost!(fnm)
     obj_thermal_noload_cost!(fnm)
@@ -224,6 +228,7 @@ $(_write_formulation(
         latex(con_generation_ramp_rates!),
         latex(con_ancillary_ramp_rates!),
         latex(con_energy_balance_uc!),
+        latex(con_must_run!),
         latex(_con_nodal_net_injection_uc!),
         latex(_con_branch_flows!),
         latex(_con_branch_flow_limits!),
