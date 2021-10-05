@@ -891,6 +891,10 @@ end
     con_must_run!(fnm::FullNetworkModel)
 
 Ensure that the units with must run flag set to 1 are committed.
+
+$(latex(con_must_run!))
+
+The constraint is named `must_run`.
 """
 function con_must_run!(fnm::FullNetworkModel)
     unit_codes = get_unit_codes(ThermalGen, fnm.system)
