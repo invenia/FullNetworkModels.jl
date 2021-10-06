@@ -59,6 +59,7 @@ export get_load_names_perbus
 export get_minimum_downtime
 export get_minimum_uptime
 export get_monitored_branch_names
+export get_must_run_flag
 export get_noload_cost
 export get_off_sup_cost
 export get_off_sup_providers
@@ -98,6 +99,7 @@ export con_ancillary_ramp_rates!
 export con_energy_balance!
 export con_generation_limits!
 export con_generation_ramp_rates!
+export con_must_run!
 export con_operating_reserve_requirements!
 export con_regulation_requirements!
 export con_thermal_branch!
