@@ -16,10 +16,6 @@ function _con_branch_flow_limits! end
 function _con_branch_flow_slacks! end
 function con_thermal_branch! end
 function con_must_run! end
-function _con_branch_flows_conting! end
-function _con_branch_flow_conting_limits! end
-function _con_branch_flow_conting_slacks! end
-function con_thermal_branch_conting! end
 
 function latex(::typeof(_con_generation_limits_uc!))
     return """
