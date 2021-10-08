@@ -180,14 +180,13 @@
         @test obj_sl2 < obj_sl2_all
 
         # Test for branch flow limits without contingencies
-        system_no_lodf = deepcopy(TEST_SYSTEM)
         t_lodf = Dict{String, DenseAxisArray}()
-        fnm = unit_commitment_branch_flow_limits(system_no_lodf, GLPK.Optimizer, TEST_PTDF, t_lodf)
+        fnm = unit_commitment_branch_flow_limits(TEST_SYSTEM, GLPK.Optimizer, TEST_PTDF, t_lodf)
         optimize!(fnm)
         @test termination_status(fnm.model) == TerminationStatusCode(1)
         obj_no_conting = objective_value(fnm.model)
 
-        fnm = unit_commitment_branch_flow_limits(system_no_lodf, GLPK.Optimizer, TEST_PTDF)
+        fnm = unit_commitment_branch_flow_limits(TEST_SYSTEM, GLPK.Optimizer, TEST_PTDF)
         optimize!(fnm)
         @test termination_status(fnm.model) == TerminationStatusCode(1)
         obj_no_conting_dict = objective_value(fnm.model)
@@ -419,14 +418,13 @@
         @test termination_status(fnm.model) == TerminationStatusCode(2)
 
         # Test for branch flow limits without contingencies
-        system_no_lodf = deepcopy(TEST_SYSTEM_RT)
         t_lodf = Dict{String, DenseAxisArray}()
-        fnm = economic_dispatch_branch_flow_limits(system_no_lodf, GLPK.Optimizer, TEST_PTDF, t_lodf)
+        fnm = economic_dispatch_branch_flow_limits(TEST_SYSTEM_RT, GLPK.Optimizer, TEST_PTDF, t_lodf)
         optimize!(fnm)
         @test termination_status(fnm.model) == TerminationStatusCode(1)
         obj_no_conting = objective_value(fnm.model)
 
-        fnm = economic_dispatch_branch_flow_limits(system_no_lodf, GLPK.Optimizer, TEST_PTDF)
+        fnm = economic_dispatch_branch_flow_limits(TEST_SYSTEM_RT, GLPK.Optimizer, TEST_PTDF)
         optimize!(fnm)
         @test termination_status(fnm.model) == TerminationStatusCode(1)
         obj_no_conting_dict = objective_value(fnm.model)

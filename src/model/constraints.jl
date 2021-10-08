@@ -698,8 +698,7 @@ function con_thermal_branch!(
     lodfs = Dict{String, DenseAxisArray}()
 )
     #Add case base to the lodf scenarios dictionary
-    lodf_base = DenseAxisArray(Matrix{Float64}(undef, 0, 0), String[], Int[])
-    merge!(lodfs,Dict("base_case"=>lodf_base))
+    lodfs = _add_base_case_to_lodfs(lodfs)
     #Shared Data
     system = fnm.system
     bus_numbers = get_bus_numbers(system)
