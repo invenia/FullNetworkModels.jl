@@ -375,18 +375,6 @@ end
             tests_energy_balance(fnm)
         end
     end
-    #=
-    @testset "Thermal branch constraints $T" for (T, t_system, t_ptdf) in
-        ((UC, TEST_SYSTEM, TEST_PTDF), (ED, TEST_SYSTEM_RT, TEST_PTDF))
-        @testset "_con_branch_flow_limits!" begin
-            fnm = FullNetworkModel{T}(t_system, GLPK.Optimizer)
-            var_thermal_generation!(fnm)
-            T == UC && var_bids!(fnm)
-            con_thermal_branch!(fnm, t_ptdf)
-            tests_branch_flow_limits(T, fnm, t_ptdf)
-        end
-    end
-    =#
 
     @testset "con_must_run!" begin
         # Create a system with a very cheap generator
@@ -422,17 +410,13 @@ end
         @testset "_con_branch_flow_limits!" begin
             fnm = FullNetworkModel{T}(t_system, GLPK.Optimizer)
             var_thermal_generation!(fnm)
-            base_case = []
             conting1 = ["Line2"]
             conting2 = ["Line2", "Line3"]
             branches_out_per_scenario_names = Dict([
-                ("base_case", base_case),
                 ("conting1", conting1),
                 ("conting2", conting2)
             ])
             t_lodfs = _compute_contingency_lodfs(branches_out_per_scenario_names, TEST_PSSE, TEST_PTDF)
-            lodf_base = lodf(TEST_PSSE, TEST_PTDF, [])
-            merge!(t_lodfs,Dict("base_case"=>lodf_base))
             T == UC && var_bids!(fnm)
             con_thermal_branch!(fnm, t_ptdf, t_lodfs)
             tests_branch_flow_limits(T, fnm, t_ptdf, t_lodfs)

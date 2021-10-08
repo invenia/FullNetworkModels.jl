@@ -668,7 +668,7 @@ end
     con_thermal_branch!(
         fnm::FullNetworkModel,
         sys_ptdf,
-        lodfs = Dict("base_case" => DenseAxisArray(Matrix{Float64}(undef, 0, 0), String[], Int[]))
+        lodfs = Dict{String, DenseAxisArray}()
     )
 
 Adds the nodal net injections, branch flows, and branch flow limits constraints for the case
@@ -695,8 +695,11 @@ high boundary) and `branch_flow_min` (for the lower boundary) respectively.
 function con_thermal_branch!(
     fnm::FullNetworkModel,
     sys_ptdf,
-    lodfs = Dict("base_case" => DenseAxisArray(Matrix{Float64}(undef, 0, 0), String[], Int[]))
+    lodfs = Dict{String, DenseAxisArray}()
 )
+    #Add case base to the lodf scenarios dictionary
+    lodf_base = DenseAxisArray(Matrix{Float64}(undef, 0, 0), String[], Int[])
+    merge!(lodfs,Dict("base_case"=>lodf_base))
     #Shared Data
     system = fnm.system
     bus_numbers = get_bus_numbers(system)

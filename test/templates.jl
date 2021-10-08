@@ -66,17 +66,13 @@
         end
     end
     @testset "unit_commitment_branch_flow_limits" begin
-        base_case = []
         conting1 = ["Line2"]
         conting2 = ["Line2", "Line3"]
         branches_out_per_scenario_names = Dict([
-            ("base_case", base_case),
             ("conting1", conting1),
             ("conting2", conting2)
         ])
         t_lodfs = _compute_contingency_lodfs(branches_out_per_scenario_names, TEST_PSSE, TEST_PTDF)
-        lodf_base = lodf(TEST_PSSE, TEST_PTDF, [])
-        merge!(t_lodfs,Dict("base_case"=>lodf_base))
         fnm = unit_commitment_branch_flow_limits(TEST_SYSTEM, GLPK.Optimizer, TEST_PTDF, t_lodfs)
         tests_branch_flow_limits(UC, fnm, TEST_PTDF, t_lodfs)
 
@@ -185,8 +181,7 @@
 
         # Test for branch flow limits without contingencies
         system_no_lodf = deepcopy(TEST_SYSTEM)
-        lodf_base = lodf(TEST_PSSE, TEST_PTDF, [])
-        t_lodf = Dict("base_case" => lodf_base)
+        t_lodf = Dict{String, DenseAxisArray}()
         fnm = unit_commitment_branch_flow_limits(system_no_lodf, GLPK.Optimizer, TEST_PTDF, t_lodf)
         optimize!(fnm)
         @test termination_status(fnm.model) == TerminationStatusCode(1)
@@ -195,12 +190,12 @@
         fnm = unit_commitment_branch_flow_limits(system_no_lodf, GLPK.Optimizer, TEST_PTDF)
         optimize!(fnm)
         @test termination_status(fnm.model) == TerminationStatusCode(1)
-        obj_no_conting_matrix = objective_value(fnm.model)
+        obj_no_conting_dict = objective_value(fnm.model)
 
         #Compare objectives without and with contingencies
         @test obj_no_conting <= obj
-         #Compare objectives without and with lodf matrix
-        @test obj_no_conting == obj_no_conting_matrix
+         #Compare objectives without and with lodf dictionary
+        @test obj_no_conting == obj_no_conting_dict
     end
 
     @testset "economic_dispatch" begin
@@ -253,17 +248,13 @@
         @test obj_high_slack > obj_low_slack
     end
     @testset "economic_dispatch_branch_flow_limits" begin
-        base_case = []
         conting1 = ["Line2"]
         conting2 = ["Line2", "Line3"]
         branches_out_per_scenario_names = Dict([
-            ("base_case", base_case),
             ("conting1", conting1),
             ("conting2", conting2)
         ])
         t_lodfs = _compute_contingency_lodfs(branches_out_per_scenario_names, TEST_PSSE, TEST_PTDF)
-        lodf_base = lodf(TEST_PSSE, TEST_PTDF, [])
-        merge!(t_lodfs,Dict("base_case"=>lodf_base))
         fnm = economic_dispatch_branch_flow_limits(TEST_SYSTEM_RT, GLPK.Optimizer, TEST_PTDF, t_lodfs)
         tests_branch_flow_limits(ED, fnm, TEST_PTDF, t_lodfs)
 
@@ -429,8 +420,7 @@
 
         # Test for branch flow limits without contingencies
         system_no_lodf = deepcopy(TEST_SYSTEM_RT)
-        lodf_base = lodf(TEST_PSSE, TEST_PTDF, [])
-        t_lodf = Dict("base_case" => lodf_base)
+        t_lodf = Dict{String, DenseAxisArray}()
         fnm = economic_dispatch_branch_flow_limits(system_no_lodf, GLPK.Optimizer, TEST_PTDF, t_lodf)
         optimize!(fnm)
         @test termination_status(fnm.model) == TerminationStatusCode(1)
@@ -439,12 +429,12 @@
         fnm = economic_dispatch_branch_flow_limits(system_no_lodf, GLPK.Optimizer, TEST_PTDF)
         optimize!(fnm)
         @test termination_status(fnm.model) == TerminationStatusCode(1)
-        obj_no_conting_matrix = objective_value(fnm.model)
+        obj_no_conting_dict = objective_value(fnm.model)
 
         #Compare objectives without and with contingencies
         @test obj_no_conting <= obj
-        #Compare objectives without and with lodf matrix
-        @test obj_no_conting == obj_no_conting_matrix
+        #Compare objectives without and with lodf dictionary
+        @test obj_no_conting == obj_no_conting_dict
     end
 end
 

@@ -253,8 +253,9 @@ See also [`unit_commitment_soft_ramps_branch_flow_limits`](@ref) and
 # Arguments
  - `system::System`: The PowerSystems system that provides the input data.
  - `solver`: The solver of choice, e.g. `GLPK.Optimizer`.
- - `datetimes=get_forecast_timestamps(system)`: The time periods considered in the model.
  - `sys_ptdf`: The Power Transfer Distribution Factor (PTDF) matrix of the system.
+ - `lodfs`: Dictionary of contingency scenarios => Line Outage Distribution Factor (LODF).
+ - `datetimes=get_forecast_timestamps(system)`: The time periods considered in the model.
 
 # Keywords
  - `relax_integrality=false`: If set to `true`, binary variables will be relaxed.
@@ -263,7 +264,7 @@ function unit_commitment_branch_flow_limits(
     system::System,
     solver,
     sys_ptdf,
-    lodfs = Dict("base_case" => DenseAxisArray(Matrix{Float64}(undef, 0, 0), String[], Int[])),
+    lodfs = Dict{String, DenseAxisArray}(),
     datetimes=get_forecast_timestamps(system);
     relax_integrality=false
 )
@@ -313,8 +314,9 @@ See also [`unit_commitment_branch_flow_limits`](@ref) and [`unit_commitment_soft
 # Arguments
  - `system::System`: The PowerSystems system that provides the input data.
  - `solver`: The solver of choice, e.g. `GLPK.Optimizer`.
- - `datetimes=get_forecast_timestamps(system)`: The time periods considered in the model.
  - `sys_ptdf`: The Power Transfer Distribution Factor (PTDF) matrix of the system.
+ - `lodfs`: Dictionary of contingency scenarios => Line Outage Distribution Factor (LODF).
+ - `datetimes=get_forecast_timestamps(system)`: The time periods considered in the model.
 
 # Keywords
  - `slack=1e4`: The slack penalty for the soft constraints.
@@ -324,7 +326,7 @@ function unit_commitment_soft_ramps_branch_flow_limits(
     system::System,
     solver,
     sys_ptdf,
-    lodfs = Dict("base_case" => DenseAxisArray(Matrix{Float64}(undef, 0, 0), String[], Int[])),
+    lodfs = Dict{String, DenseAxisArray}(),
     datetimes=get_forecast_timestamps(system);
     slack=1e4,
     relax_integrality=false
@@ -375,8 +377,9 @@ See also [`unit_commitment_branch_flow_limits`](@ref) and [`unit_commitment_no_r
 # Arguments
  - `system::System`: The PowerSystems system that provides the input data.
  - `solver`: The solver of choice, e.g. `GLPK.Optimizer`.
- - `datetimes=get_forecast_timestamps(system)`: The time periods considered in the model.
  - `sys_ptdf`: The Power Transfer Distribution Factor (PTDF) matrix of the system.
+ - `lodfs`: Dictionary of contingency scenarios => Line Outage Distribution Factor (LODF).
+ - `datetimes=get_forecast_timestamps(system)`: The time periods considered in the model.
 
 # Keywords
  - `relax_integrality=false`: If set to `true`, binary variables will be relaxed.
@@ -385,7 +388,7 @@ function unit_commitment_no_ramps_branch_flow_limits(
     system::System,
     solver,
     sys_ptdf,
-    lodfs = Dict("base_case" => DenseAxisArray(Matrix{Float64}(undef, 0, 0), String[], Int[])),
+    lodfs = Dict{String, DenseAxisArray}(),
     datetimes=get_forecast_timestamps(system);
     relax_integrality=false
 )

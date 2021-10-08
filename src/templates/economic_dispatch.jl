@@ -102,8 +102,9 @@ likely that these constraints are not binding within the hourly time period.
 Arguments:
  - `system::System`: The PowerSystems system that provides the input data.
  - `solver`: The solver of choice, e.g. `GLPK.Optimizer`.
- - `datetimes=get_forecast_timestamps(system)`: The time periods considered in the model.
  - `sys_ptdf`: The Power Transfer Distribution Factor (PTDF) matrix of the system.
+ - `lodfs`: Dictionary of contingency scenarios => Line Outage Distribution Factor (LODF).
+ - `datetimes=get_forecast_timestamps(system)`: The time periods considered in the model.
 
 Keyword arguments:
  - `slack=1e4`: The slack penalty for the soft constraints.
@@ -113,7 +114,7 @@ function economic_dispatch_branch_flow_limits(
     system::System,
     solver,
     sys_ptdf,
-    lodfs = Dict("base_case" => DenseAxisArray(Matrix{Float64}(undef, 0, 0), String[], Int[])),
+    lodfs = Dict{String, DenseAxisArray}(),
     datetimes=get_forecast_timestamps(system);
     slack = 1e4
 )
