@@ -163,16 +163,19 @@ function tests_energy_balance(fnm::FullNetworkModel{<:UC})
     return nothing
 end
 
-function tests_branch_flow_limits(T, fnm::FullNetworkModel, sys_ptdf)
+function tests_branch_flow_limits(T, fnm::FullNetworkModel, sys_ptdf, lodfs)
     @testset "All branch constraints were added" begin
         @test has_constraint(fnm.model, "nodal_net_injection")
         @test has_constraint(fnm.model, "branch_flows")
-        @test has_constraint(fnm.model, "branch_flow_max")
-        @test has_constraint(fnm.model, "branch_flow_min")
+        @test has_constraint(fnm.model, "branch_flow_max_base")
+        @test has_constraint(fnm.model, "branch_flow_min_base")
+        @test has_constraint(fnm.model, "branch_flow_max_cont")
+        @test has_constraint(fnm.model, "branch_flow_min_cont")
         @test has_constraint(fnm.model, "branch_flow_sl1_zero")
         @test has_constraint(fnm.model, "branch_flow_sl2_zero")
         @test has_constraint(fnm.model, "branch_flow_sl2_one")
-        @test has_constraint(fnm.model, "branch_flow_sl1_two")
+        @test has_constraint(fnm.model, "branch_flow_sl1_two_base")
+        @test has_constraint(fnm.model, "branch_flow_sl1_two_cont")
     end
     system = fnm.system
     mon_branches_names = get_monitored_branch_names(Branch, system)
@@ -180,6 +183,10 @@ function tests_branch_flow_limits(T, fnm::FullNetworkModel, sys_ptdf)
     load_names_perbus = get_load_names_perbus(PowerLoad, system)
     D = get_fixed_loads(system)
     pg = Array{String}(undef, 3)
+    base_case = []
+    conting1 = ["Line2"]
+    conting2 = ["Line2", "Line3"]
+    scenarios = ["base_case", "conting1", "conting2"]
     if T == UC
         inc_names_perbus = get_bid_names_perbus(Increment, system)
         dec_names_perbus = get_bid_names_perbus(Decrement, system)
@@ -224,25 +231,44 @@ function tests_branch_flow_limits(T, fnm::FullNetworkModel, sys_ptdf)
             end
         end
     end
-    @testset "Branch flows" for t in fnm.datetimes
-        for m in mon_branches_names
-            ptdf_aux2 = -sys_ptdf[m,2]
-            ptdf_aux3 = -sys_ptdf[m,3]
-            @test sprint(show, constraint_by_name(fnm.model, "branch_flows[$m,$t]")) ==
-            "branch_flows[$m,$t] : $ptdf_aux2 p_net[2,$t] + $ptdf_aux3 p_net[3,$t] + fl0[$m,$t] = 0.0"
-        end
+
+    @testset "Branch flows constraints" for t in fnm.datetimes
+        m = "Transformer1"
+        (c, c1, c2) = ("base_case", "conting1", "conting2")
+        (ptdf2, ptdf3)  = ("0.12500000000000003", "0.12499999999999997")
+        @test sprint(show, constraint_by_name(fnm.model, "branch_flows[$m,$t,$c]")) ==
+        "branch_flows[$m,$t,$c] : -$ptdf2 p_net[2,$t] + $ptdf3 p_net[3,$t] + fl[$m,$t,$c] = 0.0"
+        @test sprint(show, constraint_by_name(fnm.model, "branch_flows[$m,$t,$c1]")) ==
+        "branch_flows[$m,$t,$c1] : -$ptdf2 p_net[2,$t] + $ptdf3 p_net[3,$t] - 0.5 fl[Line2,$t,base_case] + fl[$m,$t,$c1] = 0.0"
+        @test sprint(show, constraint_by_name(fnm.model, "branch_flows[$m,$t,$c2]")) ==
+        "branch_flows[$m,$t,$c2] : -$ptdf2 p_net[2,$t] + $ptdf3 p_net[3,$t] + fl[$m,$t,$c2] - fl[Line3,$t,base_case] - fl[Line2,$t,base_case] = 0.0"
     end
-    mon_branches_rates = get_branch_rates(mon_branches_names, system)
+
+    mon_branches_rates_a = get_branch_rates(mon_branches_names, system)
+    mon_branches_rates_b = get_branch_rates_b(mon_branches_names, system)
     @testset "Thermal Branch Limits" for t in fnm.datetimes
-        for m in mon_branches_names
-            rate = mon_branches_rates[m]
-            @test sprint(show, constraint_by_name(fnm.model, "branch_flow_max[$m,$t]")) ==
-            "branch_flow_max[$m,$t] : fl0[$m,$t] - sl1_fl0[$m,$t] - sl2_fl0[$m,$t] ≤ $rate"
-            @test sprint(show, constraint_by_name(fnm.model, "branch_flow_min[$m,$t]")) ==
-            "branch_flow_min[$m,$t] : fl0[$m,$t] + sl1_fl0[$m,$t] + sl2_fl0[$m,$t] ≥ -$rate"
+        for c in scenarios
+            for m in mon_branches_names
+                rate = c =="base_case" ? mon_branches_rates_a[m] : mon_branches_rates_b[m]
+                if c == "base_case"
+                    @test sprint(show, constraint_by_name(fnm.model, "branch_flow_max_base[$m,$t,$c]")) ==
+                    "branch_flow_max_base[$m,$t,$c] : fl[$m,$t,$c] - sl1_fl[$m,$t,$c] - sl2_fl[$m,$t,$c] ≤ $rate"
+                    @test sprint(show, constraint_by_name(fnm.model, "branch_flow_min_base[$m,$t,$c]")) ==
+                    "branch_flow_min_base[$m,$t,$c] : fl[$m,$t,$c] + sl1_fl[$m,$t,$c] + sl2_fl[$m,$t,$c] ≥ -$rate"
+                else
+                    @test sprint(show, constraint_by_name(fnm.model, "branch_flow_max_cont[$m,$t,$c]")) ==
+                    "branch_flow_max_cont[$m,$t,$c] : fl[$m,$t,$c] - sl1_fl[$m,$t,$c] - sl2_fl[$m,$t,$c] ≤ $rate"
+                    @test sprint(show, constraint_by_name(fnm.model, "branch_flow_min_cont[$m,$t,$c]")) ==
+                    "branch_flow_min_cont[$m,$t,$c] : fl[$m,$t,$c] + sl1_fl[$m,$t,$c] + sl2_fl[$m,$t,$c] ≥ -$rate"
+                end
+            end
         end
-        @test constraint_by_name(fnm.model, "branch_flow_max[\"Line2\",$t]") === nothing
-        @test constraint_by_name(fnm.model, "branch_flow_min[\"Line2\",$t]") === nothing
+        @test constraint_by_name(fnm.model, "branch_flow_max_base[\"Line2\",$t,\"base_case\"]") === nothing
+        @test constraint_by_name(fnm.model, "branch_flow_min_base[\"Line2\",$t,\"base_case\"]") === nothing
+        @test constraint_by_name(fnm.model, "branch_flow_max_cont[\"Line2\",$t,\"conting1\"]") === nothing
+        @test constraint_by_name(fnm.model, "branch_flow_min_cont[\"Line2\",$t,\"conting1\"]") === nothing
+        @test constraint_by_name(fnm.model, "branch_flow_max_cont[\"Line2\",$t,\"conting2\"]") === nothing
+        @test constraint_by_name(fnm.model, "branch_flow_min_cont[\"Line2\",$t,\"conting2\"]") === nothing
     end
     return nothing
 end
@@ -350,17 +376,6 @@ end
         end
     end
 
-    @testset "Thermal branch constraints $T" for (T, t_system, t_ptdf) in
-        ((UC, TEST_SYSTEM, TEST_PTDF), (ED, TEST_SYSTEM_RT, TEST_PTDF))
-        @testset "_con_branch_flow_limits!" begin
-            fnm = FullNetworkModel{T}(t_system, GLPK.Optimizer)
-            var_thermal_generation!(fnm)
-            T == UC && var_bids!(fnm)
-            con_thermal_branch!(fnm, t_ptdf)
-            tests_branch_flow_limits(T, fnm, t_ptdf)
-        end
-    end
-
     @testset "con_must_run!" begin
         # Create a system with a very cheap generator
         system = deepcopy(TEST_SYSTEM)
@@ -388,5 +403,23 @@ end
         optimize!(fnm)
         u = value.(fnm.model[:u])
         @test u[7, :].data == ones(24)
+    end
+
+    @testset "Thermal branch constraints $T" for (T, t_system, t_ptdf) in
+        ((UC, TEST_SYSTEM, TEST_PTDF), (ED, TEST_SYSTEM_RT, TEST_PTDF))
+        @testset "_con_branch_flow_limits!" begin
+            fnm = FullNetworkModel{T}(t_system, GLPK.Optimizer)
+            var_thermal_generation!(fnm)
+            conting1 = ["Line2"]
+            conting2 = ["Line2", "Line3"]
+            branches_out_per_scenario_names = Dict([
+                ("conting1", conting1),
+                ("conting2", conting2)
+            ])
+            t_lodfs = _compute_contingency_lodfs(branches_out_per_scenario_names, TEST_PSSE, TEST_PTDF)
+            T == UC && var_bids!(fnm)
+            con_thermal_branch!(fnm, t_ptdf, t_lodfs)
+            tests_branch_flow_limits(T, fnm, t_ptdf, t_lodfs)
+        end
     end
 end

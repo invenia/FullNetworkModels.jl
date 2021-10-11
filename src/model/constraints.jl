@@ -446,118 +446,155 @@ end
 
 function latex(::typeof(_con_branch_flows!))
     return """
-        ``fl^{0}_{m, t} = \\sum_{n \\in \\mathcal{N}_m} PTDF_{m, n} p^{net}_{n, t},
-        \\forall m \\in \\mathcal{M}_0, t \\in \\mathcal{T}``
+        ``fl^{c}_{m, t} = \\sum_{n \\in \\mathcal{N}_m} PTDF_{m, n} p^{net}_{n, t} + \\sum_{l \\in \\mathcal{L}_c} LODF_{m, l, c} fl^{0}_{l, t},
+        \\forall m \\in \\mathcal{M}_0, t \\in \\mathcal{T}, c \\in \\mathcal{C}``
         """
 end
 
 """
-    _con_branch_flows!(fnm::FullNetworkModel, bus_numbers, mon_branches_names, sys_ptdf)
+    _con_branch_flows!(fnm::FullNetworkModel, bus_numbers, branches_names_monitored_or_out, sys_ptdf, lodfs)
 
-Adds the branch power flow constraints to the full network model. The constraints calculates
-the power flow trough the "m" monitored Lines and transformers.
+Adds the branch power flow constraints for all scenarios of the system to the full network
+model. The scenarios include the base-case and selected contingency scenarios. The constraints
+calculate the power flow through the "m" branches_names_monitored_or_out (Lines and Transformers).
 
-The branch power flows are calculated as:
+The branch power flows for the base-case and contingency scenarios are calculated as:
 
 $(latex(_con_branch_flows!))
 
-The constraint is named `branch_flows`.
+Where the LODF for the base-case is zero.
+
+The constraints are named `branch_flows`.
 """
-function _con_branch_flows!(fnm::FullNetworkModel, bus_numbers, mon_branches_names, sys_ptdf)
+function _con_branch_flows!(
+    fnm::FullNetworkModel,
+    bus_numbers,
+    branches_names_monitored_or_out,
+    sys_ptdf,
+    lodfs
+)
     model = fnm.model
-    @variable(model, fl0[m in mon_branches_names, t in fnm.datetimes])
     p_net = model[:p_net]
+    scenarios = collect(keys(lodfs)) #Collect Scenarios (Case base, and contingency scenarios)
+    @variable(model, fl[m in branches_names_monitored_or_out, t in fnm.datetimes, c in scenarios])
+    branches_out_per_scenario_names = _get_branches_out_per_scenario_names(lodfs)
     @constraint(
         model,
-        branch_flows[m in mon_branches_names, t in fnm.datetimes],
-        fl0[m, t] == sum(sys_ptdf[m, n] * p_net[n, t] for n in bus_numbers)
+        branch_flows[m in branches_names_monitored_or_out, t in fnm.datetimes, c in scenarios],
+        fl[m, t, c] == sum(sys_ptdf[m, n] * p_net[n, t] for n in bus_numbers) +
+        sum(lodfs[c][m, l] * fl[l, t, "base_case"] for l in branches_out_per_scenario_names[c])
     )
     return fnm
 end
 
 function latex(::typeof(_con_branch_flow_limits!))
     return """
-        ``-FL^{rate_a}_{m, t} -sl1^{fl0}_{m, t} -sl2^{fl0}_{m, t} <= fl^0_{m, t} <= FL^{rate_a}_{m, t} +sl1^{fl0}_{m, t} +sl2^{fl0}_{m, t}``
+        ``-FL^{rate}_{m, t, c} -sl1^{fl}_{m, t, c} -sl2^{fl}_{m, t, c} <= fl^{c}_{m, t} <= FL^{rate}_{m, t, c} +sl1^{fl}_{m, t, c} +sl2^{fl}_{m, t, c}``
         """
 end
 
 """
-    _con_branch_flow_limits!(fnm::FullNetworkModel, mon_branches_names, mon_branches_rates)
+    _con_branch_flow_limits!(fnm::FullNetworkModel, mon_branches_names, mon_branches_rates_a, mon_branches_rates_b, scenarios)
 
-Adds the thermal branch constraints to the full network model. The constraints ensure that
-the power flow trough the "m" monitored lines and transformers is smaller than the
-transmission limit in both directions (Power flowing from bus "i" to bus "j" and from bus
-"j" to bus "i").
+Adds the thermal branch constraints for all scenarios of the system to the full network model.
+The scenarios include the base-case and selected the contingency scenarios. The constraints
+ensure that the power flow through the "m" monitored lines and transformers is smaller than the
+transmission limit in both directions (Power flowing from bus "i" to bus "j" and from bus "j"
+to bus "i").
 
-The thermal branch constraint is formulated as:
+The thermal branch constraints for the base-case and contingency scenarios are formulated as:
 
 $(latex(_con_branch_flow_limits!))
+
+Where the Rate A will be used for the base-case scenario, and the rate B will be used for the
+contingency scenarios.
 
 The constraint is named `branch_flow_max` for the high boundary and `branch_flow_min`
 for the lower boundary.
 """
-function _con_branch_flow_limits!(fnm::FullNetworkModel, mon_branches_names, mon_branches_rates)
+function _con_branch_flow_limits!(
+    fnm::FullNetworkModel,
+    mon_branches_names,
+    mon_branches_rates_a,
+    mon_branches_rates_b,
+    scenarios
+)
     model = fnm.model
-    p = model[:p]
-    fl0 = model[:fl0]
-    sl1_fl0 = model[:sl1_fl0]
-    sl2_fl0 = model[:sl2_fl0]
+    fl = model[:fl]
+    sl1_fl = model[:sl1_fl]
+    sl2_fl = model[:sl2_fl]
+    cont_scenarios = filter(x -> x ≠ "base_case", scenarios)
+    #Case Base
     @constraint(
         model,
-        branch_flow_max[m in mon_branches_names, t in fnm.datetimes],
-        fl0[m, t] <= mon_branches_rates[m] + sl1_fl0[m, t] + sl2_fl0[m, t]
+        branch_flow_max_base[m in mon_branches_names, t in fnm.datetimes, c in ["base_case"]],
+        fl[m, t, c] <= mon_branches_rates_a[m] + sl1_fl[m, t, c] + sl2_fl[m, t, c]
     )
     @constraint(
         model,
-        branch_flow_min[m in mon_branches_names, t in fnm.datetimes],
-        fl0[m, t] >= - mon_branches_rates[m] - sl1_fl0[m, t] - sl2_fl0[m, t]
+        branch_flow_min_base[m in mon_branches_names, t in fnm.datetimes, c in ["base_case"]],
+        fl[m, t, c] >= - mon_branches_rates_a[m] - sl1_fl[m, t, c] - sl2_fl[m, t, c]
+    )
+    #Contingency Scenarios
+    @constraint(
+        model,
+        branch_flow_max_cont[m in mon_branches_names, t in fnm.datetimes, c in cont_scenarios],
+        fl[m, t, c] <= mon_branches_rates_b[m] + sl1_fl[m, t, c] + sl2_fl[m, t, c]
+    )
+    @constraint(
+        model,
+        branch_flow_min_cont[m in mon_branches_names, t in fnm.datetimes, c in cont_scenarios],
+        fl[m, t, c] >= - mon_branches_rates_b[m] - sl1_fl[m, t, c] - sl2_fl[m, t, c]
     )
     return fnm
 end
 
 function latex(::typeof(_con_branch_flow_slacks!))
     return """
-    ``0 <= sl1^{fl0}_{m, t} <= \\bar{SL1}^{fl0}_{m, t}`` \n
-    ``0 <= sl2^{fl0}_{m, t}``
+    ``0 <= sl1^{fl}_{m, t, c} <= \\bar{SL1}^{fl}_{m, t, c}`` \n
+    ``0 <= sl2^{fl}_{m, t, c}``
     """
 end
 """
      _con_branch_flow_slacks!(
          fnm::FullNetworkModel,
          mon_branches_names,
-         mon_branches_rates,
+         mon_branches_rates_a,
+         mon_branches_rates_b,
          mon_branches_break_points,
-         mon_branches_penalties
+         mon_branches_penalties,
+         scenarios
     )
 
-Adds the power flow slack penalty constraints to the full network model. The constraints
-ensure that the power flow trough the "m" monitored lines and transformers is penalised
-according to the branch breaking points and penalties.
+Adds the power flow slack penalty constraints for all scenarios of the system to the full
+network model. The scenarios include the base-case and selected the contingency scenarios.
+The constraints ensure that the power flow through the "m" monitored lines and transformers
+is penalised according to the branch breaking points and penalties.
 
-The power flow slack penalty constraints are formulated as:
+The power flow slack penalty constraints for all scenarios are formulated as:
 
 $(latex(_con_branch_flow_slacks!))
 
 The Breakpoints are the percentage value of the Branch Rate in which the penalty for branch
-flow changes. A branch could have one, two or no breakpoints. For example a Branch of 75MW
+flow changes. A branch could have one, two or no break-points. For example a Branch of 75MW
 rate (FL) with one breakpoint at [100%] of the line rate will have a corresponding penalty
-"Penalty1" for any flow above 100% (75MW). For a branch with two breakpoints [100%, 110%] will
+"Penalty1" for any flow above 100% (75MW). For a branch with two break-points [100%, 110%] will
 have a penalty "Penalty1" for any flow in betweeen 100% (75MW) and 110% (82.5MW), and for any
 MW avobe the 110% of the branch rate, the penalty will be "Penalty2". Finally a branch with no
-breakpoints, the constraint should be a hard constraint. Thus, the slacks for each case should
+break-points, the constraint should be a hard constraint. Thus, the slacks for each case should
 be:
 
-No breakpoints:
-sl1^{fl0}_{m, t} = 0
-sl2^{fl0}_{m, t} = 0
+No break-points:
+sl1^{fl}_{m, t, c} = 0
+sl2^{fl}_{m, t, c} = 0
 
-One breakpoints:
-sl1^{fl0}_{m, t} = 0
-0 <= sl2^{fl0}_{m, t}
+One break-points:
+sl1^{fl}_{m, t, c} = 0
+0 <= sl2^{fl}_{m, t, c}
 
-Two breakpoints:
-0 <= sl1^{fl0}_{m, t} <= (110% - 100%)*75MW/(100*Sbase)
-0 <= sl2^{fl0}_{m, t}
+Two break-points:
+0 <= sl1^{fl}_{m, t, c} <= (110% - 100%)*75MW/(100*Sbase)
+0 <= sl2^{fl}_{m, t, c}
 
 The constraint is named `branch_flow_sl1_max` for the first step slack and `branch_flow_sl2_max`
 for the second step slack.
@@ -565,17 +602,19 @@ for the second step slack.
 function _con_branch_flow_slacks!(
     fnm::FullNetworkModel,
     mon_branches_names,
-    mon_branches_rates,
+    mon_branches_rates_a,
+    mon_branches_rates_b,
     mon_branches_break_points,
-    mon_branches_penalties
+    mon_branches_penalties,
+    scenarios
 )
-
     model = fnm.model
     system = fnm.system
     datetimes = fnm.datetimes
-    # Slacks
-    @variable(model, sl1_fl0[m in mon_branches_names, t in datetimes] >= 0)
-    @variable(model, sl2_fl0[m in mon_branches_names, t in datetimes] >= 0)
+    cont_scenarios = filter(x -> x ≠ "base_case", scenarios)
+    #Add slacks
+    @variable(model, sl1_fl[m in mon_branches_names, t in datetimes, c in scenarios] >= 0)
+    @variable(model, sl2_fl[m in mon_branches_names, t in datetimes, c in scenarios] >= 0)
 
     (branches_zero_break_points,
     branches_one_break_points,
@@ -584,62 +623,78 @@ function _con_branch_flow_slacks!(
     # Constraints Zero Break points
     @constraint(
         model,
-        branch_flow_sl1_zero[m in branches_zero_break_points, t in datetimes],
-        sl1_fl0[m, t] == 0
+        branch_flow_sl1_zero[m in branches_zero_break_points, t in datetimes, c in scenarios],
+        sl1_fl[m, t, c] == 0
     )
     @constraint(
         model,
-        branch_flow_sl2_zero[m in branches_zero_break_points, t in datetimes],
-        sl2_fl0[m, t] == 0
+        branch_flow_sl2_zero[m in branches_zero_break_points, t in datetimes, c in scenarios],
+        sl2_fl[m, t, c] == 0
     )
     # Constraints One Break Point
     @constraint(
         model,
-        branch_flow_sl2_one[m in branches_one_break_points, t in datetimes],
-        sl2_fl0[m, t] == 0
+        branch_flow_sl2_one[m in branches_one_break_points, t in datetimes, c in scenarios],
+        sl2_fl[m, t, c] == 0
     )
-    # Constraints Two Break Points
+    # Constraints Two Break Points Case Base
     @constraint(
         model,
-        branch_flow_sl1_two[m in branches_two_break_points, t in datetimes],
-        sl1_fl0[m, t] <= (mon_branches_break_points[m][2]-mon_branches_break_points[m][1])*(mon_branches_rates[m]/100)
+        branch_flow_sl1_two_base[m in branches_two_break_points, t in datetimes, c in ["base_case"]],
+        sl1_fl[m, t, c] <= (mon_branches_break_points[m][2]-mon_branches_break_points[m][1])*(mon_branches_rates_a[m]/100)
+    )
+    # Constraints Two Break Points Contingency Scenarios
+    @constraint(
+        model,
+        branch_flow_sl1_two_cont[m in branches_two_break_points, t in datetimes, c in cont_scenarios],
+        sl1_fl[m, t, c] <= (mon_branches_break_points[m][2]-mon_branches_break_points[m][1])*(mon_branches_rates_b[m]/100)
     )
     # Add slacks penalties to the objective
-    for m in branches_one_break_points, t in datetimes
-        set_objective_coefficient(model, sl1_fl0[m, t], mon_branches_penalties[m][1])
+    for m in branches_one_break_points, t in datetimes, c in scenarios
+        set_objective_coefficient(model, sl1_fl[m, t, c], mon_branches_penalties[m][1])
     end
-    for m in branches_two_break_points, t in datetimes
-        set_objective_coefficient(model, sl1_fl0[m, t], mon_branches_penalties[m][1])
-        set_objective_coefficient(model, sl2_fl0[m, t], mon_branches_penalties[m][2])
+    for m in branches_two_break_points, t in datetimes, c in scenarios
+        set_objective_coefficient(model, sl1_fl[m, t, c], mon_branches_penalties[m][1])
+        set_objective_coefficient(model, sl2_fl[m, t, c], mon_branches_penalties[m][2])
     end
     return fnm
 end
 
 """
-    con_thermal_branch!(fnm::FullNetworkModel, sys_ptdf)
+    con_thermal_branch!(
+        fnm::FullNetworkModel,
+        sys_ptdf,
+        lodfs = Dict{String, DenseAxisArray}()
+    )
 
-Adds the nodal net injections, branch flows, and branch flow limits constraints to the full
-model. The nodal net injection is formulated different for the Unit Commitment and for the
-Economic Dispatch.
+Adds the nodal net injections, branch flows, and branch flow limits constraints for the case
+base and the selected contingency scenarios to the full network model. The nodal net injection
+is formulated different for the Unit Commitment and for the Economic Dispatch.
 
 The constraints avobe are formulated as:
 
-The Net Nodal Injection for the Economic Dispatch is formulated as:
+The Case Base Net Nodal Injection for the Economic Dispatch is formulated as:
 $(latex(_con_nodal_net_injection_ed!))
 
-The Net Nodal Injection for the Unit Commitment is formulated as:
+The Case Base Net Nodal Injection for the Unit Commitment is formulated as:
 $(latex(_con_nodal_net_injection_uc!))
 
-Branch Flows are formulated as:
+Case Base and Contingency Branch Flows are formulated as:
 $(latex(_con_branch_flows!))
 
-Branch Flows Limits are formulated as:
+Case Base and Contingency Branch Flows Limits are formulated as:
 $(latex(_con_branch_flow_limits!))
 
 The constraints are named `nodal_net_injection`, `branch_flows`, `branch_flow_max` (for the
 high boundary) and `branch_flow_min` (for the lower boundary) respectively.
 """
-function con_thermal_branch!(fnm::FullNetworkModel, sys_ptdf)
+function con_thermal_branch!(
+    fnm::FullNetworkModel,
+    sys_ptdf,
+    lodfs = Dict{String, DenseAxisArray}()
+)
+    #Add case base to the lodf scenarios dictionary
+    lodfs = _add_base_case_to_lodfs(lodfs)
     #Shared Data
     system = fnm.system
     bus_numbers = get_bus_numbers(system)
@@ -647,20 +702,41 @@ function con_thermal_branch!(fnm::FullNetworkModel, sys_ptdf)
     unit_codes_perbus = get_unit_codes_perbus(ThermalStandard, system)
     load_names_perbus = get_load_names_perbus(PowerLoad, system)
     mon_branches_names = get_monitored_branch_names(Branch, system)
-    mon_branches_rates = get_branch_rates(mon_branches_names, system)
+    mon_branches_rates_a = get_branch_rates(mon_branches_names, system)
+    mon_branches_rates_b = get_branch_rates_b(mon_branches_names, system)
     mon_branches_break_points = get_branch_break_points(mon_branches_names, system)
     mon_branches_penalties = get_branch_penalties(mon_branches_names, system)
-    #Add Constraints
+    scenarios = collect(keys(lodfs)) #Collect Scenarios (Case base, and contingency scenarios)
+    branches_out_names = unique(vcat(axes.(values(lodfs),2)...))
+    # The flows need to be defined only for the branches that are monitored or going
+    # out under some contingency
+    branches_names_monitored_or_out = union(branches_out_names, mon_branches_names)
+    #Add the nodal net injections for the base-case
     _con_nodal_net_injection!(fnm, bus_numbers, D, unit_codes_perbus, load_names_perbus)
-    _con_branch_flows!(fnm, bus_numbers, mon_branches_names, sys_ptdf)
+    #Add the branch flows constraints for all scenarios
+    _con_branch_flows!(
+        fnm,
+        bus_numbers,
+        branches_names_monitored_or_out,
+        sys_ptdf,
+        lodfs
+    )
     _con_branch_flow_slacks!(
         fnm,
         mon_branches_names,
-        mon_branches_rates,
+        mon_branches_rates_a,
+        mon_branches_rates_b,
         mon_branches_break_points,
-        mon_branches_penalties
+        mon_branches_penalties,
+        scenarios,
     )
-    _con_branch_flow_limits!(fnm, mon_branches_names, mon_branches_rates)
+    _con_branch_flow_limits!(
+        fnm,
+        mon_branches_names,
+        mon_branches_rates_a,
+        mon_branches_rates_b,
+        scenarios
+    )
     return fnm
 end
 

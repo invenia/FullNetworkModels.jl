@@ -45,6 +45,7 @@ export get_branch_break_points
 export get_branch_names
 export get_branch_penalties
 export get_branch_rates
+export get_branch_rates_b
 export get_commitment_reg_status
 export get_commitment_status
 export get_fixed_loads

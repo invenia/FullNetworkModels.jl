@@ -197,3 +197,30 @@ function _get_branch_num_break_points_names(branchtype::Type{<:Branch}, system::
     branches_two_break_points = get_name.(get_components(branchtype, system, x -> length(x.ext["break_points"]) == 2 && x.ext["is_monitored"] == true))
     return branches_zero_break_points, branches_one_break_points, branches_two_break_points
 end
+
+"""
+    _get_branches_out_per_scenario_names(lodfs) -> Dict{String, Vector{String}}
+
+Returns a dictionary with the names of the branches on outage for each one of the lodfs
+
+"""
+function _get_branches_out_per_scenario_names(lodfs)
+    branches_out_per_scenario_names = Dict{String, Vector{String}}()
+    for (k, v) in lodfs
+        branches_out_per_scenario_names[k] = axes(v, 2)
+    end
+    return branches_out_per_scenario_names
+end
+"""
+    _add_base_case_to_lodfs(lodfs) -> Dict{String, DenseAxisArray}
+
+Adds the base_case scenario with an empty DenseAxisArray to the dictionary of LODFs (the input
+dictionary only contains the contingency scenarios). The output will be the dictionary of
+scenarios => LODFs which includes base_case and contingency scenarios.
+
+"""
+function _add_base_case_to_lodfs(lodfs)
+    lodf_base = DenseAxisArray(Matrix{Float64}(undef, 0, 0), String[], Int[])
+    lodfs = merge(lodfs,Dict("base_case"=>lodf_base))
+    return lodfs
+end
