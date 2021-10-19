@@ -661,11 +661,7 @@ function _con_branch_flow_slacks!(
 end
 
 """
-    con_thermal_branch!(
-        fnm::FullNetworkModel,
-        sys_ptdf,
-        lodfs = Dict{String, DenseAxisArray}()
-    )
+    con_thermal_branch!(fnm::FullNetworkModel)
 
 Adds the nodal net injections, branch flows, and branch flow limits constraints for the case
 base and the selected contingency scenarios to the full network model. The nodal net injection
@@ -688,13 +684,7 @@ $(latex(_con_branch_flow_limits!))
 The constraints are named `nodal_net_injection`, `branch_flows`, `branch_flow_max` (for the
 high boundary) and `branch_flow_min` (for the lower boundary) respectively.
 """
-function con_thermal_branch!(
-    fnm::FullNetworkModel,
-    sys_ptdf,
-    lodfs = Dict{String, DenseAxisArray}()
-)
-    #Add case base to the lodf scenarios dictionary
-    lodfs = _add_base_case_to_lodfs(lodfs)
+function con_thermal_branch!(fnm::FullNetworkModel)
     #Shared Data
     system = fnm.system
     bus_numbers = get_bus_numbers(system)
@@ -706,7 +696,10 @@ function con_thermal_branch!(
     mon_branches_rates_b = get_branch_rates_b(mon_branches_names, system)
     mon_branches_break_points = get_branch_break_points(mon_branches_names, system)
     mon_branches_penalties = get_branch_penalties(mon_branches_names, system)
-    scenarios = collect(keys(lodfs)) #Collect Scenarios (Case base, and contingency scenarios)
+    sys_ptdf = get_ptdf(system)
+    lodf_dict = get_lodf_dict(system)
+    lodfs = _add_base_case_to_lodfs(lodf_dict) # Add base case to the LODF dictionary
+    scenarios = collect(keys(lodfs)) # All scenarios (base base, and contingency scenarios)
     branches_out_names = unique(vcat(axes.(values(lodfs),2)...))
     # The flows need to be defined only for the branches that are monitored or going
     # out under some contingency

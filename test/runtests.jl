@@ -10,6 +10,7 @@ using JuMP
 using JuMP.Containers: DenseAxisArray
 using PowerSystems
 using PowerSystemsExtras
+using PowerSystemsExtras: PTDF
 using Test
 using TimeSeries
 

@@ -201,7 +201,7 @@ end
 
 """
     unit_commitment_branch_flow_limits(
-        system::System, solver, sys_ptdf, datetimes=get_forecast_timestamps(system);
+        system::System, solver, datetimes=get_forecast_timestamps(system);
         relax_integrality=false
     ) -> FullNetworkModel{UC}
 
@@ -253,19 +253,13 @@ See also [`unit_commitment_soft_ramps_branch_flow_limits`](@ref) and
 # Arguments
  - `system::System`: The PowerSystems system that provides the input data.
  - `solver`: The solver of choice, e.g. `GLPK.Optimizer`.
- - `sys_ptdf`: The Power Transfer Distribution Factor (PTDF) matrix of the system.
- - `lodfs`: Dictionary of contingency scenarios => Line Outage Distribution Factor (LODF).
  - `datetimes=get_forecast_timestamps(system)`: The time periods considered in the model.
 
 # Keywords
  - `relax_integrality=false`: If set to `true`, binary variables will be relaxed.
 """
 function unit_commitment_branch_flow_limits(
-    system::System,
-    solver,
-    sys_ptdf,
-    lodfs = Dict{String, DenseAxisArray}(),
-    datetimes=get_forecast_timestamps(system);
+    system::System, solver, datetimes=get_forecast_timestamps(system);
     relax_integrality=false
 )
     # Initialize FNM
@@ -284,7 +278,7 @@ function unit_commitment_branch_flow_limits(
     con_generation_ramp_rates!(fnm)
     con_ancillary_ramp_rates!(fnm)
     con_energy_balance!(fnm)
-    con_thermal_branch!(fnm, sys_ptdf, lodfs)
+    con_thermal_branch!(fnm)
     # Objectives
     obj_thermal_variable_cost!(fnm)
     obj_thermal_noload_cost!(fnm)
@@ -300,7 +294,7 @@ end
 
 """
     unit_commitment_soft_ramps_branch_flow_limits(
-        system::System, solver, sys_ptdf, datetimes=get_forecast_timestamps(system);
+        system::System, solver, datetimes=get_forecast_timestamps(system);
         slack=1e4, relax_integrality=false
     ) -> FullNetworkModel{UC}
 
@@ -314,8 +308,6 @@ See also [`unit_commitment_branch_flow_limits`](@ref) and [`unit_commitment_soft
 # Arguments
  - `system::System`: The PowerSystems system that provides the input data.
  - `solver`: The solver of choice, e.g. `GLPK.Optimizer`.
- - `sys_ptdf`: The Power Transfer Distribution Factor (PTDF) matrix of the system.
- - `lodfs`: Dictionary of contingency scenarios => Line Outage Distribution Factor (LODF).
  - `datetimes=get_forecast_timestamps(system)`: The time periods considered in the model.
 
 # Keywords
@@ -323,13 +315,8 @@ See also [`unit_commitment_branch_flow_limits`](@ref) and [`unit_commitment_soft
  - `relax_integrality=false`: If set to `true`, binary variables will be relaxed.
 """
 function unit_commitment_soft_ramps_branch_flow_limits(
-    system::System,
-    solver,
-    sys_ptdf,
-    lodfs = Dict{String, DenseAxisArray}(),
-    datetimes=get_forecast_timestamps(system);
-    slack=1e4,
-    relax_integrality=false
+    system::System, solver, datetimes=get_forecast_timestamps(system);
+    slack=1e4, relax_integrality=false
 )
     # Initialize FNM
     fnm = FullNetworkModel{UC}(system, datetimes)
@@ -347,7 +334,7 @@ function unit_commitment_soft_ramps_branch_flow_limits(
     con_generation_ramp_rates!(fnm; slack=slack)
     con_ancillary_ramp_rates!(fnm)
     con_energy_balance!(fnm)
-    con_thermal_branch!(fnm, sys_ptdf, lodfs)
+    con_thermal_branch!(fnm)
     # Objectives
     obj_thermal_variable_cost!(fnm)
     obj_thermal_noload_cost!(fnm)
@@ -363,7 +350,7 @@ end
 
 """
     unit_commitment_no_ramps_branch_flow_limits(
-        system::System, solver, sys_ptdf, datetimes=get_forecast_timestamps(system);
+        system::System, solver, datetimes=get_forecast_timestamps(system);
         relax_integrality=false
     ) -> FullNetworkModel{UC}
 
@@ -377,19 +364,13 @@ See also [`unit_commitment_branch_flow_limits`](@ref) and [`unit_commitment_no_r
 # Arguments
  - `system::System`: The PowerSystems system that provides the input data.
  - `solver`: The solver of choice, e.g. `GLPK.Optimizer`.
- - `sys_ptdf`: The Power Transfer Distribution Factor (PTDF) matrix of the system.
- - `lodfs`: Dictionary of contingency scenarios => Line Outage Distribution Factor (LODF).
  - `datetimes=get_forecast_timestamps(system)`: The time periods considered in the model.
 
 # Keywords
  - `relax_integrality=false`: If set to `true`, binary variables will be relaxed.
 """
 function unit_commitment_no_ramps_branch_flow_limits(
-    system::System,
-    solver,
-    sys_ptdf,
-    lodfs = Dict{String, DenseAxisArray}(),
-    datetimes=get_forecast_timestamps(system);
+    system::System, solver, datetimes=get_forecast_timestamps(system);
     relax_integrality=false
 )
     # Initialize FNM
@@ -406,7 +387,7 @@ function unit_commitment_no_ramps_branch_flow_limits(
     con_regulation_requirements!(fnm)
     con_operating_reserve_requirements!(fnm)
     con_energy_balance!(fnm)
-    con_thermal_branch!(fnm, sys_ptdf, lodfs)
+    con_thermal_branch!(fnm)
     # Objectives
     obj_thermal_variable_cost!(fnm)
     obj_thermal_noload_cost!(fnm)

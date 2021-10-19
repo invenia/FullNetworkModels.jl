@@ -6,6 +6,7 @@ using JuMP.Containers: DenseAxisArray
 using Memento
 using PowerSystems
 using PowerSystemsExtras
+using PowerSystemsExtras: PTDF # to avoid conflict with PowerSystems.jl
 
 const LOGGER = getlogger(@__MODULE__)
 
