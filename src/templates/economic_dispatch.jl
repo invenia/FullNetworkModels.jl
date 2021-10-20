@@ -65,7 +65,7 @@ end
 
 """
     economic_dispatch_branch_flow_limits(
-        system::System, datetimes=get_forecast_timestamps(system); slack=1e4
+        system::System, solver, datetimes=get_forecast_timestamps(system); slack=1e4
     ) -> FullNetworkModel{ED}
 
 Defines the economic dispatch template with base case thermal branch constraints.
