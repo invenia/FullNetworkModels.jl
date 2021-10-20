@@ -661,7 +661,7 @@ function get_ptdf(system::System)
 end
 
 """
-    get_lodf_dict(system::System) -> Dict
+    get_lodf_dict(system::System) -> Dict{String, DenseAxisArray}
 
 Returns the LODF dictionary that points contingencies to branches going out that is stored
 in the `system` as an `LODFDict` device.
