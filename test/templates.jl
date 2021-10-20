@@ -66,30 +66,21 @@
         end
     end
     @testset "unit_commitment_branch_flow_limits" begin
-        conting1 = ["Line2"]
-        conting2 = ["Line2", "Line3"]
-        branches_out_per_scenario_names = Dict([
-            ("conting1", conting1),
-            ("conting2", conting2)
-        ])
-        t_lodfs = _compute_contingency_lodfs(branches_out_per_scenario_names, TEST_PSSE, TEST_PTDF)
-        fnm = unit_commitment_branch_flow_limits(TEST_SYSTEM, GLPK.Optimizer, TEST_PTDF, t_lodfs)
-        tests_branch_flow_limits(UC, fnm, TEST_PTDF, t_lodfs)
+        fnm = unit_commitment_branch_flow_limits(TEST_SYSTEM, GLPK.Optimizer)
+        tests_branch_flow_limits(UC, fnm)
 
         # Solve the original UC with thermal branch constraints
-        system_orig = TEST_SYSTEM
-        fnm = unit_commitment_branch_flow_limits(system_orig, GLPK.Optimizer, TEST_PTDF, t_lodfs)
+        fnm = unit_commitment_branch_flow_limits(TEST_SYSTEM, GLPK.Optimizer)
         optimize!(fnm)
         # Should be feasible
         @test termination_status(fnm.model) == TerminationStatusCode(1)
         obj = objective_value(fnm.model)
 
         # Verify that the branch flows are within bounds
-        scenarios = collect(keys(t_lodfs)) #Collect Scenarios (Case base, and contingency scenarios)
-        monitored_branches_names = get_monitored_branch_names(Branch, system_orig)
-        @testset "branch bounds" for c in scenarios
+        monitored_branches_names = get_monitored_branch_names(Branch, TEST_SYSTEM)
+        @testset "branch bounds" for c in TEST_SCENARIOS
             for m in monitored_branches_names
-                t_branch = get_component(Branch, system_orig, m)
+                t_branch = get_component(Branch, TEST_SYSTEM, m)
                 rate = c == "base_case" ? t_branch.rate : t_branch.ext["rate_b"]
                 @test value.(fnm.model[:fl][m, fnm.datetimes[1], c]) <= rate
                 @test value.(fnm.model[:fl][m, fnm.datetimes[1], c]) >= -rate
@@ -105,7 +96,7 @@
         Transformer1.ext["penalties"] = [1000.0, 2000.0]
 
         # Solve, slack 1 should be active in base-case and conting2 but not in conting1
-        fnm = unit_commitment_branch_flow_limits(system_sl1, GLPK.Optimizer, TEST_PTDF, t_lodfs)
+        fnm = unit_commitment_branch_flow_limits(system_sl1, GLPK.Optimizer)
         optimize!(fnm)
         @test termination_status(fnm.model) == TerminationStatusCode(1)
         obj_sl1 = objective_value(fnm.model)
@@ -129,7 +120,7 @@
         Transformer1.ext["penalties"] = [1000.0, 2000.0]
 
         # Solve, slack 2 should be active
-        fnm = unit_commitment_branch_flow_limits(system_sl2, GLPK.Optimizer, TEST_PTDF, t_lodfs)
+        fnm = unit_commitment_branch_flow_limits(system_sl2, GLPK.Optimizer)
         optimize!(fnm)
         @test termination_status(fnm.model) == TerminationStatusCode(1)
         obj_sl2 = objective_value(fnm.model)
@@ -157,14 +148,14 @@
         Transformer1.ext["penalties"] = [1000.0, 2000.0]
 
         # Solve, slack 2 should be active in all cases
-        fnm = unit_commitment_branch_flow_limits(system_sl2_all, GLPK.Optimizer, TEST_PTDF, t_lodfs)
+        fnm = unit_commitment_branch_flow_limits(system_sl2_all, GLPK.Optimizer)
         optimize!(fnm)
         @test termination_status(fnm.model) == TerminationStatusCode(1)
         obj_sl2_all = objective_value(fnm.model)
 
         # Verify that the branch flows are higher than the line rate, SL1 and SL2 are active
         # in all cases SL1 should be at their maximum value
-        @testset "branch bounds sl2 all cases" for c in scenarios
+        @testset "branch bounds sl2 all cases" for c in TEST_SCENARIOS
             m = "Transformer1"
             t_branch = get_component(Branch, system_sl2_all, m)
             rate = c == "base_case" ? t_branch.rate : t_branch.ext["rate_b"]
@@ -180,21 +171,16 @@
         @test obj_sl2 < obj_sl2_all
 
         # Test for branch flow limits without contingencies
-        t_lodf = Dict{String, DenseAxisArray}()
-        fnm = unit_commitment_branch_flow_limits(TEST_SYSTEM, GLPK.Optimizer, TEST_PTDF, t_lodf)
+        system_no_contingencies = deepcopy(TEST_SYSTEM)
+        lodf_device = only(get_components(LODFDict, system_no_contingencies))
+        lodf_device.lodf_dict = Dict{String, DenseAxisArray}()
+        fnm = unit_commitment_branch_flow_limits(TEST_SYSTEM, GLPK.Optimizer)
         optimize!(fnm)
         @test termination_status(fnm.model) == TerminationStatusCode(1)
         obj_no_conting = objective_value(fnm.model)
 
-        fnm = unit_commitment_branch_flow_limits(TEST_SYSTEM, GLPK.Optimizer, TEST_PTDF)
-        optimize!(fnm)
-        @test termination_status(fnm.model) == TerminationStatusCode(1)
-        obj_no_conting_dict = objective_value(fnm.model)
-
-        #Compare objectives without and with contingencies
+        # Compare objectives without and with contingencies
         @test obj_no_conting <= obj
-         #Compare objectives without and with lodf dictionary
-        @test obj_no_conting == obj_no_conting_dict
     end
 
     @testset "economic_dispatch" begin
@@ -209,14 +195,13 @@
         tests_energy_balance(fnm)
 
         # Solve the original ED with slack = nothing
-        system_orig = TEST_SYSTEM_RT
-        fnm = economic_dispatch(system_orig, GLPK.Optimizer; slack = nothing)
+        fnm = economic_dispatch(TEST_SYSTEM_RT, GLPK.Optimizer; slack = nothing)
         optimize!(fnm)
         # Should be feasible
         @test termination_status(fnm.model) == TerminationStatusCode(1)
         obj_orig = objective_value(fnm.model)
         # Solve it with slack = 1e4
-        fnm = economic_dispatch(system_orig, GLPK.Optimizer; slack = 1e4)
+        fnm = economic_dispatch(TEST_SYSTEM_RT, GLPK.Optimizer; slack = 1e4)
         optimize!(fnm)
         # Should be feasible with a smaller objective value.
         @test termination_status(fnm.model) == TerminationStatusCode(1)
@@ -247,30 +232,21 @@
         @test obj_high_slack > obj_low_slack
     end
     @testset "economic_dispatch_branch_flow_limits" begin
-        conting1 = ["Line2"]
-        conting2 = ["Line2", "Line3"]
-        branches_out_per_scenario_names = Dict([
-            ("conting1", conting1),
-            ("conting2", conting2)
-        ])
-        t_lodfs = _compute_contingency_lodfs(branches_out_per_scenario_names, TEST_PSSE, TEST_PTDF)
-        fnm = economic_dispatch_branch_flow_limits(TEST_SYSTEM_RT, GLPK.Optimizer, TEST_PTDF, t_lodfs)
-        tests_branch_flow_limits(ED, fnm, TEST_PTDF, t_lodfs)
+        fnm = economic_dispatch_branch_flow_limits(TEST_SYSTEM_RT, GLPK.Optimizer)
+        tests_branch_flow_limits(ED, fnm)
 
         # Solve the original ED with thermal branch constraints
-        system_orig = TEST_SYSTEM_RT
-        fnm = economic_dispatch_branch_flow_limits(system_orig, GLPK.Optimizer, TEST_PTDF, t_lodfs)
+        fnm = economic_dispatch_branch_flow_limits(TEST_SYSTEM_RT, GLPK.Optimizer)
         optimize!(fnm)
         # Should be feasible
         @test termination_status(fnm.model) == TerminationStatusCode(1)
         obj = objective_value(fnm.model)
 
         # Verify that the branch flows are within bounds
-        scenarios = collect(keys(t_lodfs)) #Collect Scenarios (Case base, and contingency scenarios)
-        monitored_branches_names = get_monitored_branch_names(Branch, system_orig)
-        @testset "branch bounds" for c in scenarios
+        monitored_branches_names = get_monitored_branch_names(Branch, TEST_SYSTEM_RT)
+        @testset "branch bounds" for c in TEST_SCENARIOS
             for m in monitored_branches_names
-                t_branch = get_component(Branch, system_orig, m)
+                t_branch = get_component(Branch, TEST_SYSTEM_RT, m)
                 rate = c == "base_case" ? t_branch.rate : t_branch.ext["rate_b"]
                 @test value.(fnm.model[:fl][m, fnm.datetimes[1], c]) <= rate
                 @test value.(fnm.model[:fl][m, fnm.datetimes[1], c]) >= -rate
@@ -286,7 +262,7 @@
         Transformer1.ext["penalties"] = [1000.0, 2000.0]
 
         # Solve, slack 1 should be active in base-case and conting2 but not in conting1
-        fnm = economic_dispatch_branch_flow_limits(system_sl1, GLPK.Optimizer, TEST_PTDF, t_lodfs)
+        fnm = economic_dispatch_branch_flow_limits(system_sl1, GLPK.Optimizer)
         optimize!(fnm)
         @test termination_status(fnm.model) == TerminationStatusCode(1)
         obj_sl1 = objective_value(fnm.model)
@@ -310,7 +286,7 @@
         Transformer1.ext["penalties"] = [1000.0, 2000.0]
 
         # Solve, slack 2 should be active
-        fnm = economic_dispatch_branch_flow_limits(system_sl2, GLPK.Optimizer, TEST_PTDF, t_lodfs)
+        fnm = economic_dispatch_branch_flow_limits(system_sl2, GLPK.Optimizer)
         optimize!(fnm)
         @test termination_status(fnm.model) == TerminationStatusCode(1)
         obj_sl2 = objective_value(fnm.model)
@@ -338,14 +314,14 @@
         Transformer1.ext["penalties"] = [1000.0, 2000.0]
 
         # Solve, slack 2 should be active in all cases
-        fnm = economic_dispatch_branch_flow_limits(system_sl2_all, GLPK.Optimizer, TEST_PTDF, t_lodfs)
+        fnm = economic_dispatch_branch_flow_limits(system_sl2_all, GLPK.Optimizer)
         optimize!(fnm)
         @test termination_status(fnm.model) == TerminationStatusCode(1)
         obj_sl2_all = objective_value(fnm.model)
 
         # Verify that the branch flows are higher than the line rate, SL1 and SL2 are active
         # in all cases SL1 should be at their maximum value
-        @testset "branch bounds sl2 all cases" for c in scenarios
+        @testset "branch bounds sl2 all cases" for c in TEST_SCENARIOS
             m = "Transformer1"
             t_branch = get_component(Branch, system_sl2_all, m)
             rate = c == "base_case" ? t_branch.rate : t_branch.ext["rate_b"]
@@ -369,12 +345,12 @@
         Transformer1.ext["penalties"] = [1000.0]
 
         # Solve, slack 1 should be active
-        fnm = economic_dispatch_branch_flow_limits(system_bkpt_one, GLPK.Optimizer, TEST_PTDF, t_lodfs)
+        fnm = economic_dispatch_branch_flow_limits(system_bkpt_one, GLPK.Optimizer)
         optimize!(fnm)
         @test termination_status(fnm.model) == TerminationStatusCode(1)
         obj_bkpt_one = objective_value(fnm.model)
 
-        @testset "branch bounds sl1 one breakpoint" for c in scenarios
+        @testset "branch bounds sl1 one breakpoint" for c in TEST_SCENARIOS
             m = "Transformer1"
             t_branch = get_component(Branch, system_bkpt_one, m)
             rate = c == "base_case" ? t_branch.rate : t_branch.ext["rate_b"]
@@ -390,12 +366,12 @@
         Transformer1.ext["penalties"] = []
 
         # Solve, should be feasible
-        fnm = economic_dispatch_branch_flow_limits(system_bkpt_zero, GLPK.Optimizer, TEST_PTDF, t_lodfs)
+        fnm = economic_dispatch_branch_flow_limits(system_bkpt_zero, GLPK.Optimizer)
         optimize!(fnm)
         @test termination_status(fnm.model) == TerminationStatusCode(1)
         obj_bkpt_zero = objective_value(fnm.model)
 
-        @testset "branch bounds sl1 one breakpoint" for c in scenarios
+        @testset "branch bounds sl1 one breakpoint" for c in TEST_SCENARIOS
             m = "Transformer1"
             t_branch = get_component(Branch, system_bkpt_zero, m)
             rate = c == "base_case" ? t_branch.rate : t_branch.ext["rate_b"]
@@ -413,26 +389,21 @@
         Transformer1.ext["penalties"] = []
 
         # Solve, should be infeasible
-        fnm = economic_dispatch_branch_flow_limits(system_bkpt_inf, GLPK.Optimizer, TEST_PTDF, t_lodfs)
+        fnm = economic_dispatch_branch_flow_limits(system_bkpt_inf, GLPK.Optimizer)
         optimize!(fnm)
         @test termination_status(fnm.model) == TerminationStatusCode(2)
 
         # Test for branch flow limits without contingencies
-        t_lodf = Dict{String, DenseAxisArray}()
-        fnm = economic_dispatch_branch_flow_limits(TEST_SYSTEM_RT, GLPK.Optimizer, TEST_PTDF, t_lodf)
+        system_no_contingencies = deepcopy(TEST_SYSTEM_RT)
+        lodf_device = only(get_components(LODFDict, system_no_contingencies))
+        lodf_device.lodf_dict = Dict{String, DenseAxisArray}()
+        fnm = economic_dispatch_branch_flow_limits(system_no_contingencies, GLPK.Optimizer)
         optimize!(fnm)
         @test termination_status(fnm.model) == TerminationStatusCode(1)
         obj_no_conting = objective_value(fnm.model)
 
-        fnm = economic_dispatch_branch_flow_limits(TEST_SYSTEM_RT, GLPK.Optimizer, TEST_PTDF)
-        optimize!(fnm)
-        @test termination_status(fnm.model) == TerminationStatusCode(1)
-        obj_no_conting_dict = objective_value(fnm.model)
-
-        #Compare objectives without and with contingencies
+        # Compare objectives without and with contingencies
         @test obj_no_conting <= obj
-        #Compare objectives without and with lodf dictionary
-        @test obj_no_conting == obj_no_conting_dict
     end
 end
 

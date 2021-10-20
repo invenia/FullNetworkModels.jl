@@ -475,7 +475,7 @@ function _con_branch_flows!(
 )
     model = fnm.model
     p_net = model[:p_net]
-    scenarios = collect(keys(lodfs)) #Collect Scenarios (Case base, and contingency scenarios)
+    scenarios = collect(keys(lodfs)) # all scenarios (base case and contingencies)
     @variable(model, fl[m in branches_names_monitored_or_out, t in fnm.datetimes, c in scenarios])
     branches_out_per_scenario_names = _get_branches_out_per_scenario_names(lodfs)
     @constraint(
@@ -524,7 +524,7 @@ function _con_branch_flow_limits!(
     sl1_fl = model[:sl1_fl]
     sl2_fl = model[:sl2_fl]
     cont_scenarios = filter(x -> x ≠ "base_case", scenarios)
-    #Case Base
+    # Base case
     @constraint(
         model,
         branch_flow_max_base[m in mon_branches_names, t in fnm.datetimes, c in ["base_case"]],
@@ -637,7 +637,7 @@ function _con_branch_flow_slacks!(
         branch_flow_sl2_one[m in branches_one_break_points, t in datetimes, c in scenarios],
         sl2_fl[m, t, c] == 0
     )
-    # Constraints Two Break Points Case Base
+    # Constraints Two Break Points Base Case
     @constraint(
         model,
         branch_flow_sl1_two_base[m in branches_two_break_points, t in datetimes, c in ["base_case"]],
@@ -669,16 +669,16 @@ is formulated different for the Unit Commitment and for the Economic Dispatch.
 
 The constraints avobe are formulated as:
 
-The Case Base Net Nodal Injection for the Economic Dispatch is formulated as:
+The Base Case Net Nodal Injection for the Economic Dispatch is formulated as:
 $(latex(_con_nodal_net_injection_ed!))
 
-The Case Base Net Nodal Injection for the Unit Commitment is formulated as:
+The Base Case Net Nodal Injection for the Unit Commitment is formulated as:
 $(latex(_con_nodal_net_injection_uc!))
 
-Case Base and Contingency Branch Flows are formulated as:
+Base Case and Contingency Branch Flows are formulated as:
 $(latex(_con_branch_flows!))
 
-Case Base and Contingency Branch Flows Limits are formulated as:
+Base Case and Contingency Branch Flows Limits are formulated as:
 $(latex(_con_branch_flow_limits!))
 
 The constraints are named `nodal_net_injection`, `branch_flows`, `branch_flow_max` (for the

@@ -58,6 +58,7 @@ export get_initial_generation
 export get_initial_uptime
 export get_load_names
 export get_load_names_perbus
+export get_lodf_dict
 export get_minimum_downtime
 export get_minimum_uptime
 export get_monitored_branch_names
@@ -71,6 +72,7 @@ export get_on_sup_providers
 export get_operating_reserve_requirements
 export get_pmax
 export get_pmin
+export get_ptdf
 export get_ramp_rates
 export get_regmax
 export get_regmin
