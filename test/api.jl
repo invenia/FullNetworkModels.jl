@@ -6,7 +6,7 @@
     t2 = DateTime(2017, 12, 15, 23)
 
     @testset "Prints" begin
-        @test sprint(show, fnm) == "FullNetworkModel{UC}\nTime periods: $t1 to $t2\nModel formulation: 0 variables and 0 constraints\nSystem: 32 components\n"
+        @test sprint(show, fnm) == "FullNetworkModel{UC}\nTime periods: $t1 to $t2\nModel formulation: 0 variables and 0 constraints\nSystem: 34 components\n"
     end
 
     @testset "Accessors" begin
@@ -95,6 +95,15 @@
         )
         @test get_initial_downtime(system) == Dict(3 => 0.0, 7 => 0.0)
         @test get_ramp_rates(system) == Dict(3 => 0.25, 7 => 0.25)
+
+        ptdf_mat = get_ptdf(system)
+        @test ptdf_mat isa DenseAxisArray
+        @test issetequal(axes(ptdf_mat, 1), ("Line1", "Line2", "Line3", "Transformer1"))
+        @test issetequal(axes(ptdf_mat, 2), (1, 2, 3))
+
+        lodf_dict = get_lodf_dict(system)
+        @test issetequal(keys(lodf_dict), ("conting1", "conting2"))
+        @test eltype(values(lodf_dict)) == DenseAxisArray
 
         @testset "Get data for specific datetimes" begin
             datetimes = get_forecast_timestamps(system)[5:8]
