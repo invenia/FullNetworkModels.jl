@@ -183,7 +183,6 @@ function tests_branch_flow_limits(T, fnm::FullNetworkModel)
     load_names_perbus = get_load_names_perbus(PowerLoad, system)
     D = get_fixed_loads(system)
     pg = Array{String}(undef, 3)
-    scenarios = ["base_case", "conting1", "conting2"]
     if T == UC
         inc_names_perbus = get_bid_names_perbus(Increment, system)
         dec_names_perbus = get_bid_names_perbus(Decrement, system)
@@ -244,7 +243,7 @@ function tests_branch_flow_limits(T, fnm::FullNetworkModel)
     mon_branches_rates_a = get_branch_rates(mon_branches_names, system)
     mon_branches_rates_b = get_branch_rates_b(mon_branches_names, system)
     @testset "Thermal Branch Limits" for t in fnm.datetimes
-        for c in scenarios
+        for c in TEST_SCENARIOS
             for m in mon_branches_names
                 rate = c =="base_case" ? mon_branches_rates_a[m] : mon_branches_rates_b[m]
                 if c == "base_case"
