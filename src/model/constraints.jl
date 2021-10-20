@@ -699,7 +699,7 @@ function con_thermal_branch!(fnm::FullNetworkModel)
     sys_ptdf = get_ptdf(system)
     lodf_dict = get_lodf_dict(system)
     lodfs = _add_base_case_to_lodfs(lodf_dict) # Add base case to the LODF dictionary
-    scenarios = collect(keys(lodfs)) # All scenarios (base base, and contingency scenarios)
+    scenarios = collect(keys(lodfs)) # All scenarios (base case and contingency scenarios)
     branches_out_names = unique(vcat(axes.(values(lodfs),2)...))
     # The flows need to be defined only for the branches that are monitored or going
     # out under some contingency
