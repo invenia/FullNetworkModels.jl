@@ -649,3 +649,24 @@ function get_must_run_flag(
 )
     return get_generator_time_series(system, "must_run", datetimes)
 end
+
+"""
+    get_ptdf(system::System) -> DenseAxisArray
+
+Returns the PTDF matrix stored in the `system` as a `PTDF` device.
+"""
+function get_ptdf(system::System)
+    ptdf_device = only(get_components(PTDF, system))
+    return ptdf_device.ptdf_mat
+end
+
+"""
+    get_lodf_dict(system::System) -> Dict{String, DenseAxisArray}
+
+Returns the LODF dictionary that points contingencies to branches going out that is stored
+in the `system` as an `LODFDict` device.
+"""
+function get_lodf_dict(system::System)
+    lodf_device = only(get_components(LODFDict, system))
+    return lodf_device.lodf_dict
+end

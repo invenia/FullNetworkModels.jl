@@ -163,7 +163,7 @@ function tests_energy_balance(fnm::FullNetworkModel{<:UC})
     return nothing
 end
 
-function tests_branch_flow_limits(T, fnm::FullNetworkModel, sys_ptdf, lodfs)
+function tests_branch_flow_limits(T, fnm::FullNetworkModel)
     @testset "All branch constraints were added" begin
         @test has_constraint(fnm.model, "nodal_net_injection")
         @test has_constraint(fnm.model, "branch_flows")
@@ -183,10 +183,6 @@ function tests_branch_flow_limits(T, fnm::FullNetworkModel, sys_ptdf, lodfs)
     load_names_perbus = get_load_names_perbus(PowerLoad, system)
     D = get_fixed_loads(system)
     pg = Array{String}(undef, 3)
-    base_case = []
-    conting1 = ["Line2"]
-    conting2 = ["Line2", "Line3"]
-    scenarios = ["base_case", "conting1", "conting2"]
     if T == UC
         inc_names_perbus = get_bid_names_perbus(Increment, system)
         dec_names_perbus = get_bid_names_perbus(Decrement, system)
@@ -247,7 +243,7 @@ function tests_branch_flow_limits(T, fnm::FullNetworkModel, sys_ptdf, lodfs)
     mon_branches_rates_a = get_branch_rates(mon_branches_names, system)
     mon_branches_rates_b = get_branch_rates_b(mon_branches_names, system)
     @testset "Thermal Branch Limits" for t in fnm.datetimes
-        for c in scenarios
+        for c in TEST_SCENARIOS
             for m in mon_branches_names
                 rate = c =="base_case" ? mon_branches_rates_a[m] : mon_branches_rates_b[m]
                 if c == "base_case"
@@ -405,21 +401,14 @@ end
         @test u[7, :].data == ones(24)
     end
 
-    @testset "Thermal branch constraints $T" for (T, t_system, t_ptdf) in
-        ((UC, TEST_SYSTEM, TEST_PTDF), (ED, TEST_SYSTEM_RT, TEST_PTDF))
+    @testset "Thermal branch constraints $T" for (T, t_system) in
+        ((UC, TEST_SYSTEM), (ED, TEST_SYSTEM_RT))
         @testset "_con_branch_flow_limits!" begin
             fnm = FullNetworkModel{T}(t_system, GLPK.Optimizer)
             var_thermal_generation!(fnm)
-            conting1 = ["Line2"]
-            conting2 = ["Line2", "Line3"]
-            branches_out_per_scenario_names = Dict([
-                ("conting1", conting1),
-                ("conting2", conting2)
-            ])
-            t_lodfs = _compute_contingency_lodfs(branches_out_per_scenario_names, TEST_PSSE, TEST_PTDF)
             T == UC && var_bids!(fnm)
-            con_thermal_branch!(fnm, t_ptdf, t_lodfs)
-            tests_branch_flow_limits(T, fnm, t_ptdf, t_lodfs)
+            con_thermal_branch!(fnm)
+            tests_branch_flow_limits(T, fnm)
         end
     end
 end
