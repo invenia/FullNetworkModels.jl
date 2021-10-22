@@ -657,13 +657,15 @@ function _con_branch_flow_slacks!(
         sl1_fl[m, t, c] <= (mon_branches_break_points[m][2]-mon_branches_break_points[m][1])*(mon_branches_rates_b[m]/100)
     )
     # Add slacks penalties to the objective
+    slack_cost = AffExpr()
     for m in branches_one_break_points, t in datetimes, c in scenarios
-        set_objective_coefficient(model, sl1_fl[m, t, c], mon_branches_penalties[m][1])
+        add_to_expression!(slack_cost, sl1_fl[m, t, c] * mon_branches_penalties[m][1])
     end
     for m in branches_two_break_points, t in datetimes, c in scenarios
-        set_objective_coefficient(model, sl1_fl[m, t, c], mon_branches_penalties[m][1])
-        set_objective_coefficient(model, sl2_fl[m, t, c], mon_branches_penalties[m][2])
+        add_to_expression!(slack_cost, sl1_fl[m, t, c] * mon_branches_penalties[m][1])
+        add_to_expression!(slack_cost, sl2_fl[m, t, c] * mon_branches_penalties[m][2])
     end
+    _add_to_objective!(model, slack_cost)
     return fnm
 end
 
