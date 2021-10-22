@@ -166,7 +166,8 @@ end
 function tests_branch_flow_limits(T, fnm::FullNetworkModel)
     @testset "All branch constraints were added" begin
         @test has_constraint(fnm.model, "nodal_net_injection")
-        @test has_constraint(fnm.model, "branch_flows")
+        @test has_constraint(fnm.model, "branch_flows_base")
+        @test has_constraint(fnm.model, "branch_flows_conting")
         @test has_constraint(fnm.model, "branch_flow_max_base")
         @test has_constraint(fnm.model, "branch_flow_min_base")
         @test has_constraint(fnm.model, "branch_flow_max_cont")
@@ -230,14 +231,14 @@ function tests_branch_flow_limits(T, fnm::FullNetworkModel)
 
     @testset "Branch flows constraints" for t in fnm.datetimes
         m = "Transformer1"
-        (c, c1, c2) = ("base_case", "conting1", "conting2")
+        (c1, c2) = ("conting1", "conting2")
         (ptdf2, ptdf3)  = ("0.12500000000000003", "0.12499999999999997")
-        @test sprint(show, constraint_by_name(fnm.model, "branch_flows[$m,$t,$c]")) ==
-        "branch_flows[$m,$t,$c] : -$ptdf2 p_net[2,$t] + $ptdf3 p_net[3,$t] + fl[$m,$t,$c] = 0.0"
-        @test sprint(show, constraint_by_name(fnm.model, "branch_flows[$m,$t,$c1]")) ==
-        "branch_flows[$m,$t,$c1] : -$ptdf2 p_net[2,$t] + $ptdf3 p_net[3,$t] - 0.5 fl[Line2,$t,base_case] + fl[$m,$t,$c1] = 0.0"
-        @test sprint(show, constraint_by_name(fnm.model, "branch_flows[$m,$t,$c2]")) ==
-        "branch_flows[$m,$t,$c2] : -$ptdf2 p_net[2,$t] + $ptdf3 p_net[3,$t] + fl[$m,$t,$c2] - fl[Line3,$t,base_case] - fl[Line2,$t,base_case] = 0.0"
+        @test sprint(show, constraint_by_name(fnm.model, "branch_flows_base[$m,$t]")) ==
+        "branch_flows_base[$m,$t] : -$ptdf2 p_net[2,$t] + $ptdf3 p_net[3,$t] + fl[$m,$t,base_case] = 0.0"
+        @test sprint(show, constraint_by_name(fnm.model, "branch_flows_conting[$m,$t,$c1]")) ==
+        "branch_flows_conting[$m,$t,$c1] : -0.5 fl[Line2,$t,base_case] - fl[$m,$t,base_case] + fl[$m,$t,$c1] = 0.0"
+        @test sprint(show, constraint_by_name(fnm.model, "branch_flows_conting[$m,$t,$c2]")) ==
+        "branch_flows_conting[$m,$t,$c2] : fl[$m,$t,$c2] - fl[Line3,$t,base_case] - fl[Line2,$t,base_case] - fl[$m,$t,base_case] = 0.0"
     end
 
     mon_branches_rates_a = get_branch_rates(mon_branches_names, system)
