@@ -464,7 +464,8 @@ $(latex(_con_branch_flows!))
 
 Where the LODF for the base-case is zero.
 
-The constraints are named `branch_flows`.
+The constraints are named `branch_flows_base` for the base case and `branch_flows_conting`
+for the contingency scenarios.
 """
 function _con_branch_flows!(
     fnm::FullNetworkModel,
@@ -476,12 +477,18 @@ function _con_branch_flows!(
     model = fnm.model
     p_net = model[:p_net]
     scenarios = collect(keys(lodfs)) # all scenarios (base case and contingencies)
+    cont_scenarios = filter(x -> x ≠ "base_case", scenarios)
     @variable(model, fl[m in branches_names_monitored_or_out, t in fnm.datetimes, c in scenarios])
     branches_out_per_scenario_names = _get_branches_out_per_scenario_names(lodfs)
     @constraint(
         model,
-        branch_flows[m in branches_names_monitored_or_out, t in fnm.datetimes, c in scenarios],
-        fl[m, t, c] == sum(sys_ptdf[m, n] * p_net[n, t] for n in bus_numbers) +
+        branch_flows_base[m in branches_names_monitored_or_out, t in fnm.datetimes],
+        fl[m, t, "base_case"] == sum(sys_ptdf[m, n] * p_net[n, t] for n in bus_numbers)
+    )
+    @constraint(
+        model,
+        branch_flows_conting[m in branches_names_monitored_or_out, t in fnm.datetimes, c in cont_scenarios],
+        fl[m, t, c] == fl[m, t, "base_case"] +
         sum(lodfs[c][m, l] * fl[l, t, "base_case"] for l in branches_out_per_scenario_names[c])
     )
     return fnm
@@ -681,8 +688,8 @@ $(latex(_con_branch_flows!))
 Base Case and Contingency Branch Flows Limits are formulated as:
 $(latex(_con_branch_flow_limits!))
 
-The constraints are named `nodal_net_injection`, `branch_flows`, `branch_flow_max` (for the
-high boundary) and `branch_flow_min` (for the lower boundary) respectively.
+The constraints are named `nodal_net_injection`, `branch_flows_base`, `branch_flows_conting`,
+`branch_flow_max` (for the high boundary) and `branch_flow_min` (for the lower boundary) respectively.
 """
 function con_thermal_branch!(fnm::FullNetworkModel)
     #Shared Data
