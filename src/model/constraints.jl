@@ -452,7 +452,14 @@ function latex(::typeof(_con_branch_flows!))
 end
 
 """
-    _con_branch_flows!(fnm::FullNetworkModel, bus_numbers, branches_names_monitored_or_out, sys_ptdf, lodfs)
+    _con_branch_flows!(
+        fnm::FullNetworkModel,
+        bus_numbers,
+        mon_branches_names,
+        branches_names_monitored_or_out,
+        sorted_ptdf,
+        lodfs
+    )
 
 Adds the branch power flow constraints for all scenarios of the system to the full network
 model. The scenarios include the base-case and selected contingency scenarios. The constraints
@@ -470,6 +477,7 @@ for the contingency scenarios.
 function _con_branch_flows!(
     fnm::FullNetworkModel,
     bus_numbers,
+    mon_branches_names,
     branches_names_monitored_or_out,
     sorted_ptdf,
     lodfs
@@ -484,14 +492,14 @@ function _con_branch_flows!(
     @constraint(
         model,
         branch_flows_base[m in branches_names_monitored_or_out, t in fnm.datetimes],
-        fl[m, t, "base_case"] == sum(sorted_ptdf[m, n] * p_net[n, t] for n in bus_numbers)
+        fl[m, t, "base_case"] == sorted_ptdf[m, :].data' * p_net[:, t].data
     )
-    # sorted_ptdf[m, :]' * p_net[:, t]
     @constraint(
         model,
-        branch_flows_conting[m in branches_names_monitored_or_out, t in fnm.datetimes, c in cont_scenarios],
-        fl[m, t, c] == fl[m, t, "base_case"] +
-        sum(lodfs[c][m, l] * fl[l, t, "base_case"] for l in branches_out_per_scenario_names[c])
+        branch_flows_conting[m in mon_branches_names, t in fnm.datetimes, c in cont_scenarios],
+        fl[m, t, c] == fl[m, t, "base_case"] + sum(
+            lodfs[c][m, l] * fl[l, t, "base_case"] for l in branches_out_per_scenario_names[c]
+        )
     )
     return fnm
 end
@@ -720,8 +728,9 @@ function con_thermal_branch!(fnm::FullNetworkModel)
     _con_branch_flows!(
         fnm,
         bus_numbers,
+        mon_branches_names,
         branches_names_monitored_or_out,
-        sys_ptdf,
+        sorted_ptdf,
         lodfs
     )
     _con_branch_flow_slacks!(
