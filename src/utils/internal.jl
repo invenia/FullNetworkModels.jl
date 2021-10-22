@@ -224,3 +224,16 @@ function _add_base_case_to_lodfs(lodfs)
     lodfs = merge(lodfs,Dict("base_case"=>lodf_base))
     return lodfs
 end
+
+"""
+    _sort_ptdf_axes(ptdf_mat) -> DenseAxisArray
+
+Returns the same PTDF with the 2nd axis sorted with respect to the bus numbers. This is done
+to ensure that the axis is consistent with other defined variables (e.g. `p_net`) when
+performing vector multiplication.
+"""
+function _sort_ptdf_axes(ptdf_mat)
+    sorted_bus_numbers = sort(axes(ptdf_mat, 2))
+    sorted_ptdf = ptdf_mat[:, sorted_bus_numbers]
+    return sorted_ptdf
+end
