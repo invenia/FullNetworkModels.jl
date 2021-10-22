@@ -470,19 +470,20 @@ function _con_branch_flows!(
     fnm::FullNetworkModel,
     bus_numbers,
     branches_names_monitored_or_out,
-    sys_ptdf,
+    sorted_ptdf,
     lodfs
 )
     model = fnm.model
     p_net = model[:p_net]
+    @assert axes(sorted_ptdf, 2) == axes(p_net, 1) # we need this for vector multiplication
     scenarios = collect(keys(lodfs)) # all scenarios (base case and contingencies)
     @variable(model, fl[m in branches_names_monitored_or_out, t in fnm.datetimes, c in scenarios])
     branches_out_per_scenario_names = _get_branches_out_per_scenario_names(lodfs)
     @constraint(
         model,
         branch_flows[m in branches_names_monitored_or_out, t in fnm.datetimes, c in scenarios],
-        fl[m, t, c] == sum(sys_ptdf[m, n] * p_net[n, t] for n in bus_numbers) +
-        sum(lodfs[c][m, l] * fl[l, t, "base_case"] for l in branches_out_per_scenario_names[c])
+        fl[m, t, c] == sorted_ptdf[m, :]' * p_net[:, t] +
+            sum(lodfs[c][m, l] * fl[l, t, "base_case"] for l in branches_out_per_scenario_names[c])
     )
     return fnm
 end
@@ -697,6 +698,7 @@ function con_thermal_branch!(fnm::FullNetworkModel)
     mon_branches_break_points = get_branch_break_points(mon_branches_names, system)
     mon_branches_penalties = get_branch_penalties(mon_branches_names, system)
     sys_ptdf = get_ptdf(system)
+    sorted_ptdf = _sort_ptdf_axes(sys_ptdf) # to enable vector multiplication with `p_net`
     lodf_dict = get_lodf_dict(system)
     lodfs = _add_base_case_to_lodfs(lodf_dict) # Add base case to the LODF dictionary
     scenarios = collect(keys(lodfs)) # All scenarios (base case and contingency scenarios)
