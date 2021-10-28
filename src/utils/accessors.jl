@@ -75,9 +75,10 @@ Returns the names of the bids in `system` that are of type `bidtype`.
 """
 function get_bid_names_perbus(bidtype::Type{<:Device}, system::System)
     bus_numbers = get_bus_numbers(system)
-    bid_names_perbus = Dict{Int, Vector{String}}()
-    for i in bus_numbers
-        bid_names_perbus[i] = map(get_name, get_components(bidtype, system, x -> x.bus.number == i))
+    bids = get_components(bidtype, system)
+    bid_names_perbus = Dict{Int, Vector{String}}(b => String[] for b in bus_numbers)
+    for b in bids
+        push!(bid_names_perbus[b.bus.number], get_name(b))
     end
     return bid_names_perbus
 end
