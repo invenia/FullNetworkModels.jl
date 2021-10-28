@@ -50,11 +50,10 @@ Returns the unit codes of all generators per bus in `system` under type `gentype
 """
 function get_unit_codes_perbus(gentype::Type{<:Generator}, system::System)
     bus_numbers = get_bus_numbers(system)
-    unit_codes_perbus = Dict{Int, Vector{Int}}()
-    for i in bus_numbers
-        unit_codes_perbus[i] = parse.(
-            Int, get_name.(get_components(gentype, system, x -> x.bus.number == i))
-        )
+    gens = get_components(gentype, system)
+    unit_codes_perbus = Dict{Int, Vector{Int}}(b => Int[] for b in bus_numbers)
+    for g in gens
+        push!(unit_codes_perbus[g.bus.number], parse(Int, get_name(g)))
     end
     return unit_codes_perbus
 end
