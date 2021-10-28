@@ -99,9 +99,10 @@ Returns the names of all loads per bus in `system` under type `loadtype`.
 """
 function get_load_names_perbus(loadtype::Type{<:StaticLoad}, system::System)
     bus_numbers = get_bus_numbers(system)
-    load_names_perbus = Dict{Int, Vector{String}}()
-    for i in bus_numbers
-        load_names_perbus[i] = get_name.(get_components(loadtype, system, x -> x.bus.number == i))
+    loads = get_components(loadtype, system)
+    load_names_perbus = Dict{Int, Vector{String}}(b => String[] for b in bus_numbers)
+    for l in loads
+        push!(load_names_perbus[l.bus.number], get_name(l))
     end
     return load_names_perbus
 end
