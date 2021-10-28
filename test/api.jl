@@ -96,6 +96,22 @@
         @test get_initial_downtime(system) == Dict(3 => 0.0, 7 => 0.0)
         @test get_ramp_rates(system) == Dict(3 => 0.25, 7 => 0.25)
 
+        @test get_unit_codes_perbus(ThermalGen, system) == Dict(
+            1 => [3], 2 => [7], 3 => []
+        )
+        @test get_load_names_perbus(PowerLoad, system) == Dict(
+            1 => [], 2 => ["Load1_2"], 3 => ["Load2_3"]
+        )
+        @test get_bid_names_perbus(Increment, system) == Dict(
+            1 => ["111_1"], 2 => [], 3 => []
+        )
+        @test get_bid_names_perbus(Decrement, system) == Dict(
+            1 => ["222_1"], 2 => [], 3 => []
+        )
+        @test get_bid_names_perbus(PriceSensitiveDemand, system) == Dict(
+            1 => ["333_1"], 2 => [], 3 => []
+        )
+
         ptdf_mat = get_ptdf(system)
         @test ptdf_mat isa DenseAxisArray
         @test issetequal(axes(ptdf_mat, 1), ("Line1", "Line2", "Line3", "Transformer1"))
