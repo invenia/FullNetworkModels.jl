@@ -28,9 +28,9 @@ Returns a vector with all forecast timestamps stored in `system`.
 function get_forecast_timestamps(system::System)
     initial_timestamp = get_forecast_initial_timestamp(system)
     horizon = get_forecast_horizon(system)
-    interval = get_forecast_interval(system)
+    resolution = get_time_series_resolution(system)
     return map(0:(horizon - 1)) do t
-        initial_timestamp + t * interval
+        initial_timestamp + t * resolution
     end::Vector{DateTime}
 end
 
