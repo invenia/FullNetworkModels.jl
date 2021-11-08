@@ -1,6 +1,6 @@
 @testset "Templates" begin
     @testset "unit_commitment" begin
-        fnm = unit_commitment(TEST_SYSTEM, GLPK.Optimizer)
+        fnm = unit_commitment(TEST_SYSTEM, Cbc.Optimizer)
         datetimes = fnm.datetimes
         tests_thermal_variable(fnm, "p")
         tests_commitment(fnm)
@@ -23,14 +23,14 @@
         gens[1].active_power = 50.0
         @test get_initial_generation(system_infeasible)[7] == 50.0
 
-        fnm = unit_commitment(system_infeasible, GLPK.Optimizer; relax_integrality=true)
+        fnm = unit_commitment(system_infeasible, Cbc.Optimizer; relax_integrality=true)
         optimize!(fnm)
-        # Should be infeasible
-        @test termination_status(fnm.model) == TerminationStatusCode(2)
+        # Should be infeasible (termination 6 because Cbc uses INFEASIBLE_OR_UNBOUNDED)
+        @test termination_status(fnm.model) == TerminationStatusCode(6)
 
         # Now do the same with soft ramp constraints – should be feasible
         fnm_soft_ramps = unit_commitment_soft_ramps(
-            system_infeasible, GLPK.Optimizer; slack=1e3, relax_integrality=true
+            system_infeasible, Cbc.Optimizer; slack=1e3, relax_integrality=true
         )
         # Basic ramp rate tests with correct slack
         tests_ramp_rates(fnm_soft_ramps; slack=1e3)
@@ -42,7 +42,7 @@
         # Now do the same for no ramp constraints - should be feasible and have a lower
         # objective value (since there's no penalty for violating soft constraints)
         fnm_no_ramps = unit_commitment_no_ramps(
-            system_infeasible, GLPK.Optimizer; relax_integrality=true
+            system_infeasible, Cbc.Optimizer; relax_integrality=true
         )
         optimize!(fnm_no_ramps)
         @test termination_status(fnm_no_ramps.model) == TerminationStatusCode(1)
@@ -66,11 +66,11 @@
         end
     end
     @testset "unit_commitment_branch_flow_limits" begin
-        fnm = unit_commitment_branch_flow_limits(TEST_SYSTEM, GLPK.Optimizer)
+        fnm = unit_commitment_branch_flow_limits(TEST_SYSTEM, Cbc.Optimizer)
         tests_branch_flow_limits(UC, fnm)
 
         # Solve the original UC with thermal branch constraints
-        fnm = unit_commitment_branch_flow_limits(TEST_SYSTEM, GLPK.Optimizer)
+        fnm = unit_commitment_branch_flow_limits(TEST_SYSTEM, Cbc.Optimizer)
         optimize!(fnm)
         # Should be feasible
         @test termination_status(fnm.model) == TerminationStatusCode(1)
@@ -96,7 +96,7 @@
         Transformer1.ext["penalties"] = [1000.0, 2000.0]
 
         # Solve, slack 1 should be active in base-case and conting2 but not in conting1
-        fnm = unit_commitment_branch_flow_limits(system_sl1, GLPK.Optimizer)
+        fnm = unit_commitment_branch_flow_limits(system_sl1, Cbc.Optimizer)
         optimize!(fnm)
         @test termination_status(fnm.model) == TerminationStatusCode(1)
         obj_sl1 = objective_value(fnm.model)
@@ -120,7 +120,7 @@
         Transformer1.ext["penalties"] = [1000.0, 2000.0]
 
         # Solve, slack 2 should be active
-        fnm = unit_commitment_branch_flow_limits(system_sl2, GLPK.Optimizer)
+        fnm = unit_commitment_branch_flow_limits(system_sl2, Cbc.Optimizer)
         optimize!(fnm)
         @test termination_status(fnm.model) == TerminationStatusCode(1)
         obj_sl2 = objective_value(fnm.model)
@@ -148,7 +148,7 @@
         Transformer1.ext["penalties"] = [1000.0, 2000.0]
 
         # Solve, slack 2 should be active in all cases
-        fnm = unit_commitment_branch_flow_limits(system_sl2_all, GLPK.Optimizer)
+        fnm = unit_commitment_branch_flow_limits(system_sl2_all, Cbc.Optimizer)
         optimize!(fnm)
         @test termination_status(fnm.model) == TerminationStatusCode(1)
         obj_sl2_all = objective_value(fnm.model)
@@ -174,7 +174,7 @@
         system_no_contingencies = deepcopy(TEST_SYSTEM)
         lodf_device = only(get_components(LODFDict, system_no_contingencies))
         lodf_device.lodf_dict = Dict{String, DenseAxisArray}()
-        fnm = unit_commitment_branch_flow_limits(TEST_SYSTEM, GLPK.Optimizer)
+        fnm = unit_commitment_branch_flow_limits(TEST_SYSTEM, Cbc.Optimizer)
         optimize!(fnm)
         @test termination_status(fnm.model) == TerminationStatusCode(1)
         obj_no_conting = objective_value(fnm.model)
@@ -184,7 +184,7 @@
     end
 
     @testset "economic_dispatch" begin
-        fnm = economic_dispatch(TEST_SYSTEM_RT, GLPK.Optimizer)
+        fnm = economic_dispatch(TEST_SYSTEM_RT, Clp.Optimizer)
         tests_thermal_variable(fnm, "p")
         tests_generation_limits(fnm)
         tests_thermal_variable_cost(fnm)
@@ -195,13 +195,13 @@
         tests_energy_balance(fnm)
 
         # Solve the original ED with slack = nothing
-        fnm = economic_dispatch(TEST_SYSTEM_RT, GLPK.Optimizer; slack = nothing)
+        fnm = economic_dispatch(TEST_SYSTEM_RT, Clp.Optimizer; slack = nothing)
         optimize!(fnm)
         # Should be feasible
         @test termination_status(fnm.model) == TerminationStatusCode(1)
         obj_orig = objective_value(fnm.model)
         # Solve it with slack = 1e4
-        fnm = economic_dispatch(TEST_SYSTEM_RT, GLPK.Optimizer; slack = 1e4)
+        fnm = economic_dispatch(TEST_SYSTEM_RT, Clp.Optimizer; slack = 1e4)
         optimize!(fnm)
         # Should be feasible with a smaller objective value.
         @test termination_status(fnm.model) == TerminationStatusCode(1)
@@ -214,15 +214,15 @@
         @test reg_1.requirement == 1e3
 
         # Solve with no slack – should be infeasible
-        fnm = economic_dispatch(system_infeasible, GLPK.Optimizer; slack=nothing)
+        fnm = economic_dispatch(system_infeasible, Clp.Optimizer; slack=nothing)
         optimize!(fnm)
         @test termination_status(fnm.model) == TerminationStatusCode(2)
         # Solve with two different values of slack – should be feasible with different objectives
-        fnm = economic_dispatch(system_infeasible, GLPK.Optimizer; slack=1e2)
+        fnm = economic_dispatch(system_infeasible, Clp.Optimizer; slack=1e2)
         optimize!(fnm)
         @test termination_status(fnm.model) == TerminationStatusCode(1)
         obj_low_slack = objective_value(fnm.model)
-        fnm = economic_dispatch(system_infeasible, GLPK.Optimizer; slack=1e4)
+        fnm = economic_dispatch(system_infeasible, Clp.Optimizer; slack=1e4)
         optimize!(fnm)
         @test termination_status(fnm.model) == TerminationStatusCode(1)
         obj_high_slack = objective_value(fnm.model)
@@ -232,11 +232,11 @@
         @test obj_high_slack > obj_low_slack
     end
     @testset "economic_dispatch_branch_flow_limits" begin
-        fnm = economic_dispatch_branch_flow_limits(TEST_SYSTEM_RT, GLPK.Optimizer)
+        fnm = economic_dispatch_branch_flow_limits(TEST_SYSTEM_RT, Clp.Optimizer)
         tests_branch_flow_limits(ED, fnm)
 
         # Solve the original ED with thermal branch constraints
-        fnm = economic_dispatch_branch_flow_limits(TEST_SYSTEM_RT, GLPK.Optimizer)
+        fnm = economic_dispatch_branch_flow_limits(TEST_SYSTEM_RT, Clp.Optimizer)
         optimize!(fnm)
         # Should be feasible
         @test termination_status(fnm.model) == TerminationStatusCode(1)
@@ -262,7 +262,7 @@
         Transformer1.ext["penalties"] = [1000.0, 2000.0]
 
         # Solve, slack 1 should be active in base-case and conting2 but not in conting1
-        fnm = economic_dispatch_branch_flow_limits(system_sl1, GLPK.Optimizer)
+        fnm = economic_dispatch_branch_flow_limits(system_sl1, Clp.Optimizer)
         optimize!(fnm)
         @test termination_status(fnm.model) == TerminationStatusCode(1)
         obj_sl1 = objective_value(fnm.model)
@@ -286,7 +286,7 @@
         Transformer1.ext["penalties"] = [1000.0, 2000.0]
 
         # Solve, slack 2 should be active
-        fnm = economic_dispatch_branch_flow_limits(system_sl2, GLPK.Optimizer)
+        fnm = economic_dispatch_branch_flow_limits(system_sl2, Clp.Optimizer)
         optimize!(fnm)
         @test termination_status(fnm.model) == TerminationStatusCode(1)
         obj_sl2 = objective_value(fnm.model)
@@ -314,7 +314,7 @@
         Transformer1.ext["penalties"] = [1000.0, 2000.0]
 
         # Solve, slack 2 should be active in all cases
-        fnm = economic_dispatch_branch_flow_limits(system_sl2_all, GLPK.Optimizer)
+        fnm = economic_dispatch_branch_flow_limits(system_sl2_all, Clp.Optimizer)
         optimize!(fnm)
         @test termination_status(fnm.model) == TerminationStatusCode(1)
         obj_sl2_all = objective_value(fnm.model)
@@ -327,7 +327,7 @@
             rate = c == "base_case" ? t_branch.rate : t_branch.ext["rate_b"]
             tr1_sl1_max = (Transformer1.ext["break_points"][2]-Transformer1.ext["break_points"][1])*(rate/100)
             @test value.(fnm.model[:fl][m, fnm.datetimes[1], c]) > rate
-            @test value.(fnm.model[:sl1_fl][m, fnm.datetimes[1], c]) == tr1_sl1_max
+            @test isapprox(value.(fnm.model[:sl1_fl][m, fnm.datetimes[1], c]), tr1_sl1_max)
             @test value.(fnm.model[:sl2_fl][m, fnm.datetimes[1], c]) > 0
         end
 
@@ -345,7 +345,7 @@
         Transformer1.ext["penalties"] = [1000.0]
 
         # Solve, slack 1 should be active
-        fnm = economic_dispatch_branch_flow_limits(system_bkpt_one, GLPK.Optimizer)
+        fnm = economic_dispatch_branch_flow_limits(system_bkpt_one, Clp.Optimizer)
         optimize!(fnm)
         @test termination_status(fnm.model) == TerminationStatusCode(1)
         obj_bkpt_one = objective_value(fnm.model)
@@ -366,7 +366,7 @@
         Transformer1.ext["penalties"] = []
 
         # Solve, should be feasible
-        fnm = economic_dispatch_branch_flow_limits(system_bkpt_zero, GLPK.Optimizer)
+        fnm = economic_dispatch_branch_flow_limits(system_bkpt_zero, Clp.Optimizer)
         optimize!(fnm)
         @test termination_status(fnm.model) == TerminationStatusCode(1)
         obj_bkpt_zero = objective_value(fnm.model)
@@ -389,7 +389,7 @@
         Transformer1.ext["penalties"] = []
 
         # Solve, should be infeasible
-        fnm = economic_dispatch_branch_flow_limits(system_bkpt_inf, GLPK.Optimizer)
+        fnm = economic_dispatch_branch_flow_limits(system_bkpt_inf, Clp.Optimizer)
         optimize!(fnm)
         @test termination_status(fnm.model) == TerminationStatusCode(2)
 
@@ -397,7 +397,7 @@
         system_no_contingencies = deepcopy(TEST_SYSTEM_RT)
         lodf_device = only(get_components(LODFDict, system_no_contingencies))
         lodf_device.lodf_dict = Dict{String, DenseAxisArray}()
-        fnm = economic_dispatch_branch_flow_limits(system_no_contingencies, GLPK.Optimizer)
+        fnm = economic_dispatch_branch_flow_limits(system_no_contingencies, Clp.Optimizer)
         optimize!(fnm)
         @test termination_status(fnm.model) == TerminationStatusCode(1)
         obj_no_conting = objective_value(fnm.model)
@@ -410,10 +410,10 @@ end
 # Test that templates don't error for a given `datetimes` argument
 function test_templates(datetimes)
     for template in (unit_commitment, unit_commitment_no_ramps, unit_commitment_soft_ramps)
-        @test template(TEST_SYSTEM, GLPK.Optimizer, datetimes) isa FullNetworkModel
+        @test template(TEST_SYSTEM, Cbc.Optimizer, datetimes) isa FullNetworkModel
     end
     for template in (economic_dispatch, )
-        @test template(TEST_SYSTEM_RT, GLPK.Optimizer, datetimes) isa FullNetworkModel
+        @test template(TEST_SYSTEM_RT, Clp.Optimizer, datetimes) isa FullNetworkModel
     end
     return nothing
 end

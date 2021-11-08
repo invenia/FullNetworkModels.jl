@@ -1,8 +1,9 @@
+using Cbc
+using Clp
 using Dates
 using ElectricityMarkets
 using FullNetworkDataPrep: DA, RT
 using FullNetworkDataPrep.TestUtils: fake_3bus_system
-using GLPK
 using FullNetworkModels
 using MathOptInterface: TerminationStatusCode
 using JuMP
