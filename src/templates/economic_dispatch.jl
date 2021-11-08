@@ -34,7 +34,7 @@ Thermal branch flow limits are not considered in this formulation.
 
 Arguments:
  - `system::System`: The PowerSystems system that provides the input data.
- - `solver`: The solver of choice, e.g. `GLPK.Optimizer`.
+ - `solver`: The solver of choice, e.g. `Clp.Optimizer`.
  - `datetimes=get_forecast_timestamps(system)`: The time periods considered in the model.
 
 Keyword arguments:
@@ -101,7 +101,7 @@ likely that these constraints are not binding within the hourly time period.
 
 Arguments:
  - `system::System`: The PowerSystems system that provides the input data.
- - `solver`: The solver of choice, e.g. `GLPK.Optimizer`.
+ - `solver`: The solver of choice, e.g. `Clp.Optimizer`.
  - `datetimes=get_forecast_timestamps(system)`: The time periods considered in the model.
 
 Keyword arguments:

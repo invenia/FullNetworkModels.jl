@@ -46,7 +46,7 @@ See also [`unit_commitment_soft_ramps`](@ref) and [`unit_commitment_no_ramps`](@
 
 # Arguments
  - `system::System`: The PowerSystems system that provides the input data.
- - `solver`: The solver of choice, e.g. `GLPK.Optimizer`.
+ - `solver`: The solver of choice, e.g. `Cbc.Optimizer`.
  - `datetimes=get_forecast_timestamps(system)`: The time periods considered in the model.
 
 # Keywords
@@ -103,7 +103,7 @@ See also [`unit_commitment`](@ref) and [`unit_commitment_no_ramps`](@ref).
 
 # Arguments
  - `system::System`: The PowerSystems system that provides the input data.
- - `solver`: The solver of choice, e.g. `GLPK.Optimizer`.
+ - `solver`: The solver of choice, e.g. `Cbc.Optimizer`.
  - `datetimes=get_forecast_timestamps(system)`: The time periods considered in the model.
 
 # Keywords
@@ -161,7 +161,7 @@ See also [`unit_commitment`](@ref) and [`unit_commitment_soft_ramps`](@ref).
 
 # Arguments
  - `system::System`: The PowerSystems system that provides the input data.
- - `solver`: The solver of choice, e.g. `GLPK.Optimizer`.
+ - `solver`: The solver of choice, e.g. `Cbc.Optimizer`.
  - `datetimes=get_forecast_timestamps(system)`: The time periods considered in the model.
 
 # Keywords
@@ -252,7 +252,7 @@ See also [`unit_commitment_soft_ramps_branch_flow_limits`](@ref) and
 
 # Arguments
  - `system::System`: The PowerSystems system that provides the input data.
- - `solver`: The solver of choice, e.g. `GLPK.Optimizer`.
+ - `solver`: The solver of choice, e.g. `Cbc.Optimizer`.
  - `datetimes=get_forecast_timestamps(system)`: The time periods considered in the model.
 
 # Keywords
@@ -307,7 +307,7 @@ See also [`unit_commitment_branch_flow_limits`](@ref) and [`unit_commitment_soft
 
 # Arguments
  - `system::System`: The PowerSystems system that provides the input data.
- - `solver`: The solver of choice, e.g. `GLPK.Optimizer`.
+ - `solver`: The solver of choice, e.g. `Cbc.Optimizer`.
  - `datetimes=get_forecast_timestamps(system)`: The time periods considered in the model.
 
 # Keywords
@@ -363,7 +363,7 @@ See also [`unit_commitment_branch_flow_limits`](@ref) and [`unit_commitment_no_r
 
 # Arguments
  - `system::System`: The PowerSystems system that provides the input data.
- - `solver`: The solver of choice, e.g. `GLPK.Optimizer`.
+ - `solver`: The solver of choice, e.g. `Cbc.Optimizer`.
  - `datetimes=get_forecast_timestamps(system)`: The time periods considered in the model.
 
 # Keywords

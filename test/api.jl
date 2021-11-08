@@ -167,8 +167,8 @@
         # test model has no solver
         @test solver_name(fnm.model) === solver_name(Model())
 
-        set_optimizer(fnm, GLPK.Optimizer)
-        @test solver_name(fnm.model) == "GLPK"
+        set_optimizer(fnm, Clp.Optimizer)
+        @test solver_name(fnm.model) == "Clp"
 
         set_optimizer_attribute(fnm, "tol_obj", 1e-2)
         @test get_optimizer_attribute(fnm, "tol_obj") == 1e-2
