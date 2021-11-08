@@ -25,8 +25,8 @@
 
         fnm = unit_commitment(system_infeasible, Cbc.Optimizer; relax_integrality=true)
         optimize!(fnm)
-        # Should be infeasible
-        @test termination_status(fnm.model) == TerminationStatusCode(2)
+        # Should be infeasible (termination 6 because Cbc uses INFEASIBLE_OR_UNBOUNDED)
+        @test termination_status(fnm.model) == TerminationStatusCode(6)
 
         # Now do the same with soft ramp constraints – should be feasible
         fnm_soft_ramps = unit_commitment_soft_ramps(
@@ -327,7 +327,7 @@
             rate = c == "base_case" ? t_branch.rate : t_branch.ext["rate_b"]
             tr1_sl1_max = (Transformer1.ext["break_points"][2]-Transformer1.ext["break_points"][1])*(rate/100)
             @test value.(fnm.model[:fl][m, fnm.datetimes[1], c]) > rate
-            @test value.(fnm.model[:sl1_fl][m, fnm.datetimes[1], c]) == tr1_sl1_max
+            @test isapprox(value.(fnm.model[:sl1_fl][m, fnm.datetimes[1], c]), tr1_sl1_max)
             @test value.(fnm.model[:sl2_fl][m, fnm.datetimes[1], c]) > 0
         end
 

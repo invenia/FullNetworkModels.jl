@@ -170,12 +170,12 @@
         set_optimizer(fnm, Clp.Optimizer)
         @test solver_name(fnm.model) == "Clp"
 
-        set_optimizer_attribute(fnm, "tol_obj", 1e-2)
-        @test get_optimizer_attribute(fnm, "tol_obj") == 1e-2
+        set_optimizer_attribute(fnm, "PrimalTolerance", 1e-2)
+        @test get_optimizer_attribute(fnm, "PrimalTolerance") == 1e-2
 
-        set_optimizer_attributes(fnm, "tol_obj" => 1e-3, "it_lim" => 10_000)
-        @test get_optimizer_attribute(fnm, "tol_obj") == 1e-3
-        @test get_optimizer_attribute(fnm, "it_lim") == 10_000
+        set_optimizer_attributes(fnm, "PrimalTolerance" => 1e-3, "MaximumIterations" => 10_000)
+        @test get_optimizer_attribute(fnm, "PrimalTolerance") == 1e-3
+        @test get_optimizer_attribute(fnm, "MaximumIterations") == 10_000
 
         optimize!(fnm)
         @test solve_time(fnm.model) > 0
