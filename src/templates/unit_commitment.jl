@@ -283,6 +283,7 @@ function unit_commitment_branch_flow_limits(
     con_generation_ramp_rates!(fnm)
     con_ancillary_ramp_rates!(fnm)
     con_energy_balance!(fnm)
+    con_must_run!(fnm)
     con_thermal_branch!(fnm)
     con_availability!(fnm)
     # Objectives
@@ -340,6 +341,7 @@ function unit_commitment_soft_ramps_branch_flow_limits(
     con_generation_ramp_rates!(fnm; slack=slack)
     con_ancillary_ramp_rates!(fnm)
     con_energy_balance!(fnm)
+    con_must_run!(fnm)
     con_thermal_branch!(fnm)
     con_availability!(fnm)
     # Objectives
@@ -394,6 +396,7 @@ function unit_commitment_no_ramps_branch_flow_limits(
     con_regulation_requirements!(fnm)
     con_operating_reserve_requirements!(fnm)
     con_energy_balance!(fnm)
+    con_must_run!(fnm)
     con_thermal_branch!(fnm)
     con_availability!(fnm)
     # Objectives
