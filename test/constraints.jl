@@ -402,6 +402,25 @@ end
         @test u[7, :].data == ones(24)
     end
 
+    @testset "con_availability!" begin
+        # Edit system so that gen3 is unavailable during the last hour
+        system = deepcopy(TEST_SYSTEM)
+        gen3 = get_component(ThermalGen, system, "3")
+        remove_time_series!(system, SingleTimeSeries, gen3, "availability")
+        datetimes = get_forecast_timestamps(system)
+        ta = TimeArray(datetimes, vcat(ones(Int, 23), 0))
+        add_time_series!(system, gen3, SingleTimeSeries("availability", ta))
+
+        # Check that gen3 was not committed during the last hour
+        fnm = _simple_unit_commitment(system, Cbc.Optimizer)
+        optimize!(fnm)
+        u = value.(fnm.model[:u])
+        p = value.(fnm.model[:p])
+        @test u[3, :].data == vcat(ones(23), 0)
+        @test all(p[3, :].data[1:(end - 1)] .> 0.0)
+        @test p[3, :].data[end] == 0.0
+    end
+
     @testset "Thermal branch constraints $T" for (T, t_system) in
         ((UC, TEST_SYSTEM), (ED, TEST_SYSTEM_RT))
         @testset "_con_branch_flow_limits!" begin

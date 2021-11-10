@@ -95,6 +95,12 @@
         )
         @test get_initial_downtime(system) == Dict(3 => 0.0, 7 => 0.0)
         @test get_ramp_rates(system) == Dict(3 => 0.25, 7 => 0.25)
+        @test get_must_run_flag(system) == DenseAxisArray(
+            zeros(2, n_periods), unit_codes, datetimes
+        )
+        @test get_availability(system) == DenseAxisArray(
+            ones(2, n_periods), unit_codes, datetimes
+        )
 
         @test get_unit_codes_perbus(ThermalGen, system) == Dict(
             1 => [3], 2 => [7], 3 => []
