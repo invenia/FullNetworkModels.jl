@@ -39,6 +39,7 @@ export UC
 export ED
 
 # Accessor functions
+export get_availability
 export get_bid_curves
 export get_bid_names
 export get_bid_names_perbus

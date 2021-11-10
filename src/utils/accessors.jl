@@ -652,6 +652,19 @@ function get_must_run_flag(
 end
 
 """
+    get_availability(
+        system::System, datetimes::Vector{DateTime}=get_forecast_timestamps(system)
+    ) -> DenseAxisArray
+
+Returns the availability of the generators in `system` for the periods in `datetimes`.
+"""
+function get_availability(
+    system::System, datetimes::Vector{DateTime}=get_forecast_timestamps(system)
+)
+    return get_generator_time_series(system, "availability", datetimes)
+end
+
+"""
     get_ptdf(system::System) -> DenseAxisArray
 
 Returns the PTDF matrix stored in the `system` as a `PTDF` device.
