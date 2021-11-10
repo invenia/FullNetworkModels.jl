@@ -284,8 +284,8 @@ function unit_commitment_branch_flow_limits(
     con_ancillary_ramp_rates!(fnm)
     con_energy_balance!(fnm)
     con_must_run!(fnm)
-    con_thermal_branch!(fnm)
     con_availability!(fnm)
+    con_thermal_branch!(fnm)
     # Objectives
     obj_thermal_variable_cost!(fnm)
     obj_thermal_noload_cost!(fnm)
@@ -342,8 +342,8 @@ function unit_commitment_soft_ramps_branch_flow_limits(
     con_ancillary_ramp_rates!(fnm)
     con_energy_balance!(fnm)
     con_must_run!(fnm)
-    con_thermal_branch!(fnm)
     con_availability!(fnm)
+    con_thermal_branch!(fnm)
     # Objectives
     obj_thermal_variable_cost!(fnm)
     obj_thermal_noload_cost!(fnm)
@@ -397,8 +397,8 @@ function unit_commitment_no_ramps_branch_flow_limits(
     con_operating_reserve_requirements!(fnm)
     con_energy_balance!(fnm)
     con_must_run!(fnm)
-    con_thermal_branch!(fnm)
     con_availability!(fnm)
+    con_thermal_branch!(fnm)
     # Objectives
     obj_thermal_variable_cost!(fnm)
     obj_thermal_noload_cost!(fnm)
