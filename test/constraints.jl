@@ -281,6 +281,7 @@ function _simple_unit_commitment(
     con_generation_limits!(fnm)
     con_energy_balance!(fnm)
     con_must_run!(fnm)
+    con_availability!(fnm)
     obj_thermal_variable_cost!(fnm)
     obj_thermal_noload_cost!(fnm)
     obj_bids!(fnm)
@@ -400,6 +401,25 @@ end
         optimize!(fnm)
         u = value.(fnm.model[:u])
         @test u[7, :].data == ones(24)
+    end
+
+    @testset "con_availability!" begin
+        # Edit system so that gen3 is unavailable during the last hour
+        system = deepcopy(TEST_SYSTEM)
+        gen7 = get_component(ThermalGen, system, "7")
+        remove_time_series!(system, SingleTimeSeries, gen7, "availability")
+        datetimes = get_forecast_timestamps(system)
+        ta = TimeArray(datetimes, vcat(ones(Int, 23), 0))
+        add_time_series!(system, gen7, SingleTimeSeries("availability", ta))
+
+        # Check that gen3 was not committed during the last hour
+        fnm = _simple_unit_commitment(system, Cbc.Optimizer)
+        optimize!(fnm)
+        u = value.(fnm.model[:u])
+        p = value.(fnm.model[:p])
+        @test u[7, :].data == vcat(ones(23), 0)
+        @test all(p[7, :].data[1:(end - 1)] .> 0.0)
+        @test p[7, :].data[end] == 0.0
     end
 
     @testset "Thermal branch constraints $T" for (T, t_system) in

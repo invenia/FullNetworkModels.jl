@@ -39,6 +39,7 @@ export UC
 export ED
 
 # Accessor functions
+export get_availability
 export get_bid_curves
 export get_bid_names
 export get_bid_names_perbus
@@ -100,6 +101,7 @@ export var_nodal_net_injection!
 # Constraint functions
 export con_ancillary_limits!
 export con_ancillary_ramp_rates!
+export con_availability!
 export con_energy_balance!
 export con_generation_limits!
 export con_generation_ramp_rates!
