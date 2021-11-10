@@ -16,6 +16,7 @@ function _con_branch_flow_limits! end
 function _con_branch_flow_slacks! end
 function con_thermal_branch! end
 function con_must_run! end
+function con_availability! end
 
 function latex(::typeof(_con_generation_limits_uc!))
     return """
@@ -994,6 +995,33 @@ function con_must_run!(fnm::FullNetworkModel)
     # is zero it has no impact, and if it is 1 it forces the commitment to be 1.
     @constraint(
         fnm.model, must_run[g in unit_codes, t in fnm.datetimes], u[g, t] >= MR[g, t]
+    )
+    return fnm
+end
+
+function latex(::typeof(con_availability!))
+    return """
+        ``u_{g, t} \\leq A_{g, t}, \\forall g \\in \\mathcal{G}, t \\in \\mathcal{T}``
+        """
+end
+
+"""
+    con_availability!(fnm::FullNetworkModel)
+
+Ensure that unavailable units cannot be committed; units that are available may or may not be.
+
+$(latex(con_availability!))
+
+The constraint is named `availability`.
+"""
+function con_availability!(fnm::FullNetworkModel)
+    unit_codes = get_unit_codes(ThermalGen, fnm.system)
+    A = get_availability(fnm.system, fnm.datetimes)
+    u = fnm.model[:u]
+    # We constrain the commitment variable to be <= the availability flag, this way if the
+    # unit is unavailable it cannot be committed, and if it is available there is no impact.
+    @constraint(
+        fnm.model, availability[g in unit_codes, t in fnm.datetimes], u[g, t] <= A[g, t]
     )
     return fnm
 end
