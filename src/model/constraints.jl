@@ -288,9 +288,9 @@ end
 function latex(::typeof(con_generation_ramp_rates!))
     return """
         ``p_{g, t} - p_{g, t - 1} \\leq \\Delta t RR_{g} u_{g, t - 1} + SU_{g} v_{g, t}, \\forall g \\in \\mathcal{G}, t \\in \\mathcal{T} \\setminus \\{1\\}`` \n
-        ``p_{g, 1} - P^{0}_{g} \\leq \\Delta t RR_{g} U^{0}_{g} + SU_{g} v_{g, 1}, \\forall g \\in \\mathcal{G}`` \n
+        ``p_{g, 1} - P^{0}_{g} \\leq \\Delta t RR_{g} U^{0}_{g} + SU_{g} v_{g, 1}, \\forall g \\in \\mathcal{G}^{a}_{1}`` \n
         ``p_{g, t - 1} - p_{g, t} \\leq \\Delta t RR_{g} u_{g, t} + SD_{g} w_{g, t}, \\forall g \\in \\mathcal{G}, t \\in \\mathcal{T} \\setminus \\{1\\}`` \n
-        ``P^{0}_{g} - p_{g, 1} \\leq \\Delta t RR_{g} u_{g, 1} + SD_{g} w_{g, 1}, \\forall g \\in \\mathcal{G}``
+        ``P^{0}_{g} - p_{g, 1} \\leq \\Delta t RR_{g} u_{g, 1} + SD_{g} w_{g, 1}, \\forall g \\in \\mathcal{G}^{a}_{1}``
         """
 end
 
@@ -923,6 +923,13 @@ function con_generation_ramp_rates!(fnm::FullNetworkModel; slack=nothing)
     Δt = _get_resolution_in_minutes(system)
     Δh = Hour(Δt / 60) # assume hourly resolution
     h1 = first(datetimes)
+    # We only consider the initial ramp for the units available in the first hour.
+    # This is done to avoid situations where a unit has initial generation coming from the
+    # previous day, but is marked as unavailable in hour 1, which leads to infeasibility
+    # because it cannot ramp down to zero.
+    A = get_availability(system)
+    units_available_in_first_hour = axes(A, 1)[findall(==(1), A.data[:, 1])]
+
     p = model[:p]
     u = model[:u]
     v = model[:v]
@@ -935,7 +942,7 @@ function con_generation_ramp_rates!(fnm::FullNetworkModel; slack=nothing)
     )
     @constraint(
         model,
-        ramp_up_initial[g in unit_codes],
+        ramp_up_initial[g in units_available_in_first_hour],
         p[g, h1] - P0[g] <= Δt * RR[g] * U0[g] + SU[g, h1] * v[g, h1]
     )
     # Ramp down - generation can't go down more than ramp capacity (defined in pu/min)
@@ -947,7 +954,7 @@ function con_generation_ramp_rates!(fnm::FullNetworkModel; slack=nothing)
     )
     @constraint(
         model,
-        ramp_down_initial[g in unit_codes],
+        ramp_down_initial[g in units_available_in_first_hour],
         P0[g] - p[g, h1] <= Δt * RR[g] * u[g, h1] + SU[g, h1] * w[g, h1]
     )
 
@@ -955,18 +962,25 @@ function con_generation_ramp_rates!(fnm::FullNetworkModel; slack=nothing)
     if slack !== nothing
         @variable(model, Γ_ramp[g in unit_codes, t in datetimes] >= 0)
         for g in unit_codes
-            set_normalized_coefficient(ramp_up_initial[g], Γ_ramp[g, h1], -1.0)
-            set_normalized_coefficient(ramp_down_initial[g], Γ_ramp[g, h1], -1.0)
             for t in datetimes[2:end]
                 set_normalized_coefficient(ramp_up[g, t], Γ_ramp[g, t], -1.0)
                 set_normalized_coefficient(ramp_down[g, t], Γ_ramp[g, t], -1.0)
             end
         end
+        for g in units_available_in_first_hour
+            set_normalized_coefficient(ramp_up_initial[g], Γ_ramp[g, h1], -1.0)
+            set_normalized_coefficient(ramp_down_initial[g], Γ_ramp[g, h1], -1.0)
+        end
 
         # Add slack penalty to the objective
-        for g in unit_codes, t in datetimes
-            set_objective_coefficient(model, Γ_ramp[g, t], slack)
+        slack_cost = AffExpr()
+        for g in units_available_in_first_hour
+            add_to_expression!(slack_cost, slack * Γ_ramp[g, h1])
         end
+        for g in unit_codes, t in datetimes[2:end]
+            add_to_expression!(slack_cost, slack * Γ_ramp[g, t])
+        end
+        _add_to_objective!(model, slack_cost)
     end
 
     return fnm
