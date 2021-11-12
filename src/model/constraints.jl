@@ -929,7 +929,7 @@ function con_generation_ramp_rates!(fnm::FullNetworkModel; slack=nothing)
     # previous day, but is marked as unavailable in hour 1, which leads to infeasibility
     # because it cannot ramp down to zero.
     A = get_availability(system)
-    units_available_in_first_hour = axes(A, 1)[findall(==(1), A.data[:, 1])]
+    units_available_in_first_hour = @views axes(A, 1)[A.data[:, 1] .== 1]
 
     p = model[:p]
     u = model[:u]
