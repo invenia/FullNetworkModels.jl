@@ -519,8 +519,9 @@ function get_startup_limits(
     regmin = get_regmin(system, datetimes)
     RR = get_ramp_rates(system)
     SU = DenseAxisArray(zeros(size(regmin)), axes(regmin)...)
+    Δt = _get_resolution_in_minutes(system)
     for g in axes(SU, 1), t in axes(SU, 2)
-        SU[g, t] = max(regmin[g, t], RR[g])
+        SU[g, t] = max(regmin[g, t], 2 * Δt * RR[g])
     end
     return SU
 end
