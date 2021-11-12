@@ -115,29 +115,29 @@ function tests_ramp_rates(fnm; slack=nothing)
     if slack !== nothing
         @test sprint(show, constraint_by_name(
         fnm.model, "ramp_up[3,$t2]"
-        )) == "ramp_up[3,$t2] : -p[3,$t1] + p[3,$t2] - 15 u[3,$t1] - 0.5 v[3,$t2] - Γ_ramp[3,$t2] ≤ 0.0"
+        )) == "ramp_up[3,$t2] : -p[3,$t1] + p[3,$t2] - 15 u[3,$t1] - 30 v[3,$t2] - Γ_ramp[3,$t2] ≤ 0.0"
         @test sprint(show, constraint_by_name(
             fnm.model, "ramp_down[3,$t2]"
-        )) == "ramp_down[3,$t2] : p[3,$t1] - p[3,$t2] - 15 u[3,$t2] - 0.5 w[3,$t2] - Γ_ramp[3,$t2] ≤ 0.0"
+        )) == "ramp_down[3,$t2] : p[3,$t1] - p[3,$t2] - 15 u[3,$t2] - 30 w[3,$t2] - Γ_ramp[3,$t2] ≤ 0.0"
         @test sprint(show, constraint_by_name(
             fnm.model, "ramp_up_initial[3]"
-        )) == "ramp_up_initial[3] : p[3,$t1] - 0.5 v[3,$t1] - Γ_ramp[3,$t1] ≤ 16.0"
+        )) == "ramp_up_initial[3] : p[3,$t1] - 30 v[3,$t1] - Γ_ramp[3,$t1] ≤ 16.0"
         @test sprint(show, constraint_by_name(
             fnm.model, "ramp_down_initial[3]"
-        )) == "ramp_down_initial[3] : -p[3,$t1] - 15 u[3,$t1] - 0.5 w[3,$t1] - Γ_ramp[3,$t1] ≤ -1.0"
+        )) == "ramp_down_initial[3] : -p[3,$t1] - 15 u[3,$t1] - 30 w[3,$t1] - Γ_ramp[3,$t1] ≤ -1.0"
     else
         @test sprint(show, constraint_by_name(
         fnm.model, "ramp_up[3,$t2]"
-        )) == "ramp_up[3,$t2] : -p[3,$t1] + p[3,$t2] - 15 u[3,$t1] - 0.5 v[3,$t2] ≤ 0.0"
+        )) == "ramp_up[3,$t2] : -p[3,$t1] + p[3,$t2] - 15 u[3,$t1] - 30 v[3,$t2] ≤ 0.0"
         @test sprint(show, constraint_by_name(
             fnm.model, "ramp_down[3,$t2]"
-        )) == "ramp_down[3,$t2] : p[3,$t1] - p[3,$t2] - 15 u[3,$t2] - 0.5 w[3,$t2] ≤ 0.0"
+        )) == "ramp_down[3,$t2] : p[3,$t1] - p[3,$t2] - 15 u[3,$t2] - 30 w[3,$t2] ≤ 0.0"
         @test sprint(show, constraint_by_name(
             fnm.model, "ramp_up_initial[3]"
-        )) == "ramp_up_initial[3] : p[3,$t1] - 0.5 v[3,$t1] ≤ 16.0"
+        )) == "ramp_up_initial[3] : p[3,$t1] - 30 v[3,$t1] ≤ 16.0"
         @test sprint(show, constraint_by_name(
             fnm.model, "ramp_down_initial[3]"
-        )) == "ramp_down_initial[3] : -p[3,$t1] - 15 u[3,$t1] - 0.5 w[3,$t1] ≤ -1.0"
+        )) == "ramp_down_initial[3] : -p[3,$t1] - 15 u[3,$t1] - 30 w[3,$t1] ≤ -1.0"
     end
     return nothing
 end
