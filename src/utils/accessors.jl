@@ -504,14 +504,27 @@ function get_ramp_rates(system::System)
 end
 
 """
-    get_startup_limits(system::System) -> Dict
+    get_startup_limits(
+        system::System, datetimes::Vector{DateTime}=get_forecast_timestamps(system)
+    ) -> DenseAxisArray
 
 Returns a dictionary with the start-up limits of each unit in `system`. The start-up limits
-are defined as equal to Regmin to avoid infeasibilities. Since we don't
-currently differentiate between ramp up and down, this can also be used to obtain the
-shutdown limits, which are identical under this assumption.
+are defined as the larger value between Regmin and 2 hours of ramp capability to avoid
+infeasibilities. Since we don't currently differentiate between ramp up and down, this can
+also be used to obtain the shutdown limits, which are identical under this assumption.
 """
-get_startup_limits(system::System) = get_regmin(system)
+function get_startup_limits(
+    system::System, datetimes::Vector{DateTime}=get_forecast_timestamps(system)
+)
+    regmin = get_regmin(system, datetimes)
+    RR = get_ramp_rates(system)
+    SU = DenseAxisArray(zeros(size(regmin)), axes(regmin)...)
+    Δt = _get_resolution_in_minutes(system)
+    for g in axes(SU, 1), t in axes(SU, 2)
+        SU[g, t] = max(regmin[g, t], 2 * Δt * RR[g])
+    end
+    return SU
+end
 
 """
     get_bid_curves(
