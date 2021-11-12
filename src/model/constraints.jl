@@ -954,7 +954,7 @@ function con_generation_ramp_rates!(fnm::FullNetworkModel; slack=nothing)
     # a unit that has initial generation of 4*60*RR (i.e. 4 times the hourly ramp rate)
     # and is unavailable in hour 3. This means it is impossible for the unit to ramp down
     # that amount in 3 hours, leading to infeasibility. Therefore, whenever A_{g,t} is 0,
-    # the constraint is relaxed by allowing a ramp of Pmax.
+    # the constraint is relaxed by allowing the unit to ramp as much as it wants.
     @constraint(
         model,
         ramp_down[g in unit_codes, t in datetimes[2:end]],
