@@ -96,6 +96,10 @@ function Base.show(io::IO, fnm::T) where {T <: FullNetworkModel}
     print(io, T)
     # Time
     min, max = extrema(fnm.datetimes)
+    if get(io, :compact, false)::Bool
+        min == max ? print(io, "(", min, ")") : print(io, "(", min, " … ", max, ")")
+        return nothing
+    end
     min == max ? print(io, "\nTime period: ", min) : print(io, "\nTime periods: ", min, " to ", max)
     # System
     print(io, "\nSystem: $(length(get_components(Component, fnm.system))) components")

@@ -4,6 +4,7 @@
         fnm = FullNetworkModel{UC}(TEST_SYSTEM)
         t1 = DateTime(2017, 12, 15)
         t2 = DateTime(2017, 12, 15, 23)
+        @test sprint(show, fnm; context=:compact => true) == "FullNetworkModel{UC}($t1 … $t2)"
         @test sprint(show, fnm) == strip("""
             FullNetworkModel{UC}
             Time periods: $t1 to $t2
