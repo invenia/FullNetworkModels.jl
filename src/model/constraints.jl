@@ -369,7 +369,7 @@ end
 
 function latex(::typeof(_con_nodal_net_injection_ed!))
     return """
-        ``p^{net}_{n, t} = \\sum_{g \\in \\mathcal{G}_n} p_{g, t} +
+        ``p^{net}_{n, t} = \\sum_{g \\in \\mathcal{G}_n} p_{g, t} -
         \\sum_{f \\in \\mathcal{F}_n} D_{f, t}, \\forall n \\in \\mathcal{V}, t \\in \\mathcal{T}``
         """
 end
@@ -598,7 +598,7 @@ flow changes. A branch could have one, two or no break-points. For example a Bra
 rate (FL) with one breakpoint at [100%] of the line rate will have a corresponding penalty
 "Penalty1" for any flow above 100% (75MW). For a branch with two break-points [100%, 110%] will
 have a penalty "Penalty1" for any flow in betweeen 100% (75MW) and 110% (82.5MW), and for any
-MW avobe the 110% of the branch rate, the penalty will be "Penalty2". Finally a branch with no
+MW above the 110% of the branch rate, the penalty will be "Penalty2". Finally a branch with no
 break-points, the constraint should be a hard constraint. Thus, the slacks for each case should
 be:
 
@@ -687,7 +687,7 @@ Adds the nodal net injections, branch flows, and branch flow limits constraints 
 base and the selected contingency scenarios to the full network model. The nodal net injection
 is formulated different for the Unit Commitment and for the Economic Dispatch.
 
-The constraints avobe are formulated as:
+The constraints above are formulated as:
 
 The Base Case Net Nodal Injection for the Economic Dispatch is formulated as:
 $(latex(_con_nodal_net_injection_ed!))
