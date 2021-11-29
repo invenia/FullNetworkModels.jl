@@ -1,15 +1,45 @@
 @testset "API functions" begin
-    fnm = FullNetworkModel{UC}(TEST_SYSTEM)
-    fnm_rt = FullNetworkModel{ED}(TEST_SYSTEM_RT)
-
-    t1 = DateTime(2017, 12, 15)
-    t2 = DateTime(2017, 12, 15, 23)
 
     @testset "Prints" begin
-        @test sprint(show, fnm) == "FullNetworkModel{UC}\nTime periods: $t1 to $t2\nModel formulation: 0 variables and 0 constraints\nSystem: 34 components\n"
+        fnm = FullNetworkModel{UC}(TEST_SYSTEM)
+        t1 = DateTime(2017, 12, 15)
+        t2 = DateTime(2017, 12, 15, 23)
+        @test sprint(show, fnm; context=:compact => true) == "FullNetworkModel{UC}($t1 … $t2)"
+        @test sprint(show, fnm) == strip("""
+            FullNetworkModel{UC}
+            Time periods: $t1 to $t2
+            System: 34 components
+            Model formulation: 0 variables and 0 constraints
+            """
+        )
+        var_commitment!(fnm)
+        n_units = length(fnm.datetimes) * length(get_unit_codes(ThermalGen, fnm.system))
+        @test sprint(show, fnm) == strip("""
+            FullNetworkModel{UC}
+            Time periods: $t1 to $t2
+            System: 34 components
+            Model formulation: $n_units variables and $n_units constraints
+              Variable names: u
+            """
+        )
+        con_must_run!(fnm)
+        @test sprint(show, fnm) == strip("""
+            FullNetworkModel{UC}
+            Time periods: $t1 to $t2
+            System: 34 components
+            Model formulation: $n_units variables and $(2 * n_units) constraints
+              Variable names: u
+              Constraint names: must_run
+            """
+        )
     end
 
     @testset "Accessors" begin
+        fnm = FullNetworkModel{UC}(TEST_SYSTEM)
+        fnm_rt = FullNetworkModel{ED}(TEST_SYSTEM_RT)
+        t1 = DateTime(2017, 12, 15)
+        t2 = DateTime(2017, 12, 15, 23)
+
         system = fnm.system
         system_rt = fnm_rt.system
         datetimes = fnm.datetimes
@@ -170,6 +200,7 @@
     end
 
     @testset "API extensions" begin
+        fnm = FullNetworkModel{UC}(TEST_SYSTEM)
         # test model has no solver
         @test solver_name(fnm.model) === solver_name(Model())
 

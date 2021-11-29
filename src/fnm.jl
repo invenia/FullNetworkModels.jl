@@ -92,21 +92,53 @@ function FullNetworkModel{T}(
 end
 
 # This is necessary to avoid printing a lot of stuff due to PowerSystems printing
-function Base.show(io::IO, fnm::FullNetworkModel{T}) where T
-    println(io, typeof(fnm))
-    if length(fnm.datetimes) > 1
-        println(io, "Time periods: $(first(fnm.datetimes)) to $(last(fnm.datetimes))")
-    else
-        println(io, "Time periods: $(only(fnm.datetimes))")
+function Base.show(io::IO, fnm::T) where {T <: FullNetworkModel}
+    print(io, T)
+    # Time
+    min, max = extrema(fnm.datetimes)
+    if get(io, :compact, false)::Bool
+        min == max ? print(io, "(", min, ")") : print(io, "(", min, " … ", max, ")")
+        return nothing
     end
+    min == max ? print(io, "\nTime period: ", min) : print(io, "\nTime periods: ", min, " to ", max)
+    # System
+    print(io, "\nSystem: $(length(get_components(Component, fnm.system))) components")
+    # Model
     n_vars = num_variables(fnm.model)
     con_list = list_of_constraint_types(fnm.model)
-    n_cons = if isempty(con_list)
-        0
-    else
-        sum(num_constraints(fnm.model, F, S) for (F, S) in con_list)
+    n_cons = isempty(con_list) ? 0 : sum(num_constraints(fnm.model, F, S) for (F, S) in con_list)
+    print(io, "\nModel formulation: $n_vars variables and $n_cons constraints")
+    n_vars == n_cons == 0 && return nothing
+    var_names, con_names = _names(fnm.model)
+    if !isempty(var_names)  # variables/constraints don't have to have names
+        print(io, "\n  Variable names: ")
+        if get(io, :color, false)::Bool
+            printstyled(io, join(var_names, ", "); color=Base.info_color())
+        else
+            join(io, var_names, ", ")
+        end
     end
-    println(io, "Model formulation: $n_vars variables and $n_cons constraints")
-    println(io, "System: $(length(get_components(Component, fnm.system))) components")
+    if !isempty(con_names)
+        print(io, "\n  Constraint names: ")
+        if get(io, :color, false)::Bool
+            printstyled(io, join(con_names, ", "); color=Base.info_color())
+        else
+            join(io, con_names, ", ")
+        end
+    end
     return nothing
 end
+
+function _names(model::Model)
+    var_names = Symbol[]
+    con_names = Symbol[]
+    for (name, val) in object_dictionary(model)
+        _is_constraint(val) ? push!(con_names, name) : push!(var_names, name)
+    end
+    return sort(var_names), sort(con_names)
+end
+
+_is_constraint(x::T) where T <: Union{ConstraintRef,VariableRef} = _is_constraint(T)
+_is_constraint(x) = _is_constraint(eltype(x))
+_is_constraint(::Type{<:ConstraintRef}) = true
+_is_constraint(::Type) = false
