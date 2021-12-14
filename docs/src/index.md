@@ -9,7 +9,6 @@ To run simulations with these models, see [FullNetworkSimulations.jl](https://in
 You can model MISO market clearing processes with [the template formulations](@ref templates),
 for example:
 ```julia
-using AWS
 using Cbc  # MIP solver
 using Clp  # LP solver
 using Dates
@@ -18,12 +17,8 @@ using FullNetworkDataPrep
 using FullNetworkModels
 using JuMP
 
-# For `build_system` we need to use an AWS profile with access to MISO NDA data.
-global_aws_config(profile="...")
-
 date = Date(2020, 08, 06)
-
-da_system = build_system(MISO, DA, date)
+da_system = build_system(MISO, DA, date)  # requires NDA access
 uc_model = unit_commitment(da_system, Cbc.Optimizer)
 optimize!(uc_model)
 
