@@ -161,7 +161,7 @@
             rate = c == "base_case" ? t_branch.rate : t_branch.ext["rate_b"]
             tr1_sl1_max = (Transformer1.ext["break_points"][2]-Transformer1.ext["break_points"][1])*(rate/100)
             @test value.(fnm.model[:fl][m, fnm.datetimes[1], c]) > rate
-            @test value.(fnm.model[:sl1_fl][m, fnm.datetimes[1], c]) == tr1_sl1_max
+            @test isapprox(value.(fnm.model[:sl1_fl][m, fnm.datetimes[1], c]), tr1_sl1_max)
             @test value.(fnm.model[:sl2_fl][m, fnm.datetimes[1], c]) > 0
         end
 
