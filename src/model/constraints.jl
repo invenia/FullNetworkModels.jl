@@ -317,7 +317,7 @@ $(latex(con_energy_balance_ed!))
 
 The constraint is named `energy_balance`.
 """
-function con_energy_balance!(fnm::FullNetworkModel{<:ED})
+function con_energy_balance!(fnm::FullNetworkModel{<:ED}; slack_eb=nothing)
     model = fnm.model
     system = fnm.system
     unit_codes = get_unit_codes(ThermalGen, system)
@@ -329,6 +329,17 @@ function con_energy_balance!(fnm::FullNetworkModel{<:ED})
         energy_balance[t in fnm.datetimes],
         sum(p[g, t] for g in unit_codes) == sum(D[f, t] for f in load_names)
     )
+    # If the constraints are supposed to be soft constraints, add slacks
+    if slack_eb !== nothing
+        # Add skacks
+        @variable(model, sl_eb[t in fnm.datetimes] >= 0)
+        # Add slacks penalties to the objective
+        sl_eb_cost = AffExpr()
+        for t in datetimes
+            add_to_expression!(sl_eb_cost, sl_eb[t] * slack_eb)
+        end
+        _add_to_objective!(model, sl_eb_cost)
+    end
     return fnm
 end
 
@@ -343,7 +354,7 @@ $(latex(con_energy_balance_uc!))
 
 The constraint is named `energy_balance`.
 """
-function con_energy_balance!(fnm::FullNetworkModel{<:UC})
+function con_energy_balance!(fnm::FullNetworkModel{<:UC}; slack_eb=nothing)
     model = fnm.model
     system = fnm.system
     datetimes = fnm.datetimes
@@ -364,6 +375,17 @@ function con_energy_balance!(fnm::FullNetworkModel{<:UC})
             sum(D[f, t] for f in load_names) + sum(dec[d, t] for d in dec_names) +
             sum(psd[s, t] for s in psd_names)
     )
+    # If the constraints are supposed to be soft constraints, add slacks
+    if slack_eb !== nothing
+        # Add skacks
+        @variable(model, sl_eb[t in fnm.datetimes] >= 0)
+        # Add slacks penalties to the objective
+        sl_eb_cost = AffExpr()
+        for t in datetimes
+            add_to_expression!(sl_eb_cost, sl_eb[t] * slack_eb)
+        end
+        _add_to_objective!(model, sl_eb_cost)
+    end
     return fnm
 end
 

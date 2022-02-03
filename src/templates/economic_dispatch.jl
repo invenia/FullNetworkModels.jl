@@ -39,10 +39,10 @@ Arguments:
 
 Keyword arguments:
  - `slack=1e4`: The slack penalty for the soft constraints.
-
+ - `slack_eb=1e10`: The slack penalty for the Energy Balance soft constraint.
 """
 function economic_dispatch(
-    system::System, solver, datetimes=get_forecast_timestamps(system); slack = 1e4
+    system::System, solver, datetimes=get_forecast_timestamps(system); slack = 1e4, slack_eb = 1e10
 )
     # Initialize FNM
     @timeit_debug get_timer("FNTimer") "initialise FNM" fnm = FullNetworkModel{ED}(system, datetimes)
@@ -112,9 +112,10 @@ Arguments:
 
 Keyword arguments:
  - `slack=1e4`: The slack penalty for the soft constraints.
+ - `slack_eb=1e10`: The slack penalty for the Energy Balance soft constraint.
 """
 function economic_dispatch_branch_flow_limits(
-    system::System, solver, datetimes=get_forecast_timestamps(system); slack = 1e4
+    system::System, solver, datetimes=get_forecast_timestamps(system); slack = 1e4, slack_eb = 1e10
 )
     # Initialize FNM
     @timeit_debug get_timer("FNTimer") "initialise FNM" fnm = FullNetworkModel{ED}(system, datetimes)
