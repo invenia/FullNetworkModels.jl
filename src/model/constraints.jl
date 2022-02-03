@@ -322,17 +322,18 @@ function con_energy_balance!(fnm::FullNetworkModel{<:ED}; slack_eb=nothing)
     system = fnm.system
     unit_codes = get_unit_codes(ThermalGen, system)
     load_names = get_load_names(PowerLoad, system)
+    datetimes = fnm.datetimes
     D = get_fixed_loads(system)
     p = model[:p]
     @constraint(
         model,
-        energy_balance[t in fnm.datetimes],
+        energy_balance[t in datetimes],
         sum(p[g, t] for g in unit_codes) == sum(D[f, t] for f in load_names)
     )
     # If the constraints are supposed to be soft constraints, add slacks
     if slack_eb !== nothing
         # Add skacks
-        @variable(model, sl_eb[t in fnm.datetimes] >= 0)
+        @variable(model, sl_eb[t in datetimes] >= 0)
         # Add slacks penalties to the objective
         sl_eb_cost = AffExpr()
         for t in datetimes
@@ -378,7 +379,7 @@ function con_energy_balance!(fnm::FullNetworkModel{<:UC}; slack_eb=nothing)
     # If the constraints are supposed to be soft constraints, add slacks
     if slack_eb !== nothing
         # Add skacks
-        @variable(model, sl_eb[t in fnm.datetimes] >= 0)
+        @variable(model, sl_eb[t in datetimes] >= 0)
         # Add slacks penalties to the objective
         sl_eb_cost = AffExpr()
         for t in datetimes
