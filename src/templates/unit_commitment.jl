@@ -118,7 +118,6 @@ See also [`unit_commitment`](@ref) and [`unit_commitment_no_ramps`](@ref).
 # Keywords
  - `slack=1e4`: The slack penalty for the soft constraints.
  - `relax_integrality=false`: If set to `true`, binary variables will be relaxed.
- - `slack=1e4`: The slack penalty for soft constraints.
 """
 function unit_commitment_soft_ramps(
     system::System, solver, datetimes=get_forecast_timestamps(system);
