@@ -43,7 +43,7 @@ $(_write_formulation(
 
 Thermal branch flow limits are not considered in this formulation.
 
-See also [`unit_commitment_soft_ramps`](@ref) and [`unit_commitment_no_ramps`](@ref).
+See also [`unit_commitment_no_ramps`](@ref) and [`unit_commitment_branch_flow_limits`](@ref).
 
 # Arguments
  - `system::System`: The PowerSystems system that provides the input data.
@@ -52,7 +52,7 @@ See also [`unit_commitment_soft_ramps`](@ref) and [`unit_commitment_no_ramps`](@
 
 # Keywords
  - `relax_integrality=false`: If set to `true`, binary variables will be relaxed.
- - `slack=1e4`: The slack penalty for the soft constraints.
+ - `slack=nothing`: The slack penalty for the soft constraints (i.e. slack=1e4).
 """
 function unit_commitment(
     system::System, solver, datetimes=get_forecast_timestamps(system);
@@ -173,7 +173,7 @@ which are omitted.
 
 Thermal branch flow limits are not considered in this formulation.
 
-See also [`unit_commitment`](@ref) and [`unit_commitment_soft_ramps`](@ref).
+See also [`unit_commitment`](@ref) and [`unit_commitment_branch_flow_limits`](@ref).
 
 # Arguments
  - `system::System`: The PowerSystems system that provides the input data.
@@ -182,11 +182,11 @@ See also [`unit_commitment`](@ref) and [`unit_commitment_soft_ramps`](@ref).
 
 # Keywords
  - `relax_integrality=false`: If set to `true`, binary variables will be relaxed.
- - `slack=1e4`: The slack penalty for the Energy Balance soft constraint.
+ - `slack=nothing`: The slack penalty for the soft constraints (i.e. slack=1e4).
 """
 function unit_commitment_no_ramps(
     system::System, solver, datetimes=get_forecast_timestamps(system);
-    relax_integrality=false, slack=1e4
+    relax_integrality=false, slack=nothing
 )
     # Initialize FNM
     @timeit_debug get_timer("FNTimer") "initialise FNM" fnm = FullNetworkModel{UC}(system, datetimes)
@@ -272,8 +272,7 @@ $(_write_formulation(
 
 Thermal branch flow limits are considered in this formulation.
 
-See also [`unit_commitment_soft_ramps_branch_flow_limits`](@ref) and
-[`unit_commitment_no_ramps_branch_flow_limits`](@ref).
+See also [`unit_commitment`](@ref) and [`unit_commitment_no_ramps`](@ref).
 
 # Arguments
  - `system::System`: The PowerSystems system that provides the input data.
@@ -282,7 +281,7 @@ See also [`unit_commitment_soft_ramps_branch_flow_limits`](@ref) and
 
 # Keywords
  - `relax_integrality=false`: If set to `true`, binary variables will be relaxed.
- - `slack=1e4`: The slack penalty for the Energy Balance soft constraint.
+ - `slack=nothing`: The slack penalty for the soft constraints (i.e. slack=1e4).
 """
 function unit_commitment_branch_flow_limits(
     system::System, solver, datetimes=get_forecast_timestamps(system);
