@@ -59,11 +59,11 @@ function get_unit_codes_perbus(gentype::Type{<:Generator}, system::System)
 end
 
 """
-    get_bid_names(bidtype::Type{<:Device}, system::System)
+    get_bid_names(bidtype::Type{<:Device}, system::System) -> Vector{String}
 
 Returns the names of the bids in `system` that are of type `bidtype`.
 """
-function get_bid_names(bidtype::Type{<:Device}, system::System)
+function get_bid_names(bidtype::Type{<:Device}, system::System)::Vector{String}
     return map(get_name, get_components(bidtype, system))
 end
 
@@ -89,7 +89,7 @@ end
 Returns the names of all loads in `system` under type `loadtype`.
 """
 function get_load_names(loadtype::Type{<:StaticLoad}, system::System)
-    return get_name.(get_components(loadtype, system))
+    return map(get_name, get_components(loadtype, system))
 end
 
 """
@@ -556,8 +556,8 @@ end
 
 Returns the names of all branches in `system` under type `branchtype`.
 """
-function get_branch_names(branchtype::Type{<:Branch}, system::System)
-    return get_name.(get_components(branchtype, system))
+function get_branch_names(branchtype::Type{<:Branch}, system::System)::Vector{String}
+    return map(get_name, get_components(branchtype, system))
 end
 
 """
@@ -601,12 +601,12 @@ function get_branch_rates(branchtype::Type{<:Branch}, system::System)
 end
 
 """
-    get_monitored_branch_names(branchtype::Type{<:Branch}, system::System) -> Vector
+    get_monitored_branch_names(branchtype::Type{<:Branch}, system::System) -> Vector{String}
 
 Returns the names of all the monitored branches in `system` under type `branchtype`.
 """
-function get_monitored_branch_names(branchtype::Type{<:Branch}, system::System)
-    return get_name.(get_components(branchtype, system, x -> x.ext["is_monitored"] == true))
+function get_monitored_branch_names(branchtype::Type{<:Branch}, system::System)::Vector{String}
+    return map(get_name, get_components(branchtype, system, x -> x.ext["is_monitored"]))
 end
 
 """
