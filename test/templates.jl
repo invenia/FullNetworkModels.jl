@@ -16,7 +16,7 @@
         tests_ramp_rates(fnm)
         tests_energy_balance(fnm)
     end
-    @testset "unit_commitment_soft_ramps and unit_commitment_no_ramps" begin
+    @testset "unit_commitment (soft_ramps) and unit_commitment_no_ramps" begin
         # Modify system so that hard ramp constraints result in infeasibility
         system_infeasible = deepcopy(TEST_SYSTEM)
         gens = collect(get_components(ThermalGen, system_infeasible))
@@ -29,7 +29,7 @@
         @test termination_status(fnm.model) == TerminationStatusCode(6)
 
         # Now do the same with soft ramp constraints – should be feasible
-        fnm_soft_ramps = unit_commitment_soft_ramps(
+        fnm_soft_ramps = unit_commitment(
             system_infeasible, Cbc.Optimizer; slack=1e3, relax_integrality=true
         )
         # Basic ramp rate tests with correct slack
@@ -409,7 +409,7 @@ end
 
 # Test that templates don't error for a given `datetimes` argument
 function test_templates(datetimes)
-    for template in (unit_commitment, unit_commitment_no_ramps, unit_commitment_soft_ramps)
+    for template in (unit_commitment, unit_commitment_no_ramps)
         @test template(TEST_SYSTEM, Cbc.Optimizer, datetimes) isa FullNetworkModel
     end
     for template in (economic_dispatch, )
