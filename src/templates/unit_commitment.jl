@@ -52,11 +52,11 @@ See also [`unit_commitment_soft_ramps`](@ref) and [`unit_commitment_no_ramps`](@
 
 # Keywords
  - `relax_integrality=false`: If set to `true`, binary variables will be relaxed.
- - `slack_eb=1e10`: The slack penalty for the Energy Balance soft constraint.
+ - `slack=1e4`: The slack penalty for the soft constraints.
 """
 function unit_commitment(
     system::System, solver, datetimes=get_forecast_timestamps(system);
-    relax_integrality=false, slack_eb=1e10
+    relax_integrality=false, slack=1e4
 )
     # Initialize FNM
     @timeit_debug get_timer("FNTimer") "initialise FNM" fnm = FullNetworkModel{UC}(system, datetimes)
@@ -118,11 +118,11 @@ See also [`unit_commitment`](@ref) and [`unit_commitment_no_ramps`](@ref).
 # Keywords
  - `slack=1e4`: The slack penalty for the soft constraints.
  - `relax_integrality=false`: If set to `true`, binary variables will be relaxed.
- - `slack_eb=1e10`: The slack penalty for the Energy Balance soft constraint.
+ - `slack=1e4`: The slack penalty for soft constraints.
 """
 function unit_commitment_soft_ramps(
     system::System, solver, datetimes=get_forecast_timestamps(system);
-    slack=1e4, relax_integrality=false, slack_eb=1e10
+    slack=1e4, relax_integrality=false
 )
     # Initialize FNM
     @timeit_debug get_timer("FNTimer") "initialise FNM" fnm = FullNetworkModel{UC}(system, datetimes)
@@ -183,11 +183,11 @@ See also [`unit_commitment`](@ref) and [`unit_commitment_soft_ramps`](@ref).
 
 # Keywords
  - `relax_integrality=false`: If set to `true`, binary variables will be relaxed.
- - `slack_eb=1e10`: The slack penalty for the Energy Balance soft constraint.
+ - `slack=1e4`: The slack penalty for the Energy Balance soft constraint.
 """
 function unit_commitment_no_ramps(
     system::System, solver, datetimes=get_forecast_timestamps(system);
-    relax_integrality=false, slack_eb=1e10
+    relax_integrality=false, slack=1e4
 )
     # Initialize FNM
     @timeit_debug get_timer("FNTimer") "initialise FNM" fnm = FullNetworkModel{UC}(system, datetimes)
@@ -283,11 +283,11 @@ See also [`unit_commitment_soft_ramps_branch_flow_limits`](@ref) and
 
 # Keywords
  - `relax_integrality=false`: If set to `true`, binary variables will be relaxed.
- - `slack_eb=1e10`: The slack penalty for the Energy Balance soft constraint.
+ - `slack=1e4`: The slack penalty for the Energy Balance soft constraint.
 """
 function unit_commitment_branch_flow_limits(
     system::System, solver, datetimes=get_forecast_timestamps(system);
-    relax_integrality=false, slack_eb=1e10
+    relax_integrality=false, slack=1e4
 )
     # Initialize FNM
     @timeit_debug get_timer("FNTimer") "initialise FNM" fnm = FullNetworkModel{UC}(system, datetimes)
@@ -348,11 +348,11 @@ See also [`unit_commitment_branch_flow_limits`](@ref) and [`unit_commitment_soft
 # Keywords
  - `slack=1e4`: The slack penalty for the soft constraints.
  - `relax_integrality=false`: If set to `true`, binary variables will be relaxed.
- - `slack_eb=1e10`: The slack penalty for the Energy Balance soft constraint.
+ - `slack=1e4`: The slack penalty for the soft constraints.
 """
 function unit_commitment_soft_ramps_branch_flow_limits(
     system::System, solver, datetimes=get_forecast_timestamps(system);
-    slack=1e4, relax_integrality=false, slack_eb=1e10
+    slack=1e4, relax_integrality=false
 )
     # Initialize FNM
     @timeit_debug get_timer("FNTimer") "initialise FNM" fnm = FullNetworkModel{UC}(system, datetimes)
@@ -412,11 +412,11 @@ See also [`unit_commitment_branch_flow_limits`](@ref) and [`unit_commitment_no_r
 
 # Keywords
  - `relax_integrality=false`: If set to `true`, binary variables will be relaxed.
- - `slack_eb=1e10`: The slack penalty for the Energy Balance soft constraint.
+ - `slack=1e4`: The slack penalty for the soft constraints.
 """
 function unit_commitment_no_ramps_branch_flow_limits(
     system::System, solver, datetimes=get_forecast_timestamps(system);
-    relax_integrality=false, slack_eb=1e10
+    relax_integrality=false, slack=1e4
 )
     # Initialize FNM
     @timeit_debug get_timer("FNTimer") "initialise FNM" fnm = FullNetworkModel{UC}(system, datetimes)

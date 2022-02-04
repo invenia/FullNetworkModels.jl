@@ -317,7 +317,7 @@ $(latex(con_energy_balance_ed!))
 
 The constraint is named `energy_balance`.
 """
-function con_energy_balance!(fnm::FullNetworkModel{<:ED}; slack_eb=nothing)
+function con_energy_balance!(fnm::FullNetworkModel{<:ED}; slack=nothing)
     model = fnm.model
     system = fnm.system
     unit_codes = get_unit_codes(ThermalGen, system)
@@ -331,15 +331,9 @@ function con_energy_balance!(fnm::FullNetworkModel{<:ED}; slack_eb=nothing)
         sum(p[g, t] for g in unit_codes) == sum(D[f, t] for f in load_names)
     )
     # If the constraints are supposed to be soft constraints, add slacks
-    if slack_eb !== nothing
-        # Add skacks
+    if slack !== nothing
         @variable(model, sl_eb[t in datetimes] >= 0)
-        # Add slacks penalties to the objective
-        sl_eb_cost = AffExpr()
-        for t in datetimes
-            add_to_expression!(sl_eb_cost, sl_eb[t] * slack_eb)
-        end
-        _add_to_objective!(model, sl_eb_cost)
+        _add_to_objective!(model, slack * sum(sl_eb))
     end
     return fnm
 end
@@ -355,7 +349,7 @@ $(latex(con_energy_balance_uc!))
 
 The constraint is named `energy_balance`.
 """
-function con_energy_balance!(fnm::FullNetworkModel{<:UC}; slack_eb=nothing)
+function con_energy_balance!(fnm::FullNetworkModel{<:UC}; slack=nothing)
     model = fnm.model
     system = fnm.system
     datetimes = fnm.datetimes
@@ -377,15 +371,9 @@ function con_energy_balance!(fnm::FullNetworkModel{<:UC}; slack_eb=nothing)
             sum(psd[s, t] for s in psd_names)
     )
     # If the constraints are supposed to be soft constraints, add slacks
-    if slack_eb !== nothing
-        # Add skacks
+    if slack !== nothing
         @variable(model, sl_eb[t in datetimes] >= 0)
-        # Add slacks penalties to the objective
-        sl_eb_cost = AffExpr()
-        for t in datetimes
-            add_to_expression!(sl_eb_cost, sl_eb[t] * slack_eb)
-        end
-        _add_to_objective!(model, sl_eb_cost)
+        _add_to_objective!(model, slack * sum(sl_eb))
     end
     return fnm
 end
