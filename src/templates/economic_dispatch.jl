@@ -45,21 +45,27 @@ function economic_dispatch(
     system::System, solver, datetimes=get_forecast_timestamps(system); slack = 1e4
 )
     # Initialize FNM
-    fnm = FullNetworkModel{ED}(system, datetimes)
+    @timeit_debug get_timer("FNTimer") "initialise FNM" fnm = FullNetworkModel{ED}(system, datetimes)
     # Variables
-    var_thermal_generation!(fnm)
-    var_ancillary_services!(fnm)
+    @timeit_debug get_timer("FNTimer") "add variables to model" begin
+        var_thermal_generation!(fnm)
+        var_ancillary_services!(fnm)
+    end
     # Constraints
-    con_generation_limits!(fnm)
-    con_ancillary_limits!(fnm)
-    con_regulation_requirements!(fnm; slack)
-    con_operating_reserve_requirements!(fnm; slack)
-    con_energy_balance!(fnm)
+    @timeit_debug get_timer("FNTimer") "add constraints to model" begin
+        con_generation_limits!(fnm)
+        con_ancillary_limits!(fnm)
+        con_regulation_requirements!(fnm; slack)
+        con_operating_reserve_requirements!(fnm; slack)
+        con_energy_balance!(fnm)
+    end
     # Objectives
-    obj_thermal_variable_cost!(fnm)
-    obj_ancillary_costs!(fnm)
+    @timeit_debug get_timer("FNTimer") "add objectives to model" begin
+        obj_thermal_variable_cost!(fnm)
+        obj_ancillary_costs!(fnm)
+    end
 
-    set_optimizer(fnm, solver)
+    @timeit_debug get_timer("FNTimer") "set optimizer" set_optimizer(fnm, solver)
     return fnm
 end
 
@@ -111,21 +117,27 @@ function economic_dispatch_branch_flow_limits(
     system::System, solver, datetimes=get_forecast_timestamps(system); slack = 1e4
 )
     # Initialize FNM
-    fnm = FullNetworkModel{ED}(system, datetimes)
+    @timeit_debug get_timer("FNTimer") "initialise FNM" fnm = FullNetworkModel{ED}(system, datetimes)
     # Variables
-    var_thermal_generation!(fnm)
-    var_ancillary_services!(fnm)
+    @timeit_debug get_timer("FNTimer") "add variables to model" begin
+        var_thermal_generation!(fnm)
+        var_ancillary_services!(fnm)
+    end
     # Constraints
-    con_generation_limits!(fnm)
-    con_ancillary_limits!(fnm)
-    con_regulation_requirements!(fnm; slack)
-    con_operating_reserve_requirements!(fnm; slack)
-    con_energy_balance!(fnm)
-    con_thermal_branch!(fnm)
+    @timeit_debug get_timer("FNTimer") "add constraints to model" begin
+        con_generation_limits!(fnm)
+        con_ancillary_limits!(fnm)
+        con_regulation_requirements!(fnm; slack)
+        con_operating_reserve_requirements!(fnm; slack)
+        con_energy_balance!(fnm)
+        @timeit_debug get_timer("FNTimer") "thermal branch constraints" con_thermal_branch!(fnm)
+    end
     # Objectives
-    obj_thermal_variable_cost!(fnm)
-    obj_ancillary_costs!(fnm)
+    @timeit_debug get_timer("FNTimer") "add objectives to model" begin
+        obj_thermal_variable_cost!(fnm)
+        obj_ancillary_costs!(fnm)
+    end
 
-    set_optimizer(fnm, solver)
+    @timeit_debug get_timer("FNTimer") "set optimizer" set_optimizer(fnm, solver)
     return fnm
 end
