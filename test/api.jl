@@ -47,7 +47,10 @@
         unit_codes = get_unit_codes(ThermalGen, system)
 
         @test issetequal(unit_codes, (7, 3))
-        @test issetequal(get_load_names(PowerLoad, system), ("Load1_2", "Load2_3"))
+        load_names = get_load_names(PowerLoad, system)
+        @test issetequal(load_names, ("Load1_2", "Load2_3"))
+        @test load_names isa Vector{<:AbstractString}
+
         @test @inferred(get_forecast_timestamps(system)) == t1:Hour(1):t2
 
         n_units = length(unit_codes)
@@ -183,6 +186,7 @@
                 branches_one_break_points,
                 branches_two_break_points) = FNM._get_branch_num_break_points_names(Branch, system)
             @test issetequal(monitored_branches_names, ("Line1", "Line3", "Transformer1"))
+            @test monitored_branches_names isa Vector{<:AbstractString}
             @test branches_break_points == Dict(
                 "Transformer1" => [100.0, 110.0],
                 "Line1" => [100.0, 110.0],
