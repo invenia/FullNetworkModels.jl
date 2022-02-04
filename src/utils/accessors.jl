@@ -607,7 +607,7 @@ Returns the names of all the monitored branches in `system` under type `branchty
 """
 function get_monitored_branch_names(branchtype::Type{<:Branch}, system::System)::Vector{String}
     return map(
-        get_name, get_components(branchtype, system, x -> x.ext["is_monitored"] == true)
+        get_name, get_components(branchtype, system, x -> x.ext["is_monitored"])
     )
 end
 
