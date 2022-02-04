@@ -58,33 +58,39 @@ function unit_commitment(
     relax_integrality=false
 )
     # Initialize FNM
-    fnm = FullNetworkModel{UC}(system, datetimes)
+    @timeit_debug get_timer("FNTimer") "initialise FNM" fnm = FullNetworkModel{UC}(system, datetimes)
     # Variables
-    var_thermal_generation!(fnm)
-    var_commitment!(fnm)
-    var_startup_shutdown!(fnm)
-    var_ancillary_services!(fnm)
-    var_bids!(fnm)
-    # Constraints
-    con_generation_limits!(fnm)
-    con_ancillary_limits!(fnm)
-    con_regulation_requirements!(fnm)
-    con_operating_reserve_requirements!(fnm)
-    con_generation_ramp_rates!(fnm)
-    con_ancillary_ramp_rates!(fnm)
-    con_energy_balance!(fnm)
-    con_must_run!(fnm)
-    con_availability!(fnm)
-    # Objectives
-    obj_thermal_variable_cost!(fnm)
-    obj_thermal_noload_cost!(fnm)
-    obj_thermal_startup_cost!(fnm)
-    obj_ancillary_costs!(fnm)
-    obj_bids!(fnm)
-    if relax_integrality
-        JuMP.relax_integrality(fnm.model)
+    @timeit_debug get_timer("FNTimer") "add variables to model" begin
+        var_thermal_generation!(fnm)
+        var_commitment!(fnm)
+        var_startup_shutdown!(fnm)
+        var_ancillary_services!(fnm)
+        var_bids!(fnm)
     end
-    set_optimizer(fnm, solver)
+    # Constraints
+    @timeit_debug get_timer("FNTimer") "add constraints to model" begin
+        con_generation_limits!(fnm)
+        con_ancillary_limits!(fnm)
+        con_regulation_requirements!(fnm)
+        con_operating_reserve_requirements!(fnm)
+        con_generation_ramp_rates!(fnm)
+        con_ancillary_ramp_rates!(fnm)
+        con_energy_balance!(fnm)
+        con_must_run!(fnm)
+        con_availability!(fnm)
+    end
+    # Objectives
+    @timeit_debug get_timer("FNTimer") "add objectives to model" begin
+        obj_thermal_variable_cost!(fnm)
+        obj_thermal_noload_cost!(fnm)
+        obj_thermal_startup_cost!(fnm)
+        obj_ancillary_costs!(fnm)
+        obj_bids!(fnm)
+    end
+    if relax_integrality
+        @timeit_debug get_timer("FNTimer") "relax integrality" JuMP.relax_integrality(fnm.model)
+    end
+    @timeit_debug get_timer("FNTimer") "set optimizer" set_optimizer(fnm, solver)
     return fnm
 end
 
@@ -117,33 +123,39 @@ function unit_commitment_soft_ramps(
     slack=1e4, relax_integrality=false
 )
     # Initialize FNM
-    fnm = FullNetworkModel{UC}(system, datetimes)
+    @timeit_debug get_timer("FNTimer") "initialise FNM" fnm = FullNetworkModel{UC}(system, datetimes)
     # Variables
-    var_thermal_generation!(fnm)
-    var_commitment!(fnm)
-    var_startup_shutdown!(fnm)
-    var_ancillary_services!(fnm)
-    var_bids!(fnm)
-    # Constraints
-    con_generation_limits!(fnm)
-    con_ancillary_limits!(fnm)
-    con_regulation_requirements!(fnm)
-    con_operating_reserve_requirements!(fnm)
-    con_generation_ramp_rates!(fnm; slack=slack)
-    con_ancillary_ramp_rates!(fnm)
-    con_energy_balance!(fnm)
-    con_must_run!(fnm)
-    con_availability!(fnm)
-    # Objectives
-    obj_thermal_variable_cost!(fnm)
-    obj_thermal_noload_cost!(fnm)
-    obj_thermal_startup_cost!(fnm)
-    obj_ancillary_costs!(fnm)
-    obj_bids!(fnm)
-    if relax_integrality
-        JuMP.relax_integrality(fnm.model)
+    @timeit_debug get_timer("FNTimer") "add variables to model" begin
+        var_thermal_generation!(fnm)
+        var_commitment!(fnm)
+        var_startup_shutdown!(fnm)
+        var_ancillary_services!(fnm)
+        var_bids!(fnm)
     end
-    set_optimizer(fnm, solver)
+    # Constraints
+    @timeit_debug get_timer("FNTimer") "add constraints to model" begin
+        con_generation_limits!(fnm)
+        con_ancillary_limits!(fnm)
+        con_regulation_requirements!(fnm)
+        con_operating_reserve_requirements!(fnm)
+        con_generation_ramp_rates!(fnm; slack=slack)
+        con_ancillary_ramp_rates!(fnm)
+        con_energy_balance!(fnm)
+        con_must_run!(fnm)
+        con_availability!(fnm)
+    end
+    # Objectives
+    @timeit_debug get_timer("FNTimer") "add objectives to model" begin
+        obj_thermal_variable_cost!(fnm)
+        obj_thermal_noload_cost!(fnm)
+        obj_thermal_startup_cost!(fnm)
+        obj_ancillary_costs!(fnm)
+        obj_bids!(fnm)
+    end
+    if relax_integrality
+        @timeit_debug get_timer("FNTimer") "relax integrality" JuMP.relax_integrality(fnm.model)
+    end
+    @timeit_debug get_timer("FNTimer") "set optimizer" set_optimizer(fnm, solver)
     return fnm
 end
 
@@ -175,31 +187,37 @@ function unit_commitment_no_ramps(
     relax_integrality=false
 )
     # Initialize FNM
-    fnm = FullNetworkModel{UC}(system, datetimes)
+    @timeit_debug get_timer("FNTimer") "initialise FNM" fnm = FullNetworkModel{UC}(system, datetimes)
     # Variables
-    var_thermal_generation!(fnm)
-    var_commitment!(fnm)
-    var_startup_shutdown!(fnm)
-    var_ancillary_services!(fnm)
-    var_bids!(fnm)
-    # Constraints
-    con_generation_limits!(fnm)
-    con_ancillary_limits!(fnm)
-    con_regulation_requirements!(fnm)
-    con_operating_reserve_requirements!(fnm)
-    con_energy_balance!(fnm)
-    con_must_run!(fnm)
-    con_availability!(fnm)
-    # Objectives
-    obj_thermal_variable_cost!(fnm)
-    obj_thermal_noload_cost!(fnm)
-    obj_thermal_startup_cost!(fnm)
-    obj_ancillary_costs!(fnm)
-    obj_bids!(fnm)
-    if relax_integrality
-        JuMP.relax_integrality(fnm.model)
+    @timeit_debug get_timer("FNTimer") "add variables to model" begin
+        var_thermal_generation!(fnm)
+        var_commitment!(fnm)
+        var_startup_shutdown!(fnm)
+        var_ancillary_services!(fnm)
+        var_bids!(fnm)
     end
-    set_optimizer(fnm, solver)
+    # Constraints
+    @timeit_debug get_timer("FNTimer") "add constraints to model" begin
+        con_generation_limits!(fnm)
+        con_ancillary_limits!(fnm)
+        con_regulation_requirements!(fnm)
+        con_operating_reserve_requirements!(fnm)
+        con_energy_balance!(fnm)
+        con_must_run!(fnm)
+        con_availability!(fnm)
+    end
+    # Objectives
+    @timeit_debug get_timer("FNTimer") "add objectives to model" begin
+        obj_thermal_variable_cost!(fnm)
+        obj_thermal_noload_cost!(fnm)
+        obj_thermal_startup_cost!(fnm)
+        obj_ancillary_costs!(fnm)
+        obj_bids!(fnm)
+    end
+    if relax_integrality
+        @timeit_debug get_timer("FNTimer") "relax integrality" JuMP.relax_integrality(fnm.model)
+    end
+    @timeit_debug get_timer("FNTimer") "set optimizer" set_optimizer(fnm, solver)
     return fnm
 end
 
@@ -268,34 +286,40 @@ function unit_commitment_branch_flow_limits(
     relax_integrality=false
 )
     # Initialize FNM
-    fnm = FullNetworkModel{UC}(system, datetimes)
+    @timeit_debug get_timer("FNTimer") "initialise FNM" fnm = FullNetworkModel{UC}(system, datetimes)
     # Variables
-    var_thermal_generation!(fnm)
-    var_commitment!(fnm)
-    var_startup_shutdown!(fnm)
-    var_ancillary_services!(fnm)
-    var_bids!(fnm)
-    # Constraints
-    con_generation_limits!(fnm)
-    con_ancillary_limits!(fnm)
-    con_regulation_requirements!(fnm)
-    con_operating_reserve_requirements!(fnm)
-    con_generation_ramp_rates!(fnm)
-    con_ancillary_ramp_rates!(fnm)
-    con_energy_balance!(fnm)
-    con_must_run!(fnm)
-    con_availability!(fnm)
-    con_thermal_branch!(fnm)
-    # Objectives
-    obj_thermal_variable_cost!(fnm)
-    obj_thermal_noload_cost!(fnm)
-    obj_thermal_startup_cost!(fnm)
-    obj_ancillary_costs!(fnm)
-    obj_bids!(fnm)
-    if relax_integrality
-        JuMP.relax_integrality(fnm.model)
+    @timeit_debug get_timer("FNTimer") "add variables to model" begin
+        var_thermal_generation!(fnm)
+        var_commitment!(fnm)
+        var_startup_shutdown!(fnm)
+        var_ancillary_services!(fnm)
+        var_bids!(fnm)
     end
-    set_optimizer(fnm, solver)
+    # Constraints
+    @timeit_debug get_timer("FNTimer") "add constraints to model" begin
+        con_generation_limits!(fnm)
+        con_ancillary_limits!(fnm)
+        con_regulation_requirements!(fnm)
+        con_operating_reserve_requirements!(fnm)
+        con_generation_ramp_rates!(fnm)
+        con_ancillary_ramp_rates!(fnm)
+        con_energy_balance!(fnm)
+        con_must_run!(fnm)
+        con_availability!(fnm)
+        @timeit_debug get_timer("FNTimer") "thermal branch constraints" con_thermal_branch!(fnm)
+    end
+    # Objectives
+    @timeit_debug get_timer("FNTimer") "add objectives to model" begin
+        obj_thermal_variable_cost!(fnm)
+        obj_thermal_noload_cost!(fnm)
+        obj_thermal_startup_cost!(fnm)
+        obj_ancillary_costs!(fnm)
+        obj_bids!(fnm)
+    end
+    if relax_integrality
+        @timeit_debug get_timer("FNTimer") "relax integrality" JuMP.relax_integrality(fnm.model)
+    end
+    @timeit_debug get_timer("FNTimer") "set optimizer" set_optimizer(fnm, solver)
     return fnm
 end
 
@@ -326,34 +350,40 @@ function unit_commitment_soft_ramps_branch_flow_limits(
     slack=1e4, relax_integrality=false
 )
     # Initialize FNM
-    fnm = FullNetworkModel{UC}(system, datetimes)
+    @timeit_debug get_timer("FNTimer") "initialise FNM" fnm = FullNetworkModel{UC}(system, datetimes)
     # Variables
-    var_thermal_generation!(fnm)
-    var_commitment!(fnm)
-    var_startup_shutdown!(fnm)
-    var_ancillary_services!(fnm)
-    var_bids!(fnm)
-    # Constraints
-    con_generation_limits!(fnm)
-    con_ancillary_limits!(fnm)
-    con_regulation_requirements!(fnm)
-    con_operating_reserve_requirements!(fnm)
-    con_generation_ramp_rates!(fnm; slack=slack)
-    con_ancillary_ramp_rates!(fnm)
-    con_energy_balance!(fnm)
-    con_must_run!(fnm)
-    con_availability!(fnm)
-    con_thermal_branch!(fnm)
-    # Objectives
-    obj_thermal_variable_cost!(fnm)
-    obj_thermal_noload_cost!(fnm)
-    obj_thermal_startup_cost!(fnm)
-    obj_ancillary_costs!(fnm)
-    obj_bids!(fnm)
-    if relax_integrality
-        JuMP.relax_integrality(fnm.model)
+    @timeit_debug get_timer("FNTimer") "add variables to model" begin
+        var_thermal_generation!(fnm)
+        var_commitment!(fnm)
+        var_startup_shutdown!(fnm)
+        var_ancillary_services!(fnm)
+        var_bids!(fnm)
     end
-    set_optimizer(fnm, solver)
+    # Constraints
+    @timeit_debug get_timer("FNTimer") "add constraints to model" begin
+        con_generation_limits!(fnm)
+        con_ancillary_limits!(fnm)
+        con_regulation_requirements!(fnm)
+        con_operating_reserve_requirements!(fnm)
+        con_generation_ramp_rates!(fnm; slack=slack)
+        con_ancillary_ramp_rates!(fnm)
+        con_energy_balance!(fnm)
+        con_must_run!(fnm)
+        con_availability!(fnm)
+        @timeit_debug get_timer("FNTimer") "thermal branch constraints" con_thermal_branch!(fnm)
+    end
+    # Objectives
+    @timeit_debug get_timer("FNTimer") "add objectives to model" begin
+        obj_thermal_variable_cost!(fnm)
+        obj_thermal_noload_cost!(fnm)
+        obj_thermal_startup_cost!(fnm)
+        obj_ancillary_costs!(fnm)
+        obj_bids!(fnm)
+    end
+    if relax_integrality
+        @timeit_debug get_timer("FNTimer") "relax integrality" JuMP.relax_integrality(fnm.model)
+    end
+    @timeit_debug get_timer("FNTimer") "set optimizer" set_optimizer(fnm, solver)
     return fnm
 end
 
@@ -383,31 +413,37 @@ function unit_commitment_no_ramps_branch_flow_limits(
     relax_integrality=false
 )
     # Initialize FNM
-    fnm = FullNetworkModel{UC}(system, datetimes)
+    @timeit_debug get_timer("FNTimer") "initialise FNM" fnm = FullNetworkModel{UC}(system, datetimes)
     # Variables
-    var_thermal_generation!(fnm)
-    var_commitment!(fnm)
-    var_startup_shutdown!(fnm)
-    var_ancillary_services!(fnm)
-    var_bids!(fnm)
-    # Constraints
-    con_generation_limits!(fnm)
-    con_ancillary_limits!(fnm)
-    con_regulation_requirements!(fnm)
-    con_operating_reserve_requirements!(fnm)
-    con_energy_balance!(fnm)
-    con_must_run!(fnm)
-    con_availability!(fnm)
-    con_thermal_branch!(fnm)
-    # Objectives
-    obj_thermal_variable_cost!(fnm)
-    obj_thermal_noload_cost!(fnm)
-    obj_thermal_startup_cost!(fnm)
-    obj_ancillary_costs!(fnm)
-    obj_bids!(fnm)
-    if relax_integrality
-        JuMP.relax_integrality(fnm.model)
+    @timeit_debug get_timer("FNTimer") "add variables to model" begin
+        var_thermal_generation!(fnm)
+        var_commitment!(fnm)
+        var_startup_shutdown!(fnm)
+        var_ancillary_services!(fnm)
+        var_bids!(fnm)
     end
-    set_optimizer(fnm, solver)
+    # Constraints
+    @timeit_debug get_timer("FNTimer") "add constraints to model" begin
+        con_generation_limits!(fnm)
+        con_ancillary_limits!(fnm)
+        con_regulation_requirements!(fnm)
+        con_operating_reserve_requirements!(fnm)
+        con_energy_balance!(fnm)
+        con_must_run!(fnm)
+        con_availability!(fnm)
+        @timeit_debug get_timer("FNTimer") "thermal branch constraints" con_thermal_branch!(fnm)
+    end
+    # Objectives
+    @timeit_debug get_timer("FNTimer") "add objectives to model" begin
+        obj_thermal_variable_cost!(fnm)
+        obj_thermal_noload_cost!(fnm)
+        obj_thermal_startup_cost!(fnm)
+        obj_ancillary_costs!(fnm)
+        obj_bids!(fnm)
+    end
+    if relax_integrality
+        @timeit_debug get_timer("FNTimer") "relax integrality" JuMP.relax_integrality(fnm.model)
+    end
+    @timeit_debug get_timer("FNTimer") "set optimizer" set_optimizer(fnm, solver)
     return fnm
 end

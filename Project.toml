@@ -1,7 +1,7 @@
 name = "FullNetworkModels"
 uuid = "73927447-18cb-4351-9246-c402eb8d0c47"
 authors = ["Invenia Technical Computing Corporation"]
-version = "4.3.0"
+version = "4.4.0"
 
 [deps]
 Dates = "ade2ca70-3891-5945-98fb-dc099432e06a"
@@ -9,6 +9,7 @@ JuMP = "4076af6c-e467-56ae-b986-b466b2749572"
 Memento = "f28f55f0-a522-5efc-85c2-fe41dfb9b2d9"
 PowerSystems = "bcd98974-b02a-5e2f-9ee0-a103f5c450dd"
 PowerSystemsExtras = "5c12387c-8993-487c-b7f8-95b63bb251f1"
+TimerOutputs = "a759f4b9-e2f1-59dc-863e-4aeb61b1ea8f"
 
 [compat]
 Cbc = "0.8"
@@ -19,6 +20,7 @@ JuMP = "0.21, 0.22"
 Memento = "1.1"
 PowerSystems = "1.5"
 PowerSystemsExtras = "0.1.5"
+TimerOutputs = "0.5"
 TimeSeries = "0.23"
 julia = "1.5"
 
