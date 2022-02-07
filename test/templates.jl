@@ -65,36 +65,6 @@
             @test all(==(0.0), value.(fnm_no_ramps.model[:psd]))
         end
     end
-    @testset "unit_commitment soft Energy Balance" begin
-        # Run the original test system and get the optimised objective
-        system_ori = deepcopy(TEST_SYSTEM)
-        fnm = unit_commitment(system_ori, Cbc.Optimizer; relax_integrality=true)
-        optimize!(fnm)
-        # Save the objective (Should be feasible)
-        @test termination_status(fnm.model) == TerminationStatusCode(1)
-        obj_ori = objective_value(fnm.model)
-
-        # Modify system so that hard energy balance results in infeasibility
-        system_infeasible = deepcopy(TEST_SYSTEM)
-        loads = collect(get_components(PowerLoad, system_infeasible))
-        set_active_power!(loads[1], 10.0)
-        set_active_power!(loads[2], 10.0)
-
-        fnm = unit_commitment(system_infeasible, Cbc.Optimizer; relax_integrality=true)
-        optimize!(fnm)
-        # Should be infeasible (termination 6 because Cbc uses INFEASIBLE_OR_UNBOUNDED)
-        @test termination_status(fnm.model) == TerminationStatusCode(6)
-
-        # Now do the same with soft energy balance constraints – should be feasible
-        fnm_soft_eb = unit_commitment(
-            system_infeasible, Cbc.Optimizer; relax_integrality=false, slack=nothing
-        )
-        optimize!(fnm_soft_eb)
-        @test termination_status(fnm_soft_eb.model) == TerminationStatusCode(1)
-        obj_soft_eb = objective_value(fnm_soft_eb.model)
-
-        @test obj_ori < obj_soft_eb
-    end
     @testset "unit_commitment_branch_flow_limits" begin
         fnm = unit_commitment_branch_flow_limits(TEST_SYSTEM, Cbc.Optimizer)
         tests_branch_flow_limits(UC, fnm)
@@ -435,33 +405,31 @@
         # Compare objectives without and with contingencies
         @test obj_no_conting <= obj
     end
-    @testset "economic dispatch soft Energy Balance" begin
+    @testset "Soft Energy Balance: $T" for (T, t_system) in ((UC, TEST_SYSTEM), (ED, TEST_SYSTEM_RT))
         # Run the original test system and get the optimised objective
-        system_ori = deepcopy(TEST_SYSTEM_RT)
-        fnm = economic_dispatch(system_ori, Cbc.Optimizer)
+        fnm = T === UC ? unit_commitment(t_system, Cbc.Optimizer; relax_integrality=true) : economic_dispatch(t_system, Cbc.Optimizer)
         optimize!(fnm)
         # Save the objective (Should be feasible)
         @test termination_status(fnm.model) == TerminationStatusCode(1)
         obj_ori = objective_value(fnm.model)
 
         # Modify system so that hard energy balance results in infeasibility
-        system_infeasible = deepcopy(TEST_SYSTEM_RT)
+        system_infeasible = deepcopy(t_system)
         loads = collect(get_components(PowerLoad, system_infeasible))
         set_active_power!(loads[1], 10.0)
         set_active_power!(loads[2], 10.0)
 
-        fnm = economic_dispatch(system_infeasible, Cbc.Optimizer)
-        optimize!(fnm)
+        fnm_inf = T === UC ? unit_commitment(system_infeasible, Cbc.Optimizer; relax_integrality=true) : economic_dispatch(system_infeasible, Cbc.Optimizer)
+        optimize!(fnm_inf)
         # Should be infeasible (termination 6 because Cbc uses INFEASIBLE_OR_UNBOUNDED)
-        @test termination_status(fnm.model) == TerminationStatusCode(6)
+        @test termination_status(fnm_inf.model) == TerminationStatusCode(6)
 
         # Now do the same with soft energy balance constraints – should be feasible
-        fnm_soft_eb = economic_dispatch(
-            system_infeasible, Cbc.Optimizer; slack=nothing
-        )
+        fnm_soft_eb = T === UC ? unit_commitment(system_infeasible, Cbc.Optimizer; relax_integrality=true, slack=1e4) : economic_dispatch(system_infeasible, Cbc.Optimizer; slack=1e4)
         optimize!(fnm_soft_eb)
         @test termination_status(fnm_soft_eb.model) == TerminationStatusCode(1)
         obj_soft_eb = objective_value(fnm_soft_eb.model)
+        @test value(fnm_soft_eb.model[:sl_eb]) > 0
         @test obj_ori < obj_soft_eb
     end
 end
