@@ -122,8 +122,10 @@ export obj_thermal_variable_cost!
 export economic_dispatch
 export economic_dispatch_branch_flow_limits
 export unit_commitment
+export unit_commitment_soft_ramps
 export unit_commitment_no_ramps
 export unit_commitment_branch_flow_limits
+export unit_commitment_soft_ramps_branch_flow_limits
 export unit_commitment_no_ramps_branch_flow_limits
 
 # API extensions

@@ -29,7 +29,7 @@
         @test termination_status(fnm.model) == TerminationStatusCode(6)
 
         # Now do the same with soft ramp constraints – should be feasible
-        fnm_soft_ramps = unit_commitment(
+        fnm_soft_ramps = unit_commitment_soft_ramps(
             system_infeasible, Cbc.Optimizer; slack=1e3, relax_integrality=true
         )
         # Basic ramp rate tests with correct slack
@@ -405,9 +405,12 @@
         # Compare objectives without and with contingencies
         @test obj_no_conting <= obj
     end
-    @testset "Soft Energy Balance: $T" for (T, t_system) in ((UC, TEST_SYSTEM), (ED, TEST_SYSTEM_RT))
+    @testset "Soft Energy Balance: $T" for (T, t_system, template, solver) in (
+            (UC, TEST_SYSTEM, unit_commitment, Cbc.Optimizer),
+            (ED, TEST_SYSTEM_RT, economic_dispatch, Clp.Optimizer)
+        )
         # Run the original test system and get the optimised objective
-        fnm = T === UC ? unit_commitment(t_system, Cbc.Optimizer; relax_integrality=true) : economic_dispatch(t_system, Cbc.Optimizer)
+        fnm = template(t_system, solver; slack=nothing)
         optimize!(fnm)
         # Save the objective (Should be feasible)
         @test termination_status(fnm.model) == TerminationStatusCode(1)
@@ -419,17 +422,19 @@
         set_active_power!(loads[1], 10.0)
         set_active_power!(loads[2], 10.0)
 
-        fnm_inf = T === UC ? unit_commitment(system_infeasible, Cbc.Optimizer; relax_integrality=true) : economic_dispatch(system_infeasible, Cbc.Optimizer)
+        fnm_inf = template(system_infeasible, solver; slack=nothing)
         optimize!(fnm_inf)
         # Should be infeasible (termination 6 because Cbc uses INFEASIBLE_OR_UNBOUNDED)
-        @test termination_status(fnm_inf.model) == TerminationStatusCode(6)
+        @test termination_status(fnm_inf.model) == TerminationStatusCode(2)
 
         # Now do the same with soft energy balance constraints – should be feasible
-        fnm_soft_eb = T === UC ? unit_commitment(system_infeasible, Cbc.Optimizer; relax_integrality=true, slack=1e4) : economic_dispatch(system_infeasible, Cbc.Optimizer; slack=1e4)
+        fnm_soft_eb = template(system_infeasible, solver; slack=1e4)
         optimize!(fnm_soft_eb)
         @test termination_status(fnm_soft_eb.model) == TerminationStatusCode(1)
         obj_soft_eb = objective_value(fnm_soft_eb.model)
-        @test value(fnm_soft_eb.model[:sl_eb]) > 0
+        @testset "$T Energy balance slack Active" for t in fnm.datetimes
+            @test value.(fnm_soft_eb.model[:sl_eb_gen][t]) > 0
+        end
         @test obj_ori < obj_soft_eb
     end
 end

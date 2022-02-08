@@ -148,7 +148,7 @@ function tests_energy_balance(fnm::FullNetworkModel{<:ED})
     @testset "Constraints were correctly defined" for t in fnm.datetimes
         system_load = sum(D[f, t] for f in load_names)
         @test sprint(show, constraint_by_name(fnm.model, "energy_balance[$t]")) ==
-            "energy_balance[$t] : p[7,$t] + p[3,$t] = $(system_load)"
+            "energy_balance[$t] : p[7,$t] + p[3,$t] + sl_eb_gen[$t] - sl_eb_load[$t] = $(system_load)"
     end
     return nothing
 end
@@ -363,13 +363,13 @@ end
             tests_ramp_rates(fnm; slack=1e4)
         end
     end
-    @testset "Energy balance constraints $T" for (T, t_system) in
-        ((UC, TEST_SYSTEM), (ED, TEST_SYSTEM_RT))
+    @testset "Energy balance constraints $T" for (T, t_system, slack) in
+        ((UC, TEST_SYSTEM, nothing), (ED, TEST_SYSTEM_RT, 1e4))
         @testset "con_energy_balance!" begin
             fnm = FullNetworkModel{T}(t_system, Clp.Optimizer)
             var_thermal_generation!(fnm)
             T == UC && var_bids!(fnm)
-            con_energy_balance!(fnm)
+            con_energy_balance!(fnm, slack=slack)
             tests_energy_balance(fnm)
         end
     end

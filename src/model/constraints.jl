@@ -332,8 +332,14 @@ function con_energy_balance!(fnm::FullNetworkModel{<:ED}; slack=nothing)
     )
     # If the constraints are supposed to be soft constraints, add slacks
     if slack !== nothing
-        @variable(model, sl_eb[t in datetimes] >= 0)
-        _add_to_objective!(model, slack * sum(sl_eb))
+        @variable(model, sl_eb_gen[t in datetimes] >= 0)
+        @variable(model, sl_eb_load[t in datetimes] >= 0)
+        for t in datetimes
+            set_normalized_coefficient(energy_balance[t], sl_eb_gen[t], 1.0)
+            set_normalized_coefficient(energy_balance[t], sl_eb_load[t], -1.0)
+        end
+        _add_to_objective!(model, slack * sum(sl_eb_gen))
+        _add_to_objective!(model, slack * sum(sl_eb_load))
     end
     return fnm
 end
@@ -372,8 +378,14 @@ function con_energy_balance!(fnm::FullNetworkModel{<:UC}; slack=nothing)
     )
     # If the constraints are supposed to be soft constraints, add slacks
     if slack !== nothing
-        @variable(model, sl_eb[t in datetimes] >= 0)
-        _add_to_objective!(model, slack * sum(sl_eb))
+        @variable(model, sl_eb_gen[t in datetimes] >= 0)
+        @variable(model, sl_eb_load[t in datetimes] >= 0)
+        for t in datetimes
+            set_normalized_coefficient(energy_balance[t], sl_eb_gen[t], 1.0)
+            set_normalized_coefficient(energy_balance[t], sl_eb_load[t], -1.0)
+        end
+        _add_to_objective!(model, slack * sum(sl_eb_gen))
+        _add_to_objective!(model, slack * sum(sl_eb_load))
     end
     return fnm
 end
