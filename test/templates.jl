@@ -411,7 +411,7 @@
         )
         datetimes=get_forecast_timestamps(t_system)
         # Run the original test system and get the optimised objective
-        fnm = _simple_template(t_system, T, solver, datetimes; slack=nothing)
+        fnm = _simple_template(t_system, T, solver; slack=nothing)
         optimize!(fnm)
         # Save the objective (Should be feasible)
         @test termination_status(fnm.model) == TerminationStatusCode(1)
@@ -423,13 +423,13 @@
         set_active_power!(loads[1], 10.0)
         set_active_power!(loads[2], 10.0)
 
-        fnm_inf = _simple_template(system_infe_load, T, solver, datetimes; slack=nothing)
+        fnm_inf = _simple_template(system_infe_load, T, solver; slack=nothing)
         optimize!(fnm_inf)
         # Should be infeasible
         @test termination_status(fnm_inf.model) == TerminationStatusCode(2)
 
         # Now do the same with soft energy balance constraints – should be feasible
-        fnm_soft_eb = _simple_template(system_infe_load, T, solver, datetimes; slack=1e4)
+        fnm_soft_eb = _simple_template(system_infe_load, T, solver; slack=1e4)
         optimize!(fnm_soft_eb)
         @test termination_status(fnm_soft_eb.model) == TerminationStatusCode(1)
         obj_soft_eb = objective_value(fnm_soft_eb.model)
@@ -448,18 +448,17 @@
             set_active_power!(loads[1], 0.1)
             set_active_power!(loads[2], 0.1)
 
-            fnm_inf = _simple_template(system_infe_gen, T, solver, datetimes; slack=nothing)
+            fnm_inf = _simple_template(system_infe_gen, T, solver; slack=nothing)
             optimize!(fnm_inf)
             # Should be infeasible
             @test termination_status(fnm_inf.model) == TerminationStatusCode(2)
 
             # Now do the same with soft energy balance constraints – should be feasible
-            fnm_soft_eb = _simple_template(system_infe_gen, T, solver, datetimes; slack=1e4)
+            fnm_soft_eb = _simple_template(system_infe_gen, T, solver; slack=1e4)
             optimize!(fnm_soft_eb)
             @test termination_status(fnm_soft_eb.model) == TerminationStatusCode(1)
             obj_soft_eb = objective_value(fnm_soft_eb.model)
             @testset "$T Energy balance slack Active" for t in fnm.datetimes
-                t = datetimes[1]
                 @test value.(fnm_soft_eb.model[:sl_eb_load][t]) > 0.0
             end
             @test obj_ori < obj_soft_eb

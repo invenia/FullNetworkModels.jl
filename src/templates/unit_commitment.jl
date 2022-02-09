@@ -468,7 +468,6 @@ See also [`unit_commitment_branch_flow_limits`](@ref) and [`unit_commitment_soft
 # Keywords
  - `slack=1e4`: The slack penalty for the soft constraints.
  - `relax_integrality=false`: If set to `true`, binary variables will be relaxed.
- - `slack=1e4`: The slack penalty for the soft constraints.
 """
 function unit_commitment_soft_ramps_branch_flow_limits(
     system::System, solver, datetimes=get_forecast_timestamps(system);
@@ -529,7 +528,7 @@ See also [`unit_commitment_branch_flow_limits`](@ref) and [`unit_commitment_no_r
 """
 function unit_commitment_no_ramps_branch_flow_limits(
     system::System, solver, datetimes=get_forecast_timestamps(system);
-    relax_integrality=false, slack=1e4
+    relax_integrality=false, slack=nothing
 )
     # Initialize FNM
     @timeit_debug get_timer("FNTimer") "initialise FNM" fnm = FullNetworkModel{UC}(system, datetimes)
