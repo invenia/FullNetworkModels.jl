@@ -406,9 +406,9 @@
         @test obj_no_conting <= obj
     end
     @testset "Soft Energy Balance: $T" for (T, t_system, solver) in (
-            (UC, TEST_SYSTEM, Cbc.Optimizer),
-            (ED, TEST_SYSTEM_RT, Clp.Optimizer)
-        )
+        (UC, TEST_SYSTEM, Cbc.Optimizer),
+        (ED, TEST_SYSTEM_RT, Clp.Optimizer)
+    )
         datetimes=get_forecast_timestamps(t_system)
         # Run the original test system and get the optimised objective
         fnm = _simple_template(t_system, T, solver; slack=nothing)
