@@ -52,7 +52,7 @@ See also [`unit_commitment_soft_ramps`](@ref) and [`unit_commitment_no_ramps`](@
 
 # Keywords
  - `relax_integrality=false`: If set to `true`, binary variables will be relaxed.
- - `slack=nothing`: The slack penalty for the soft constraints (i.e. slack=1e4).
+ - `slack=nothing`: The slack penalty for the soft constraints (e.g. slack=1e4).
 """
 function unit_commitment(
     system::System, solver, datetimes=get_forecast_timestamps(system);
@@ -240,7 +240,7 @@ See also [`unit_commitment`](@ref) and [`unit_commitment_branch_flow_limits`](@r
 
 # Keywords
  - `relax_integrality=false`: If set to `true`, binary variables will be relaxed.
- - `slack=nothing`: The slack penalty for the soft constraints (i.e. slack=1e4).
+ - `slack=nothing`: The slack penalty for the soft constraints (e.g. slack=1e4).
 """
 function unit_commitment_no_ramps(
     system::System, solver, datetimes=get_forecast_timestamps(system);
@@ -339,7 +339,7 @@ See also [`unit_commitment`](@ref) and [`unit_commitment_no_ramps`](@ref).
 
 # Keywords
  - `relax_integrality=false`: If set to `true`, binary variables will be relaxed.
- - `slack=nothing`: The slack penalty for the soft constraints (i.e. slack=1e4).
+ - `slack=nothing`: The slack penalty for the soft constraints (e.g. slack=1e4).
 """
 function unit_commitment_branch_flow_limits(
     system::System, solver, datetimes=get_forecast_timestamps(system);

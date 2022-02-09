@@ -271,21 +271,38 @@ function tests_branch_flow_limits(T, fnm::FullNetworkModel)
 end
 
 # A simple unit commitment with no ancillary services for the sake of tests.
-function _simple_unit_commitment(
-    system::System, solver, datetimes=get_forecast_timestamps(system)
+function _simple_template(
+    system::System, ::Type{UC}, solver, datetimes=get_forecast_timestamps(system);
+    slack=nothing
 )
     fnm = FullNetworkModel{UC}(system, datetimes)
     var_thermal_generation!(fnm)
     var_commitment!(fnm)
     var_bids!(fnm)
     con_generation_limits!(fnm)
-    con_energy_balance!(fnm)
+    con_energy_balance!(fnm; slack)
     con_must_run!(fnm)
     con_availability!(fnm)
     obj_thermal_variable_cost!(fnm)
     obj_thermal_noload_cost!(fnm)
     obj_bids!(fnm)
     set_optimizer(fnm, solver)
+    set_silent(fnm.model) # to reduce test verbosity
+    return fnm
+end
+
+# A simple economic dispatch with no ancillary services for the sake of tests.
+function _simple_template(
+    system::System, ::Type{ED}, solver, datetimes=get_forecast_timestamps(system);
+    slack = nothing
+)
+    fnm = FullNetworkModel{ED}(system, datetimes)
+    var_thermal_generation!(fnm)
+    con_generation_limits!(fnm)
+    con_energy_balance!(fnm; slack)
+    obj_thermal_variable_cost!(fnm)
+    set_optimizer(fnm, solver)
+    set_silent(fnm.model) # to reduce test verbosity
     return fnm
 end
 
@@ -385,7 +402,7 @@ end
         add_time_series!(system, gen3, SingleTimeSeries("offer_curve", ta))
 
         # Check that the more expensive generator is not committed
-        fnm = _simple_unit_commitment(system, Cbc.Optimizer)
+        fnm = _simple_template(system, UC, Cbc.Optimizer)
         optimize!(fnm)
         u = value.(fnm.model[:u])
         @test u[7, :].data == zeros(24)
@@ -397,7 +414,7 @@ end
         add_time_series!(system, gen7, SingleTimeSeries("must_run", ta))
 
         # Check that generator 7 is now committed throughout the day
-        fnm = _simple_unit_commitment(system, Cbc.Optimizer)
+        fnm = _simple_template(system, UC, Cbc.Optimizer)
         optimize!(fnm)
         u = value.(fnm.model[:u])
         @test u[7, :].data == ones(24)
@@ -413,7 +430,7 @@ end
         add_time_series!(system, gen7, SingleTimeSeries("availability", ta))
 
         # Check that gen3 was not committed during the last hour
-        fnm = _simple_unit_commitment(system, Cbc.Optimizer)
+        fnm = _simple_template(system, UC, Cbc.Optimizer)
         optimize!(fnm)
         u = value.(fnm.model[:u])
         p = value.(fnm.model[:p])

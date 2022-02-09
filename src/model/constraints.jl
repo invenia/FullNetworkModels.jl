@@ -331,6 +331,7 @@ function con_energy_balance!(fnm::FullNetworkModel{<:ED}; slack=nothing)
         sum(p[g, t] for g in unit_codes) == sum(D[f, t] for f in load_names)
     )
     # If the constraints are supposed to be soft constraints, add slacks
+    # We need one slack for excess load and one for excess generation
     if slack !== nothing
         @variable(model, sl_eb_gen[t in datetimes] >= 0)
         @variable(model, sl_eb_load[t in datetimes] >= 0)
@@ -338,8 +339,7 @@ function con_energy_balance!(fnm::FullNetworkModel{<:ED}; slack=nothing)
             set_normalized_coefficient(energy_balance[t], sl_eb_gen[t], 1.0)
             set_normalized_coefficient(energy_balance[t], sl_eb_load[t], -1.0)
         end
-        _add_to_objective!(model, slack * sum(sl_eb_gen))
-        _add_to_objective!(model, slack * sum(sl_eb_load))
+        _add_to_objective!(model, slack * (sum(sl_eb_gen) + sum(sl_eb_load)))
     end
     return fnm
 end
@@ -377,6 +377,7 @@ function con_energy_balance!(fnm::FullNetworkModel{<:UC}; slack=nothing)
             sum(psd[s, t] for s in psd_names)
     )
     # If the constraints are supposed to be soft constraints, add slacks
+    # We need one slack for excess load and one for excess generation
     if slack !== nothing
         @variable(model, sl_eb_gen[t in datetimes] >= 0)
         @variable(model, sl_eb_load[t in datetimes] >= 0)
@@ -384,8 +385,7 @@ function con_energy_balance!(fnm::FullNetworkModel{<:UC}; slack=nothing)
             set_normalized_coefficient(energy_balance[t], sl_eb_gen[t], 1.0)
             set_normalized_coefficient(energy_balance[t], sl_eb_load[t], -1.0)
         end
-        _add_to_objective!(model, slack * sum(sl_eb_gen))
-        _add_to_objective!(model, slack * sum(sl_eb_load))
+        _add_to_objective!(model, slack * (sum(sl_eb_gen) + sum(sl_eb_load)))
     end
     return fnm
 end
