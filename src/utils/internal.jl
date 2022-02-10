@@ -247,10 +247,9 @@ If `slacks` is a vector of Pairs, then sets the values according to the specific
 the pairs. Any missing value will be set as `nothing` (i.e. hard constraint).
 """
 function _expand_slacks(slacks::Vector{<:Pair})
-    missing_slacks = setdiff(SOFT_CONSTRAINTS, first.(slacks))
-    slacks = vcat(slacks, missing_slacks .=> nothing) # not `append!` to avoid mutating
-    return Dict(slacks)
+    no_slacks = Dict(con => nothing for con in SOFT_CONSTRAINTS)
+    return merge(no_slacks, Dict(slacks))
 end
 function _expand_slacks(slacks)
-    return Dict(SOFT_CONSTRAINTS .=> slacks)
+    return Dict(con => slacks for con in SOFT_CONSTRAINTS)
 end
