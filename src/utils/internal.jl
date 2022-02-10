@@ -262,7 +262,6 @@ end
 function _unknown_slacks(names)
     msg = """
         Possible soft contraint are: $(join(SOFT_CONSTRAINTS, ", "))
-        Ignoring slack values for unrecognised soft constraints: $(join(names, ", "))
-        """
+        Ignoring slack values for unrecognised soft constraints: $(join(names, ", "))"""
     warn(LOGGER, msg)
 end
