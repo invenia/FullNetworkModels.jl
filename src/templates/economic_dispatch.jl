@@ -132,7 +132,7 @@ function economic_dispatch_branch_flow_limits(
         con_ancillary_limits!(fnm)
         con_regulation_requirements!(fnm; slack=sl[:ancillary_requirements])
         con_operating_reserve_requirements!(fnm; slack=sl[:ancillary_requirements])
-        con_energy_balance!(fnm; sl[:energy_balance])
+        con_energy_balance!(fnm; slack=sl[:energy_balance])
         @timeit_debug get_timer("FNTimer") "thermal branch constraints" con_thermal_branch!(fnm)
     end
     # Objectives
