@@ -48,6 +48,6 @@
         @test _expand_slacks([:energy_balance => nothing, :ramp_rates => 1e3]) == Dict(
             :energy_balance => nothing, :ramp_rates => 1e3, :ancillary_requirements => nothing
         )
-        @test_log(FNM.LOGGER, "warn", r".*unrecognised soft constraints: xyz$", _expand_slacks(:xyz => 1e3))
+        @test_log(FNM.LOGGER, "warn", "unrecognised soft constraints: xyz", _expand_slacks(:xyz => 1e3))
     end
 end
