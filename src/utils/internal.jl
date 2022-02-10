@@ -250,6 +250,9 @@ function _expand_slacks(slacks::Vector{<:Pair})
     no_slacks = Dict(con => nothing for con in SOFT_CONSTRAINTS)
     return merge(no_slacks, Dict(slacks))
 end
+function _expand_slacks(slacks::Pair)
+    return _expand_slacks([slacks])
+end
 function _expand_slacks(slacks)
     return Dict(con => slacks for con in SOFT_CONSTRAINTS)
 end
