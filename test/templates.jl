@@ -25,8 +25,8 @@
 
         fnm = unit_commitment(system_infeasible, Clp.Optimizer; relax_integrality=true)
         optimize!(fnm)
-        # Should be infeasible (termination 6 because Clp uses INFEASIBLE_OR_UNBOUNDED)
-        @test termination_status(fnm.model) == TerminationStatusCode(6)
+        # Should be infeasible
+        @test termination_status(fnm.model) == TerminationStatusCode(2)
 
         # Now do the same with soft ramp constraints – should be feasible
         fnm_soft_ramps = unit_commitment(
