@@ -188,20 +188,8 @@ end
 Adds zonal and market-wide regulation requirements to the full network model:
 
 $(latex(con_regulation_requirements!))
-
-Note:
-    - For `fnm::FullNetworkModel{<:ED}` this defaults to a soft constraint (`slack=1e4`).
-    - For `fnm::FullNetworkModel{<:UC}` this defaults to a hard constraint (`slack=nothing`).
 """
-function con_regulation_requirements!(fnm::FullNetworkModel{<:UC}; slack=nothing)
-    return con_regulation_requirements!(fnm, slack)
-end
-
-function con_regulation_requirements!(fnm::FullNetworkModel{<:ED}; slack=1e4)
-    return con_regulation_requirements!(fnm, slack)
-end
-
-function con_regulation_requirements!(fnm::FullNetworkModel, slack)
+function con_regulation_requirements!(fnm::FullNetworkModel; slack=nothing)
     model = fnm.model
     system = fnm.system
     datetimes = fnm.datetimes
@@ -239,15 +227,7 @@ Adds zonal and market-wide operating reserve requirements to the full network mo
 
 $(latex(con_operating_reserve_requirements!))
 """
-function con_operating_reserve_requirements!(fnm::FullNetworkModel{<:UC}; slack=nothing)
-    return con_operating_reserve_requirements!(fnm, slack)
-end
-
-function con_operating_reserve_requirements!(fnm::FullNetworkModel{<:ED}; slack=1e4)
-    return con_operating_reserve_requirements!(fnm, slack)
-end
-
-function con_operating_reserve_requirements!(fnm::FullNetworkModel, slack)
+function con_operating_reserve_requirements!(fnm::FullNetworkModel; slack=nothing)
     model = fnm.model
     system = fnm.system
     datetimes = fnm.datetimes

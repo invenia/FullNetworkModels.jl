@@ -1,7 +1,7 @@
 """
     unit_commitment(
         system::System, solver, datetimes=get_forecast_timestamps(system);
-        relax_integrality=false
+        relax_integrality=false, slack=nothing
     ) -> FullNetworkModel{UC}
 
 Defines the unit commitment default template.
@@ -43,7 +43,7 @@ $(_write_formulation(
 
 Thermal branch flow limits are not considered in this formulation.
 
-See also [`unit_commitment_soft_ramps`](@ref) and [`unit_commitment_no_ramps`](@ref).
+See also [`unit_commitment_no_ramps`](@ref).
 
 # Arguments
  - `system::System`: The PowerSystems system that provides the input data.
@@ -58,6 +58,8 @@ function unit_commitment(
     system::System, solver, datetimes=get_forecast_timestamps(system);
     relax_integrality=false, slack=nothing
 )
+    # Get the individual slack values to be used in each soft constraint
+    @timeit_debug get_timer("FNTimer") "specify slacks" sl = _specify_slacks(slack)
     # Initialize FNM
     @timeit_debug get_timer("FNTimer") "initialise FNM" fnm = FullNetworkModel{UC}(system, datetimes)
     # Variables
@@ -72,11 +74,11 @@ function unit_commitment(
     @timeit_debug get_timer("FNTimer") "add constraints to model" begin
         con_generation_limits!(fnm)
         con_ancillary_limits!(fnm)
-        con_regulation_requirements!(fnm)
-        con_operating_reserve_requirements!(fnm)
-        con_generation_ramp_rates!(fnm)
+        con_regulation_requirements!(fnm; slack=sl[:ancillary_requirements])
+        con_operating_reserve_requirements!(fnm; slack=sl[:ancillary_requirements])
+        con_generation_ramp_rates!(fnm; slack=sl[:ramp_rates])
         con_ancillary_ramp_rates!(fnm)
-        con_energy_balance!(fnm; slack)
+        con_energy_balance!(fnm; slack=sl[:energy_balance])
         con_must_run!(fnm)
         con_availability!(fnm)
     end
@@ -95,70 +97,6 @@ function unit_commitment(
     return fnm
 end
 
-"""
-    unit_commitment_soft_ramps(
-        system::System, solver, datetimes=get_forecast_timestamps(system);
-        slack=1e4, relax_integrality=false
-    ) -> FullNetworkModel{UC}
-
-Defines the unit commitment template with soft generation ramp constraints.
-Receives a `system` from FullNetworkDataPrep and returns a [`FullNetworkModel`](@ref) with a
-`model` with the same formulation as [`unit_commitment`], except for the ramp constraints,
-which are modeled as soft constraints with slack variables.
-
-Thermal branch flow limits are not considered in this formulation.
-
-See also [`unit_commitment`](@ref) and [`unit_commitment_no_ramps`](@ref).
-
-# Arguments
- - `system::System`: The PowerSystems system that provides the input data.
- - `solver`: The solver of choice, e.g. `Cbc.Optimizer`.
- - `datetimes=get_forecast_timestamps(system)`: The time periods considered in the model.
-
-# Keywords
- - `slack=1e4`: The slack penalty for the soft constraints.
- - `relax_integrality=false`: If set to `true`, binary variables will be relaxed.
-"""
-function unit_commitment_soft_ramps(
-    system::System, solver, datetimes=get_forecast_timestamps(system);
-    slack=1e4, relax_integrality=false
-)
-    # Initialize FNM
-    @timeit_debug get_timer("FNTimer") "initialise FNM" fnm = FullNetworkModel{UC}(system, datetimes)
-    # Variables
-    @timeit_debug get_timer("FNTimer") "add variables to model" begin
-        var_thermal_generation!(fnm)
-        var_commitment!(fnm)
-        var_startup_shutdown!(fnm)
-        var_ancillary_services!(fnm)
-        var_bids!(fnm)
-    end
-    # Constraints
-    @timeit_debug get_timer("FNTimer") "add constraints to model" begin
-        con_generation_limits!(fnm)
-        con_ancillary_limits!(fnm)
-        con_regulation_requirements!(fnm)
-        con_operating_reserve_requirements!(fnm)
-        con_generation_ramp_rates!(fnm; slack=slack)
-        con_ancillary_ramp_rates!(fnm)
-        con_energy_balance!(fnm)
-        con_must_run!(fnm)
-        con_availability!(fnm)
-    end
-    # Objectives
-    @timeit_debug get_timer("FNTimer") "add objectives to model" begin
-        obj_thermal_variable_cost!(fnm)
-        obj_thermal_noload_cost!(fnm)
-        obj_thermal_startup_cost!(fnm)
-        obj_ancillary_costs!(fnm)
-        obj_bids!(fnm)
-    end
-    if relax_integrality
-        @timeit_debug get_timer("FNTimer") "relax integrality" JuMP.relax_integrality(fnm.model)
-    end
-    @timeit_debug get_timer("FNTimer") "set optimizer" set_optimizer(fnm, solver)
-    return fnm
-end
 """
     unit_commitment_no_ramps(
         system::System, solver, datetimes=get_forecast_timestamps(system);
@@ -187,6 +125,8 @@ function unit_commitment_no_ramps(
     system::System, solver, datetimes=get_forecast_timestamps(system);
     relax_integrality=false, slack=nothing
 )
+    # Get the individual slack values to be used in each soft constraint
+    @timeit_debug get_timer("FNTimer") "specify slacks" sl = _specify_slacks(slack)
     # Initialize FNM
     @timeit_debug get_timer("FNTimer") "initialise FNM" fnm = FullNetworkModel{UC}(system, datetimes)
     # Variables
@@ -201,9 +141,9 @@ function unit_commitment_no_ramps(
     @timeit_debug get_timer("FNTimer") "add constraints to model" begin
         con_generation_limits!(fnm)
         con_ancillary_limits!(fnm)
-        con_regulation_requirements!(fnm)
-        con_operating_reserve_requirements!(fnm)
-        con_energy_balance!(fnm; slack)
+        con_regulation_requirements!(fnm; slack=sl[:ancillary_requirements])
+        con_operating_reserve_requirements!(fnm; slack=sl[:ancillary_requirements])
+        con_energy_balance!(fnm; slack=sl[:energy_balance])
         con_must_run!(fnm)
         con_availability!(fnm)
     end
@@ -286,6 +226,8 @@ function unit_commitment_branch_flow_limits(
     system::System, solver, datetimes=get_forecast_timestamps(system);
     relax_integrality=false, slack=nothing
 )
+    # Get the individual slack values to be used in each soft constraint
+    @timeit_debug get_timer("FNTimer") "specify slacks" sl = _specify_slacks(slack)
     # Initialize FNM
     @timeit_debug get_timer("FNTimer") "initialise FNM" fnm = FullNetworkModel{UC}(system, datetimes)
     # Variables
@@ -300,11 +242,11 @@ function unit_commitment_branch_flow_limits(
     @timeit_debug get_timer("FNTimer") "add constraints to model" begin
         con_generation_limits!(fnm)
         con_ancillary_limits!(fnm)
-        con_regulation_requirements!(fnm)
-        con_operating_reserve_requirements!(fnm)
-        con_generation_ramp_rates!(fnm)
+        con_regulation_requirements!(fnm; slack=sl[:ancillary_requirements])
+        con_operating_reserve_requirements!(fnm; slack=sl[:ancillary_requirements])
+        con_generation_ramp_rates!(fnm; slack=sl[:ramp_rates])
         con_ancillary_ramp_rates!(fnm)
-        con_energy_balance!(fnm; slack)
+        con_energy_balance!(fnm; slack=sl[:energy_balance])
         con_must_run!(fnm)
         con_availability!(fnm)
         @timeit_debug get_timer("FNTimer") "thermal branch constraints" con_thermal_branch!(fnm)
@@ -324,70 +266,6 @@ function unit_commitment_branch_flow_limits(
     return fnm
 end
 
-"""
-    unit_commitment_soft_ramps_branch_flow_limits(
-        system::System, solver, datetimes=get_forecast_timestamps(system);
-        slack=1e4, relax_integrality=false
-    ) -> FullNetworkModel{UC}
-
-Defines the unit commitment template with soft generation ramp constraints and branch flow
-limits. Receives a `system` from FullNetworkDataPrep and returns a [`FullNetworkModel`](@ref)
-with a `model` with the same formulation as [`unit_commitment_branch_flow_limits`], except
-for the ramp constraints, which are modeled as soft constraints with slack variables.
-
-See also [`unit_commitment_branch_flow_limits`](@ref) and [`unit_commitment_soft_ramps`](@ref).
-
-# Arguments
- - `system::System`: The PowerSystems system that provides the input data.
- - `solver`: The solver of choice, e.g. `Cbc.Optimizer`.
- - `datetimes=get_forecast_timestamps(system)`: The time periods considered in the model.
-
-# Keywords
- - `slack=1e4`: The slack penalty for the soft constraints.
- - `relax_integrality=false`: If set to `true`, binary variables will be relaxed.
- - `slack=1e4`: The slack penalty for the soft constraints.
-"""
-function unit_commitment_soft_ramps_branch_flow_limits(
-    system::System, solver, datetimes=get_forecast_timestamps(system);
-    slack=1e4, relax_integrality=false
-)
-    # Initialize FNM
-    @timeit_debug get_timer("FNTimer") "initialise FNM" fnm = FullNetworkModel{UC}(system, datetimes)
-    # Variables
-    @timeit_debug get_timer("FNTimer") "add variables to model" begin
-        var_thermal_generation!(fnm)
-        var_commitment!(fnm)
-        var_startup_shutdown!(fnm)
-        var_ancillary_services!(fnm)
-        var_bids!(fnm)
-    end
-    # Constraints
-    @timeit_debug get_timer("FNTimer") "add constraints to model" begin
-        con_generation_limits!(fnm)
-        con_ancillary_limits!(fnm)
-        con_regulation_requirements!(fnm)
-        con_operating_reserve_requirements!(fnm)
-        con_generation_ramp_rates!(fnm; slack=slack)
-        con_ancillary_ramp_rates!(fnm)
-        con_energy_balance!(fnm)
-        con_must_run!(fnm)
-        con_availability!(fnm)
-        @timeit_debug get_timer("FNTimer") "thermal branch constraints" con_thermal_branch!(fnm)
-    end
-    # Objectives
-    @timeit_debug get_timer("FNTimer") "add objectives to model" begin
-        obj_thermal_variable_cost!(fnm)
-        obj_thermal_noload_cost!(fnm)
-        obj_thermal_startup_cost!(fnm)
-        obj_ancillary_costs!(fnm)
-        obj_bids!(fnm)
-    end
-    if relax_integrality
-        @timeit_debug get_timer("FNTimer") "relax integrality" JuMP.relax_integrality(fnm.model)
-    end
-    @timeit_debug get_timer("FNTimer") "set optimizer" set_optimizer(fnm, solver)
-    return fnm
-end
 """
     unit_commitment_no_ramps_branch_flow_limits(
         system::System, solver, datetimes=get_forecast_timestamps(system);
@@ -414,6 +292,8 @@ function unit_commitment_no_ramps_branch_flow_limits(
     system::System, solver, datetimes=get_forecast_timestamps(system);
     relax_integrality=false, slack=nothing
 )
+    # Get the individual slack values to be used in each soft constraint
+    @timeit_debug get_timer("FNTimer") "specify slacks" sl = _specify_slacks(slack)
     # Initialize FNM
     @timeit_debug get_timer("FNTimer") "initialise FNM" fnm = FullNetworkModel{UC}(system, datetimes)
     # Variables
@@ -428,9 +308,9 @@ function unit_commitment_no_ramps_branch_flow_limits(
     @timeit_debug get_timer("FNTimer") "add constraints to model" begin
         con_generation_limits!(fnm)
         con_ancillary_limits!(fnm)
-        con_regulation_requirements!(fnm)
-        con_operating_reserve_requirements!(fnm)
-        con_energy_balance!(fnm; slack)
+        con_regulation_requirements!(fnm; slack=sl[:ancillary_requirements])
+        con_operating_reserve_requirements!(fnm; slack=sl[:ancillary_requirements])
+        con_energy_balance!(fnm; slack=sl[:energy_balance])
         con_must_run!(fnm)
         con_availability!(fnm)
         @timeit_debug get_timer("FNTimer") "thermal branch constraints" con_thermal_branch!(fnm)

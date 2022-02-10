@@ -16,21 +16,21 @@
         tests_ramp_rates(fnm)
         tests_energy_balance(fnm)
     end
-    @testset "unit_commitment (soft_ramps) and unit_commitment_no_ramps" begin
+    @testset "unit_commitment with soft ramps and unit_commitment_no_ramps" begin
         # Modify system so that hard ramp constraints result in infeasibility
         system_infeasible = deepcopy(TEST_SYSTEM)
         gens = collect(get_components(ThermalGen, system_infeasible))
         gens[1].active_power = 50.0
         @test get_initial_generation(system_infeasible)[7] == 50.0
 
-        fnm = unit_commitment(system_infeasible, Cbc.Optimizer; relax_integrality=true)
+        fnm = unit_commitment(system_infeasible, Clp.Optimizer; relax_integrality=true)
         optimize!(fnm)
-        # Should be infeasible (termination 6 because Cbc uses INFEASIBLE_OR_UNBOUNDED)
+        # Should be infeasible (termination 6 because Clp uses INFEASIBLE_OR_UNBOUNDED)
         @test termination_status(fnm.model) == TerminationStatusCode(6)
 
         # Now do the same with soft ramp constraints – should be feasible
-        fnm_soft_ramps = unit_commitment_soft_ramps(
-            system_infeasible, Cbc.Optimizer; slack=1e3, relax_integrality=true
+        fnm_soft_ramps = unit_commitment(
+            system_infeasible, Clp.Optimizer; slack=[:ramp_rates => 1e3], relax_integrality=true
         )
         # Basic ramp rate tests with correct slack
         tests_ramp_rates(fnm_soft_ramps; slack=1e3)
