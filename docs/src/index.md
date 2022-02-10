@@ -35,6 +35,39 @@ To build your own models, you can use the [modelling functions](@ref modelling).
     [real-time](https://drive.google.com/file/d/1IhAv-Djqc72RPXsB3JBzWYYYbcpw8_0q/view)
     market clearing processes.
 
+## Using soft constraints
+
+Templates accept a keyword argument `slack` that can be used to specify the slack penalty to be used by certain constraints,
+therefore modelling them as soft constraints. By construction, if the value of the slack penalty is `nothing`, it means the 
+constraint should be modelled as a hard constraint. 
+
+NB: thermal branch constraints are always soft constraints according to the branch data coming from the data prep stage, 
+and this cannot be adjusted using the `slack` kwarg.
+
+There are several ways to specify slack penalties:
+
+To use the default slack options:
+```julia
+fnm = unit_commitment(system, solver)
+```
+Note that unit commitment templates default to hard constraints, while economic dispatch defaults to soft constraints with `1e4` slack penalty.
+
+To use a single slack penalty value across all soft constraints:
+```julia
+fnm = unit_commitment(system, solver; slack=1e4)
+```
+
+To use different slack penalties for specific soft constraints:
+```julia
+fnm = unit_commitment(system, solver; slack=:energy_balance => 1e4)
+```
+or
+```julia
+fnm = unit_commitment(system, solver; slack=[:energy_balance => 1e4, :ramp_rates => 1e3])
+```
+Note that in the examples above, any constraint not explicitly added as a `Pair` will be set as hard constraint.
+The following symbols can be used to specify soft constraints: `:energy_balance`, `:ramp_rates`, `:ancillary_requirements`.
+
 ## Notation
 The documentation and the code itself tries to use consistent and precise notation to describe what is being modelled.
 See the [notation page](notation.md) for an overview.
