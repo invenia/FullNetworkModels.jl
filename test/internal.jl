@@ -35,4 +35,15 @@
             400 * p_aux[7, t1, 1] + 600 * p_aux[7, t1, 2] + 625 * p_aux[7, t1, 3] +
             400 * p_aux[7, t2, 1] + 600 * p_aux[7, t2, 2] + 625 * p_aux[7, t2, 3]
     end
+    @testset "_specify_slacks" begin
+        soft_constraints = [:energy_balance, :ramp_rates, :ancillary_requirements]
+        @test _specify_slacks(nothing) == Dict(soft_constraints .=> nothing)
+        @test _specify_slacks(1e3) == Dict(soft_constraints .=> 1e3)
+        @test _specify_slacks([:energy_balance => 1e3]) == Dict(
+            :energy_balance => 1e3, :ramp_rates => nothing, :ancillary_requirements => nothing
+        )
+        @test _specify_slacks([:energy_balance => nothing, :ramp_rates => 1e3]) == Dict(
+            :energy_balance => nothing, :ramp_rates => 1e3, :ancillary_requirements => nothing
+        )
+    end
 end

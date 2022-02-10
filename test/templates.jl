@@ -405,7 +405,7 @@
         # Compare objectives without and with contingencies
         @test obj_no_conting <= obj
     end
-    @testset "Soft Energy Balance: $T" for (T, t_system, solver) in (
+    @testset "Energy balance as soft constraint: $T" for (T, t_system, solver) in (
         (UC, TEST_SYSTEM, Cbc.Optimizer),
         (ED, TEST_SYSTEM_RT, Clp.Optimizer)
     )
@@ -415,9 +415,9 @@
         optimize!(fnm)
         # Save the objective (Should be feasible)
         @test termination_status(fnm.model) == TerminationStatusCode(1)
-        obj_ori = objective_value(fnm.model)
+        obj = objective_value(fnm.model)
 
-        # Modify system so that hard energy balance results in infeasibility by Load
+        # Modify system such that we get infeasibility by excess load
         system_infe_load = deepcopy(t_system)
         loads = collect(get_components(PowerLoad, system_infe_load))
         set_active_power!(loads[1], 10.0)
