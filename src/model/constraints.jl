@@ -317,18 +317,30 @@ $(latex(con_energy_balance_ed!))
 
 The constraint is named `energy_balance`.
 """
-function con_energy_balance!(fnm::FullNetworkModel{<:ED})
+function con_energy_balance!(fnm::FullNetworkModel{<:ED}; slack=nothing)
     model = fnm.model
     system = fnm.system
     unit_codes = get_unit_codes(ThermalGen, system)
     load_names = get_load_names(PowerLoad, system)
+    datetimes = fnm.datetimes
     D = get_fixed_loads(system)
     p = model[:p]
     @constraint(
         model,
-        energy_balance[t in fnm.datetimes],
+        energy_balance[t in datetimes],
         sum(p[g, t] for g in unit_codes) == sum(D[f, t] for f in load_names)
     )
+    # If the constraints are supposed to be soft constraints, add slacks
+    # We need one slack for excess load and one for excess generation
+    if slack !== nothing
+        @variable(model, sl_eb_gen[t in datetimes] >= 0)
+        @variable(model, sl_eb_load[t in datetimes] >= 0)
+        for t in datetimes
+            set_normalized_coefficient(energy_balance[t], sl_eb_gen[t], 1.0)
+            set_normalized_coefficient(energy_balance[t], sl_eb_load[t], -1.0)
+        end
+        _add_to_objective!(model, slack * (sum(sl_eb_gen) + sum(sl_eb_load)))
+    end
     return fnm
 end
 
@@ -343,7 +355,7 @@ $(latex(con_energy_balance_uc!))
 
 The constraint is named `energy_balance`.
 """
-function con_energy_balance!(fnm::FullNetworkModel{<:UC})
+function con_energy_balance!(fnm::FullNetworkModel{<:UC}; slack=nothing)
     model = fnm.model
     system = fnm.system
     datetimes = fnm.datetimes
@@ -364,6 +376,17 @@ function con_energy_balance!(fnm::FullNetworkModel{<:UC})
             sum(D[f, t] for f in load_names) + sum(dec[d, t] for d in dec_names) +
             sum(psd[s, t] for s in psd_names)
     )
+    # If the constraints are supposed to be soft constraints, add slacks
+    # We need one slack for excess load and one for excess generation
+    if slack !== nothing
+        @variable(model, sl_eb_gen[t in datetimes] >= 0)
+        @variable(model, sl_eb_load[t in datetimes] >= 0)
+        for t in datetimes
+            set_normalized_coefficient(energy_balance[t], sl_eb_gen[t], 1.0)
+            set_normalized_coefficient(energy_balance[t], sl_eb_load[t], -1.0)
+        end
+        _add_to_objective!(model, slack * (sum(sl_eb_gen) + sum(sl_eb_load)))
+    end
     return fnm
 end
 

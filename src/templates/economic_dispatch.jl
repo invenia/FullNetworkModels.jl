@@ -39,7 +39,6 @@ Arguments:
 
 Keyword arguments:
  - `slack=1e4`: The slack penalty for the soft constraints.
-
 """
 function economic_dispatch(
     system::System, solver, datetimes=get_forecast_timestamps(system); slack = 1e4
@@ -57,7 +56,7 @@ function economic_dispatch(
         con_ancillary_limits!(fnm)
         con_regulation_requirements!(fnm; slack)
         con_operating_reserve_requirements!(fnm; slack)
-        con_energy_balance!(fnm)
+        con_energy_balance!(fnm; slack)
     end
     # Objectives
     @timeit_debug get_timer("FNTimer") "add objectives to model" begin
@@ -129,7 +128,7 @@ function economic_dispatch_branch_flow_limits(
         con_ancillary_limits!(fnm)
         con_regulation_requirements!(fnm; slack)
         con_operating_reserve_requirements!(fnm; slack)
-        con_energy_balance!(fnm)
+        con_energy_balance!(fnm; slack)
         @timeit_debug get_timer("FNTimer") "thermal branch constraints" con_thermal_branch!(fnm)
     end
     # Objectives

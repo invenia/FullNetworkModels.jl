@@ -52,10 +52,11 @@ See also [`unit_commitment_soft_ramps`](@ref) and [`unit_commitment_no_ramps`](@
 
 # Keywords
  - `relax_integrality=false`: If set to `true`, binary variables will be relaxed.
+ - `slack=nothing`: The slack penalty for the soft constraints (e.g. slack=1e4).
 """
 function unit_commitment(
     system::System, solver, datetimes=get_forecast_timestamps(system);
-    relax_integrality=false
+    relax_integrality=false, slack=nothing
 )
     # Initialize FNM
     @timeit_debug get_timer("FNTimer") "initialise FNM" fnm = FullNetworkModel{UC}(system, datetimes)
@@ -75,7 +76,7 @@ function unit_commitment(
         con_operating_reserve_requirements!(fnm)
         con_generation_ramp_rates!(fnm)
         con_ancillary_ramp_rates!(fnm)
-        con_energy_balance!(fnm)
+        con_energy_balance!(fnm; slack)
         con_must_run!(fnm)
         con_availability!(fnm)
     end
@@ -158,7 +159,6 @@ function unit_commitment_soft_ramps(
     @timeit_debug get_timer("FNTimer") "set optimizer" set_optimizer(fnm, solver)
     return fnm
 end
-
 """
     unit_commitment_no_ramps(
         system::System, solver, datetimes=get_forecast_timestamps(system);
@@ -172,7 +172,7 @@ which are omitted.
 
 Thermal branch flow limits are not considered in this formulation.
 
-See also [`unit_commitment`](@ref) and [`unit_commitment_soft_ramps`](@ref).
+See also [`unit_commitment`](@ref) and [`unit_commitment_branch_flow_limits`](@ref).
 
 # Arguments
  - `system::System`: The PowerSystems system that provides the input data.
@@ -181,10 +181,11 @@ See also [`unit_commitment`](@ref) and [`unit_commitment_soft_ramps`](@ref).
 
 # Keywords
  - `relax_integrality=false`: If set to `true`, binary variables will be relaxed.
+ - `slack=nothing`: The slack penalty for the soft constraints (e.g. slack=1e4).
 """
 function unit_commitment_no_ramps(
     system::System, solver, datetimes=get_forecast_timestamps(system);
-    relax_integrality=false
+    relax_integrality=false, slack=nothing
 )
     # Initialize FNM
     @timeit_debug get_timer("FNTimer") "initialise FNM" fnm = FullNetworkModel{UC}(system, datetimes)
@@ -202,7 +203,7 @@ function unit_commitment_no_ramps(
         con_ancillary_limits!(fnm)
         con_regulation_requirements!(fnm)
         con_operating_reserve_requirements!(fnm)
-        con_energy_balance!(fnm)
+        con_energy_balance!(fnm; slack)
         con_must_run!(fnm)
         con_availability!(fnm)
     end
@@ -270,8 +271,7 @@ $(_write_formulation(
 
 Thermal branch flow limits are considered in this formulation.
 
-See also [`unit_commitment_soft_ramps_branch_flow_limits`](@ref) and
-[`unit_commitment_no_ramps_branch_flow_limits`](@ref).
+See also [`unit_commitment`](@ref) and [`unit_commitment_no_ramps`](@ref).
 
 # Arguments
  - `system::System`: The PowerSystems system that provides the input data.
@@ -280,10 +280,11 @@ See also [`unit_commitment_soft_ramps_branch_flow_limits`](@ref) and
 
 # Keywords
  - `relax_integrality=false`: If set to `true`, binary variables will be relaxed.
+ - `slack=nothing`: The slack penalty for the soft constraints (e.g. slack=1e4).
 """
 function unit_commitment_branch_flow_limits(
     system::System, solver, datetimes=get_forecast_timestamps(system);
-    relax_integrality=false
+    relax_integrality=false, slack=nothing
 )
     # Initialize FNM
     @timeit_debug get_timer("FNTimer") "initialise FNM" fnm = FullNetworkModel{UC}(system, datetimes)
@@ -303,7 +304,7 @@ function unit_commitment_branch_flow_limits(
         con_operating_reserve_requirements!(fnm)
         con_generation_ramp_rates!(fnm)
         con_ancillary_ramp_rates!(fnm)
-        con_energy_balance!(fnm)
+        con_energy_balance!(fnm; slack)
         con_must_run!(fnm)
         con_availability!(fnm)
         @timeit_debug get_timer("FNTimer") "thermal branch constraints" con_thermal_branch!(fnm)
@@ -344,6 +345,7 @@ See also [`unit_commitment_branch_flow_limits`](@ref) and [`unit_commitment_soft
 # Keywords
  - `slack=1e4`: The slack penalty for the soft constraints.
  - `relax_integrality=false`: If set to `true`, binary variables will be relaxed.
+ - `slack=1e4`: The slack penalty for the soft constraints.
 """
 function unit_commitment_soft_ramps_branch_flow_limits(
     system::System, solver, datetimes=get_forecast_timestamps(system);
@@ -386,7 +388,6 @@ function unit_commitment_soft_ramps_branch_flow_limits(
     @timeit_debug get_timer("FNTimer") "set optimizer" set_optimizer(fnm, solver)
     return fnm
 end
-
 """
     unit_commitment_no_ramps_branch_flow_limits(
         system::System, solver, datetimes=get_forecast_timestamps(system);
@@ -407,10 +408,11 @@ See also [`unit_commitment_branch_flow_limits`](@ref) and [`unit_commitment_no_r
 
 # Keywords
  - `relax_integrality=false`: If set to `true`, binary variables will be relaxed.
+ - `slack=1e4`: The slack penalty for the soft constraints.
 """
 function unit_commitment_no_ramps_branch_flow_limits(
     system::System, solver, datetimes=get_forecast_timestamps(system);
-    relax_integrality=false
+    relax_integrality=false, slack=nothing
 )
     # Initialize FNM
     @timeit_debug get_timer("FNTimer") "initialise FNM" fnm = FullNetworkModel{UC}(system, datetimes)
@@ -428,7 +430,7 @@ function unit_commitment_no_ramps_branch_flow_limits(
         con_ancillary_limits!(fnm)
         con_regulation_requirements!(fnm)
         con_operating_reserve_requirements!(fnm)
-        con_energy_balance!(fnm)
+        con_energy_balance!(fnm; slack)
         con_must_run!(fnm)
         con_availability!(fnm)
         @timeit_debug get_timer("FNTimer") "thermal branch constraints" con_thermal_branch!(fnm)
