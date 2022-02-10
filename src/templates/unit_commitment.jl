@@ -59,7 +59,7 @@ function unit_commitment(
     relax_integrality=false, slack=nothing
 )
     # Get the individual slack values to be used in each soft constraint
-    @timeit_debug get_timer("FNTimer") "specify slacks" sl = _specify_slacks(slack)
+    @timeit_debug get_timer("FNTimer") "specify slacks" sl = _expand_slacks(slack)
     # Initialize FNM
     @timeit_debug get_timer("FNTimer") "initialise FNM" fnm = FullNetworkModel{UC}(system, datetimes)
     # Variables
@@ -126,7 +126,7 @@ function unit_commitment_no_ramps(
     relax_integrality=false, slack=nothing
 )
     # Get the individual slack values to be used in each soft constraint
-    @timeit_debug get_timer("FNTimer") "specify slacks" sl = _specify_slacks(slack)
+    @timeit_debug get_timer("FNTimer") "specify slacks" sl = _expand_slacks(slack)
     # Initialize FNM
     @timeit_debug get_timer("FNTimer") "initialise FNM" fnm = FullNetworkModel{UC}(system, datetimes)
     # Variables
@@ -227,7 +227,7 @@ function unit_commitment_branch_flow_limits(
     relax_integrality=false, slack=nothing
 )
     # Get the individual slack values to be used in each soft constraint
-    @timeit_debug get_timer("FNTimer") "specify slacks" sl = _specify_slacks(slack)
+    @timeit_debug get_timer("FNTimer") "specify slacks" sl = _expand_slacks(slack)
     # Initialize FNM
     @timeit_debug get_timer("FNTimer") "initialise FNM" fnm = FullNetworkModel{UC}(system, datetimes)
     # Variables
@@ -293,7 +293,7 @@ function unit_commitment_no_ramps_branch_flow_limits(
     relax_integrality=false, slack=nothing
 )
     # Get the individual slack values to be used in each soft constraint
-    @timeit_debug get_timer("FNTimer") "specify slacks" sl = _specify_slacks(slack)
+    @timeit_debug get_timer("FNTimer") "specify slacks" sl = _expand_slacks(slack)
     # Initialize FNM
     @timeit_debug get_timer("FNTimer") "initialise FNM" fnm = FullNetworkModel{UC}(system, datetimes)
     # Variables

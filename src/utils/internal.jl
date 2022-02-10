@@ -239,18 +239,18 @@ function _sort_ptdf_axes(ptdf_mat)
 end
 
 """
-    _specify_slacks(slacks) -> Dict
+    _expand_slacks(slacks) -> Dict
 
 Returns a dict with the slack penalties for each soft constraint.
 If `slacks` is a single value (including `nothing`), sets that value to all slack penalties.
 If `slacks` is a vector of Pairs, then sets the values according to the specifications in
 the pairs. Any missing value will be set as `nothing` (i.e. hard constraint).
 """
-function _specify_slacks(slacks::Vector{<:Pair})
+function _expand_slacks(slacks::Vector{<:Pair})
     missing_slacks = setdiff(SOFT_CONSTRAINTS, first.(slacks))
     slacks = vcat(slacks, missing_slacks .=> nothing) # not `append!` to avoid mutating
     return Dict(slacks)
 end
-function _specify_slacks(slacks)
+function _expand_slacks(slacks)
     return Dict(SOFT_CONSTRAINTS .=> slacks)
 end

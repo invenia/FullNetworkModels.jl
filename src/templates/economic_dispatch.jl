@@ -44,7 +44,7 @@ function economic_dispatch(
     system::System, solver, datetimes=get_forecast_timestamps(system); slack=1e4
 )
     # Get the individual slack values to be used in each soft constraint
-    @timeit_debug get_timer("FNTimer") "specify slacks" sl = _specify_slacks(slack)
+    @timeit_debug get_timer("FNTimer") "specify slacks" sl = _expand_slacks(slack)
     # Initialize FNM
     @timeit_debug get_timer("FNTimer") "initialise FNM" fnm = FullNetworkModel{ED}(system, datetimes)
     # Variables
@@ -118,7 +118,7 @@ function economic_dispatch_branch_flow_limits(
     system::System, solver, datetimes=get_forecast_timestamps(system); slack=1e4
 )
     # Get the individual slack values to be used in each soft constraint
-    @timeit_debug get_timer("FNTimer") "specify slacks" sl = _specify_slacks(slack)
+    @timeit_debug get_timer("FNTimer") "specify slacks" sl = _expand_slacks(slack)
     # Initialize FNM
     @timeit_debug get_timer("FNTimer") "initialise FNM" fnm = FullNetworkModel{ED}(system, datetimes)
     # Variables
