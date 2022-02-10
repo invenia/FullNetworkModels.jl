@@ -247,6 +247,8 @@ If `slacks` is a vector of Pairs, then sets the values according to the specific
 the pairs. Any missing value will be set as `nothing` (i.e. hard constraint).
 """
 function _expand_slacks(slacks::Vector{<:Pair{Symbol}})
+    unrecognised = setdiff(first.(slacks), SOFT_CONSTRAINTS)
+    isempty(unrecognised) || _unknown_slacks(unrecognised)
     no_slacks = Dict(con => nothing for con in SOFT_CONSTRAINTS)
     return merge(no_slacks, Dict(slacks))
 end
@@ -257,10 +259,9 @@ function _expand_slacks(slacks::Union{Number,Nothing})
     return Dict(con => slacks for con in SOFT_CONSTRAINTS)
 end
 
-function _unknown_slack(names)
+function _unknown_slacks(names)
     msg = """
         Possible soft contraint are: $(join(SOFT_CONSTRAINTS, ", "))
-        Ignoring slack values for unrecognised soft constraints: $(join(urecognised, ", "))
-        """
+        Ignoring slack values for unrecognised soft constraints: $(join(names, ", "))"""
     warn(LOGGER, msg)
 end
