@@ -7,6 +7,7 @@ using FullNetworkDataPrep.TestUtils: fake_3bus_system
 using FullNetworkModels
 using FullNetworkModels: _expand_slacks
 using MathOptInterface: TerminationStatusCode
+using Memento.TestUtils: @test_log
 using JuMP
 using JuMP.Containers: DenseAxisArray
 using PowerSystems
