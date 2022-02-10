@@ -43,7 +43,7 @@
             :energy_balance => 1e3, :ramp_rates => nothing, :ancillary_requirements => nothing
         )
         @test _expand_slacks(:energy_balance => 1e3) == Dict(
-            :energy_balance => nothing, :ramp_rates => 1e3, :ancillary_requirements => nothing
+            :energy_balance => 1e3, :ramp_rates => nothing, :ancillary_requirements => nothing
         )
         @test _expand_slacks([:energy_balance => nothing, :ramp_rates => 1e3]) == Dict(
             :energy_balance => nothing, :ramp_rates => 1e3, :ancillary_requirements => nothing

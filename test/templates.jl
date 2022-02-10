@@ -415,7 +415,7 @@
         optimize!(fnm)
         # Save the objective (Should be feasible)
         @test termination_status(fnm.model) == TerminationStatusCode(1)
-        obj = objective_value(fnm.model)
+        obj_ori = objective_value(fnm.model)
 
         # Modify system such that we get infeasibility by excess load
         system_infe_load = deepcopy(t_system)
