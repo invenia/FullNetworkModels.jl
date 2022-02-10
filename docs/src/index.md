@@ -37,12 +37,12 @@ To build your own models, you can use the [modelling functions](@ref modelling).
 
 ## Using soft constraints
 
-Templates accept a keyword argument `slack` that can be used to specify the slack penalty to be used by certain constraints,
-therefore modelling them as soft constraints. By construction, if the value of the slack penalty is `nothing`, it means the 
-constraint should be modelled as a hard constraint. 
+Templates accept a keyword argument `slack` that can be used to specify the slack penalty to be used by certain constraints, therefore modelling them as soft constraints. 
+By construction, if the value of the slack penalty is `nothing`, it means the constraint should be modelled as a hard constraint. 
+The following symbols can be used to specify soft constraints: `:energy_balance`, `:ramp_rates`, `:ancillary_requirements`.
 
-NB: thermal branch constraints are always soft constraints according to the branch data coming from the data prep stage, 
-and this cannot be adjusted using the `slack` kwarg.
+!!! note "Thermal branch constraints" 
+    Thermal branch constraints are always soft constraints according to the branch data coming from the data prep stage, and this cannot be adjusted using the `slack` kwarg.
 
 There are several ways to specify slack penalties:
 
@@ -66,7 +66,6 @@ or
 fnm = unit_commitment(system, solver; slack=[:energy_balance => 1e4, :ramp_rates => 1e3])
 ```
 Note that in the examples above, any constraint not explicitly added as a `Pair` will be set as hard constraint.
-The following symbols can be used to specify soft constraints: `:energy_balance`, `:ramp_rates`, `:ancillary_requirements`.
 
 ## Notation
 The documentation and the code itself tries to use consistent and precise notation to describe what is being modelled.
