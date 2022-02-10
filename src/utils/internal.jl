@@ -237,3 +237,30 @@ function _sort_ptdf_axes(ptdf_mat)
     sorted_ptdf = ptdf_mat[:, sorted_bus_numbers]
     return sorted_ptdf
 end
+
+"""
+    _expand_slacks(slacks) -> Dict{Symbol,<:Union{Float64,Nothing}}
+
+Returns a dict with the slack penalties for each soft constraint.
+If `slacks` is a single value (including `nothing`), sets that value to all slack penalties.
+If `slacks` is a vector of Pairs, then sets the values according to the specifications in
+the pairs. Any missing value will be set as `nothing` (i.e. hard constraint).
+"""
+function _expand_slacks(slacks::Vector{<:Pair{Symbol}})
+    no_slacks = Dict(con => nothing for con in SOFT_CONSTRAINTS)
+    return merge(no_slacks, Dict(slacks))
+end
+function _expand_slacks(slacks::Pair{Symbol})
+    return _expand_slacks([slacks])
+end
+function _expand_slacks(slacks::Union{Number,Nothing})
+    return Dict(con => slacks for con in SOFT_CONSTRAINTS)
+end
+
+function _unknown_slack(names)
+    msg = """
+        Possible soft contraint are: $(join(SOFT_CONSTRAINTS, ", "))
+        Ignoring slack values for unrecognised soft constraints: $(join(urecognised, ", "))
+        """
+    warn(LOGGER, msg)
+end

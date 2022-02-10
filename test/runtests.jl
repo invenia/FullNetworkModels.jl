@@ -5,6 +5,7 @@ using ElectricityMarkets
 using FullNetworkDataPrep: DA, RT
 using FullNetworkDataPrep.TestUtils: fake_3bus_system
 using FullNetworkModels
+using FullNetworkModels: _expand_slacks
 using MathOptInterface: TerminationStatusCode
 using JuMP
 using JuMP.Containers: DenseAxisArray

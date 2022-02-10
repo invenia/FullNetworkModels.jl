@@ -39,10 +39,13 @@ Arguments:
 
 Keyword arguments:
  - `slack=1e4`: The slack penalty for the soft constraints.
+   For more info on specifying slacks, refer to the [docs on soft constraints](@ref soft_constraints).
 """
 function economic_dispatch(
-    system::System, solver, datetimes=get_forecast_timestamps(system); slack = 1e4
+    system::System, solver, datetimes=get_forecast_timestamps(system); slack=1e4
 )
+    # Get the individual slack values to be used in each soft constraint
+    @timeit_debug get_timer("FNTimer") "specify slacks" sl = _expand_slacks(slack)
     # Initialize FNM
     @timeit_debug get_timer("FNTimer") "initialise FNM" fnm = FullNetworkModel{ED}(system, datetimes)
     # Variables
@@ -54,9 +57,9 @@ function economic_dispatch(
     @timeit_debug get_timer("FNTimer") "add constraints to model" begin
         con_generation_limits!(fnm)
         con_ancillary_limits!(fnm)
-        con_regulation_requirements!(fnm; slack)
-        con_operating_reserve_requirements!(fnm; slack)
-        con_energy_balance!(fnm; slack)
+        con_regulation_requirements!(fnm; slack=sl[:ancillary_requirements])
+        con_operating_reserve_requirements!(fnm; slack=sl[:ancillary_requirements])
+        con_energy_balance!(fnm; slack=sl[:energy_balance])
     end
     # Objectives
     @timeit_debug get_timer("FNTimer") "add objectives to model" begin
@@ -113,8 +116,10 @@ Keyword arguments:
  - `slack=1e4`: The slack penalty for the soft constraints.
 """
 function economic_dispatch_branch_flow_limits(
-    system::System, solver, datetimes=get_forecast_timestamps(system); slack = 1e4
+    system::System, solver, datetimes=get_forecast_timestamps(system); slack=1e4
 )
+    # Get the individual slack values to be used in each soft constraint
+    @timeit_debug get_timer("FNTimer") "specify slacks" sl = _expand_slacks(slack)
     # Initialize FNM
     @timeit_debug get_timer("FNTimer") "initialise FNM" fnm = FullNetworkModel{ED}(system, datetimes)
     # Variables
@@ -126,9 +131,9 @@ function economic_dispatch_branch_flow_limits(
     @timeit_debug get_timer("FNTimer") "add constraints to model" begin
         con_generation_limits!(fnm)
         con_ancillary_limits!(fnm)
-        con_regulation_requirements!(fnm; slack)
-        con_operating_reserve_requirements!(fnm; slack)
-        con_energy_balance!(fnm; slack)
+        con_regulation_requirements!(fnm; slack=sl[:ancillary_requirements])
+        con_operating_reserve_requirements!(fnm; slack=sl[:ancillary_requirements])
+        con_energy_balance!(fnm; slack=sl[:energy_balance])
         @timeit_debug get_timer("FNTimer") "thermal branch constraints" con_thermal_branch!(fnm)
     end
     # Objectives
@@ -136,7 +141,6 @@ function economic_dispatch_branch_flow_limits(
         obj_thermal_variable_cost!(fnm)
         obj_ancillary_costs!(fnm)
     end
-
     @timeit_debug get_timer("FNTimer") "set optimizer" set_optimizer(fnm, solver)
     return fnm
 end

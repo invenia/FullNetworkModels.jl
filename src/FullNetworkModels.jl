@@ -14,6 +14,9 @@ const LOGGER = getlogger(@__MODULE__)
 # We use -9999 as the code for the market-wide reserve zone in accordance with FNDataPrep
 const MARKET_WIDE_ZONE = -9999
 
+# Identifiers for the constraints we allow defining slack penalties for.
+const SOFT_CONSTRAINTS = [:energy_balance, :ramp_rates, :ancillary_requirements]
+
 # Type
 include("fnm.jl")
 
@@ -122,10 +125,8 @@ export obj_thermal_variable_cost!
 export economic_dispatch
 export economic_dispatch_branch_flow_limits
 export unit_commitment
-export unit_commitment_soft_ramps
 export unit_commitment_no_ramps
 export unit_commitment_branch_flow_limits
-export unit_commitment_soft_ramps_branch_flow_limits
 export unit_commitment_no_ramps_branch_flow_limits
 
 # API extensions
