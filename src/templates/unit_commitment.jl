@@ -52,7 +52,8 @@ See also [`unit_commitment_no_ramps`](@ref).
 
 # Keywords
  - `relax_integrality=false`: If set to `true`, binary variables will be relaxed.
- - `slack=nothing`: The slack penalty for the soft constraints (e.g. slack=1e4).
+ - `slack=nothing`: The slack penalty for the soft constraints.
+   For more info on specifying slacks, refer to the [docs on soft constraints](@ref soft_constraints).
 """
 function unit_commitment(
     system::System, solver, datetimes=get_forecast_timestamps(system);
@@ -119,7 +120,8 @@ See also [`unit_commitment`](@ref) and [`unit_commitment_branch_flow_limits`](@r
 
 # Keywords
  - `relax_integrality=false`: If set to `true`, binary variables will be relaxed.
- - `slack=nothing`: The slack penalty for the soft constraints (e.g. slack=1e4).
+ - `slack=nothing`: The slack penalty for the soft constraints.
+   For more info on specifying slacks, refer to the [docs on soft constraints](@ref soft_constraints).
 """
 function unit_commitment_no_ramps(
     system::System, solver, datetimes=get_forecast_timestamps(system);
@@ -220,7 +222,8 @@ See also [`unit_commitment`](@ref) and [`unit_commitment_no_ramps`](@ref).
 
 # Keywords
  - `relax_integrality=false`: If set to `true`, binary variables will be relaxed.
- - `slack=nothing`: The slack penalty for the soft constraints (e.g. slack=1e4).
+ - `slack=nothing`: The slack penalty for the soft constraints.
+   For more info on specifying slacks, refer to the [docs on soft constraints](@ref soft_constraints).
 """
 function unit_commitment_branch_flow_limits(
     system::System, solver, datetimes=get_forecast_timestamps(system);
@@ -286,7 +289,8 @@ See also [`unit_commitment_branch_flow_limits`](@ref) and [`unit_commitment_no_r
 
 # Keywords
  - `relax_integrality=false`: If set to `true`, binary variables will be relaxed.
- - `slack=1e4`: The slack penalty for the soft constraints.
+ - `slack=nothing`: The slack penalty for the soft constraints.
+   For more info on specifying slacks, refer to the [docs on soft constraints](@ref soft_constraints).
 """
 function unit_commitment_no_ramps_branch_flow_limits(
     system::System, solver, datetimes=get_forecast_timestamps(system);

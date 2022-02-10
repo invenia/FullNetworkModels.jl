@@ -35,7 +35,7 @@ To build your own models, you can use the [modelling functions](@ref modelling).
     [real-time](https://drive.google.com/file/d/1IhAv-Djqc72RPXsB3JBzWYYYbcpw8_0q/view)
     market clearing processes.
 
-## Using soft constraints
+## [Using soft constraints](@id soft_constraints)
 
 Templates accept a keyword argument `slack` that can be used to specify the slack penalty to be used by certain constraints, therefore modelling them as soft constraints. 
 By construction, if the value of the slack penalty is `nothing`, it means the constraint should be modelled as a hard constraint. 

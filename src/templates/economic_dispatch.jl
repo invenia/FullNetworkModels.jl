@@ -39,6 +39,7 @@ Arguments:
 
 Keyword arguments:
  - `slack=1e4`: The slack penalty for the soft constraints.
+   For more info on specifying slacks, refer to the [docs on soft constraints](@ref soft_constraints).
 """
 function economic_dispatch(
     system::System, solver, datetimes=get_forecast_timestamps(system); slack=1e4

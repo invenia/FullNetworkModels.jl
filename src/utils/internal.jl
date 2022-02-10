@@ -246,9 +246,7 @@ If `slacks` is a single value (including `nothing`), sets that value to all slac
 If `slacks` is a vector of Pairs, then sets the values according to the specifications in
 the pairs. Any missing value will be set as `nothing` (i.e. hard constraint).
 """
-function _expand_slacks(slacks::Vector{<:Pair{Symbol})
-    unrecognised = setdiff(first.(slacks), SOFT_CONSTRAINTS)
-    isempty(unrecognised) || _unknown_slack(unrecognised)
+function _expand_slacks(slacks::Vector{<:Pair{Symbol}})
     no_slacks = Dict(con => nothing for con in SOFT_CONSTRAINTS)
     return merge(no_slacks, Dict(slacks))
 end
