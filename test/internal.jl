@@ -48,5 +48,10 @@
         @test _expand_slacks([:energy_balance => nothing, :ramp_rates => 1e3]) == Dict(
             :energy_balance => nothing, :ramp_rates => 1e3, :ancillary_requirements => nothing
         )
+        msg = """
+            Possible soft contraint are: $(join(FNM.SOFT_CONSTRAINTS, ", "))
+            Ignoring slack values for unrecognised soft constraints: xyz
+            """
+        @test_log(FNM.LOGGER, "warn", msg, _expand_slacks(:xyz => 1e3))
     end
 end
