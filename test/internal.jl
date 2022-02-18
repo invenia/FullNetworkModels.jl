@@ -52,7 +52,7 @@
     end
     @testset "_add_base_case_to_lodfs" begin
         lodfs = FNM._add_base_case_to_lodfs(TEST_LODF_DICT)
-        branches_out_names = unique(vcat(axes.(values(lodfs), 2)...))
-        @test branches_out_names isa Vector{<:AbstractString}
+        branches_out = unique(vcat(axes.(values(lodfs), 2)...))
+        @test branches_out isa Vector{<:AbstractString}
     end
 end
