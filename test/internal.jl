@@ -50,4 +50,9 @@
         )
         @test_log(FNM.LOGGER, "warn", "unrecognised soft constraints: xyz", _expand_slacks(:xyz => 1e3))
     end
+    @testset "_add_base_case_to_lodfs" begin
+        lodfs = FNM._add_base_case_to_lodfs(TEST_LODF_DICT)
+        branches_out = unique(vcat(axes.(values(lodfs), 2)...))
+        @test branches_out isa Vector{<:AbstractString}
+    end
 end
