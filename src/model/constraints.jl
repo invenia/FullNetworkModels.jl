@@ -507,20 +507,25 @@ function _con_branch_flows!(
     lodfs
 )
     model = fnm.model
+    datetimes = fnm.datetimes
     p_net = model[:p_net]
     @assert axes(sorted_ptdf, 2) == axes(p_net, 1) # we need this for vector multiplication
     scenarios = collect(keys(lodfs)) # all scenarios (base case and contingencies)
     cont_scenarios = filter(x -> x ≠ "base_case", scenarios)
-    @variable(model, fl[m in branches_names_monitored_or_out, t in fnm.datetimes, c in scenarios])
+    @variable(model, fl[m in branches_names_monitored_or_out, t in datetimes, c in scenarios])
     branches_out_per_scenario_names = _get_branches_out_per_scenario_names(lodfs)
+    # Compute this multiplication all at once for performance
+    ptdf_times_pnet = sorted_ptdf[branches_names_monitored_or_out, :].data * p_net.data
+    name_mapping = Dict(branches_names_monitored_or_out .=> 1:length(branches_names_monitored_or_out))
+    time_mapping = Dict(datetimes .=> 1:length(datetimes))
     @constraint(
         model,
-        branch_flows_base[m in branches_names_monitored_or_out, t in fnm.datetimes],
-        fl[m, t, "base_case"] == sorted_ptdf[m, :].data' * p_net[:, t].data
+        branch_flows_base[m in branches_names_monitored_or_out, t in datetimes],
+        fl[m, t, "base_case"] == ptdf_times_pnet[name_mapping[m], time_mapping[t]]
     )
     @constraint(
         model,
-        branch_flows_conting[m in mon_branches_names, t in fnm.datetimes, c in cont_scenarios],
+        branch_flows_conting[m in mon_branches_names, t in datetimes, c in cont_scenarios],
         fl[m, t, c] == fl[m, t, "base_case"] + sum(
             lodfs[c][m, l] * fl[l, t, "base_case"] for l in branches_out_per_scenario_names[c]
         )
@@ -746,8 +751,8 @@ function con_thermal_branch!(fnm::FullNetworkModel)
     scenarios = collect(keys(lodfs)) # All scenarios (base case and contingency scenarios)
     branches_out_names = unique(vcat(axes.(values(lodfs),2)...))
     # The flows need to be defined only for the branches that are monitored or going
-    # out under some contingency
-    branches_names_monitored_or_out = union(branches_out_names, mon_branches_names)
+    # out under some contingency. We need to ensure these are strings.
+    branches_names_monitored_or_out = string.(union(branches_out_names, mon_branches_names))
     #Add the nodal net injections for the base-case
     _con_nodal_net_injection!(fnm, bus_numbers, D, unit_codes_perbus, load_names_perbus)
     #Add the branch flows constraints for all scenarios

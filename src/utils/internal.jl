@@ -221,7 +221,7 @@ scenarios => LODFs which includes base_case and contingency scenarios.
 """
 function _add_base_case_to_lodfs(lodfs)
     lodf_base = DenseAxisArray(Matrix{Float64}(undef, 0, 0), String[], Int[])
-    lodfs = merge(lodfs,Dict("base_case"=>lodf_base))
+    lodfs = merge(lodfs, Dict{String, DenseAxisArray}("base_case"=>lodf_base))
     return lodfs
 end
 
