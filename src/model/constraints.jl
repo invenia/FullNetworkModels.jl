@@ -751,8 +751,8 @@ function con_thermal_branch!(fnm::FullNetworkModel)
     scenarios = collect(keys(lodfs)) # All scenarios (base case and contingency scenarios)
     branches_out_names = unique(vcat(axes.(values(lodfs), 2)...))
     # The flows need to be defined only for the branches that are monitored or going
-    # out under some contingency. We need to ensure these are strings.
-    branches_names_monitored_or_out = string.(union(branches_out_names, mon_branches_names))
+    # out under some contingency.
+    branches_names_monitored_or_out = union(branches_out_names, mon_branches_names)
     #Add the nodal net injections for the base-case
     _con_nodal_net_injection!(fnm, bus_numbers, D, unit_codes_perbus, load_names_perbus)
     #Add the branch flows constraints for all scenarios
