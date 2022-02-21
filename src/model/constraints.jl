@@ -216,11 +216,11 @@ function con_regulation_requirements!(fnm::FullNetworkModel, slack)
     )
     if slack !== nothing
         # Soft constraints, add slacks
-        @variable(model, Γ_reg_req[z in reserve_zones, t in datetimes] >= 0)
+        @variable(model, sl_reg_req[z in reserve_zones, t in datetimes] >= 0)
         for z in reserve_zones, t in datetimes
-            set_normalized_coefficient(regulation_requirements[z, t], Γ_reg_req[z, t], 1.0)
+            set_normalized_coefficient(regulation_requirements[z, t], sl_reg_req[z, t], 1.0)
             # Add slack penalty to the objective
-            set_objective_coefficient(model, Γ_reg_req[z, t], slack)
+            set_objective_coefficient(model, sl_reg_req[z, t], slack)
         end
     end
     return fnm
@@ -268,11 +268,11 @@ function con_operating_reserve_requirements!(fnm::FullNetworkModel, slack)
     )
     if slack !== nothing
         # Soft constraints, add slacks
-        @variable(model, Γ_or_req[z in reserve_zones, t in datetimes] >= 0)
+        @variable(model, sl_or_req[z in reserve_zones, t in datetimes] >= 0)
         for z in reserve_zones, t in datetimes
-            set_normalized_coefficient(operating_reserve_requirements[z, t], Γ_or_req[z, t], 1.0)
+            set_normalized_coefficient(operating_reserve_requirements[z, t], sl_or_req[z, t], 1.0)
             # Add slack penalty to the objective
-            set_objective_coefficient(model, Γ_or_req[z, t], slack)
+            set_objective_coefficient(model, sl_or_req[z, t], slack)
         end
     end
     return fnm
@@ -320,9 +320,9 @@ The constraint is named `energy_balance`.
 function con_energy_balance!(fnm::FullNetworkModel{<:ED}; slack=nothing)
     model = fnm.model
     system = fnm.system
+    datetimes = fnm.datetimes
     unit_codes = get_unit_codes(ThermalGen, system)
     load_names = get_load_names(PowerLoad, system)
-    datetimes = fnm.datetimes
     D = get_fixed_loads(system)
     p = model[:p]
     @constraint(
@@ -507,11 +507,12 @@ function _con_branch_flows!(
     lodfs
 )
     model = fnm.model
+    datetimes = fnm.datetimes
     p_net = model[:p_net]
     @assert axes(sorted_ptdf, 2) == axes(p_net, 1) # we need this for vector multiplication
     scenarios = collect(keys(lodfs)) # all scenarios (base case and contingencies)
     cont_scenarios = filter(x -> x ≠ "base_case", scenarios)
-    @variable(model, fl[m in branches_names_monitored_or_out, t in fnm.datetimes, c in scenarios])
+    @variable(model, fl[m in branches_names_monitored_or_out, t in datetimes, c in scenarios])
     branches_out_per_scenario_names = _get_branches_out_per_scenario_names(lodfs)
     @constraint(
         model,
@@ -746,7 +747,7 @@ function con_thermal_branch!(fnm::FullNetworkModel)
     scenarios = collect(keys(lodfs)) # All scenarios (base case and contingency scenarios)
     branches_out_names = unique(vcat(axes.(values(lodfs), 2)...))
     # The flows need to be defined only for the branches that are monitored or going
-    # out under some contingency
+    # out under some contingency.
     branches_names_monitored_or_out = union(branches_out_names, mon_branches_names)
     #Add the nodal net injections for the base-case
     _con_nodal_net_injection!(fnm, bus_numbers, D, unit_codes_perbus, load_names_perbus)
@@ -992,25 +993,25 @@ function con_generation_ramp_rates!(fnm::FullNetworkModel; slack=nothing)
 
     # If the constraints are supposed to be soft constraints, add slacks
     if slack !== nothing
-        @variable(model, Γ_ramp[g in unit_codes, t in datetimes] >= 0)
+        @variable(model, sl_ramp[g in unit_codes, t in datetimes] >= 0)
         for g in unit_codes
             for t in datetimes[2:end]
-                set_normalized_coefficient(ramp_up[g, t], Γ_ramp[g, t], -1.0)
-                set_normalized_coefficient(ramp_down[g, t], Γ_ramp[g, t], -1.0)
+                set_normalized_coefficient(ramp_up[g, t], sl_ramp[g, t], -1.0)
+                set_normalized_coefficient(ramp_down[g, t], sl_ramp[g, t], -1.0)
             end
         end
         for g in units_available_in_first_hour
-            set_normalized_coefficient(ramp_up_initial[g], Γ_ramp[g, h1], -1.0)
-            set_normalized_coefficient(ramp_down_initial[g], Γ_ramp[g, h1], -1.0)
+            set_normalized_coefficient(ramp_up_initial[g], sl_ramp[g, h1], -1.0)
+            set_normalized_coefficient(ramp_down_initial[g], sl_ramp[g, h1], -1.0)
         end
 
         # Add slack penalty to the objective
         slack_cost = AffExpr()
         for g in units_available_in_first_hour
-            add_to_expression!(slack_cost, slack * Γ_ramp[g, h1])
+            add_to_expression!(slack_cost, slack * sl_ramp[g, h1])
         end
         for g in unit_codes, t in datetimes[2:end]
-            add_to_expression!(slack_cost, slack * Γ_ramp[g, t])
+            add_to_expression!(slack_cost, slack * sl_ramp[g, t])
         end
         _add_to_objective!(model, slack_cost)
     end
