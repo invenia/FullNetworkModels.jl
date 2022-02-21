@@ -514,18 +514,14 @@ function _con_branch_flows!(
     cont_scenarios = filter(x -> x ≠ "base_case", scenarios)
     @variable(model, fl[m in branches_names_monitored_or_out, t in datetimes, c in scenarios])
     branches_out_per_scenario_names = _get_branches_out_per_scenario_names(lodfs)
-    # Compute this multiplication all at once for performance
-    ptdf_times_pnet = sorted_ptdf[branches_names_monitored_or_out, :].data * p_net.data
-    name_mapping = Dict(branches_names_monitored_or_out .=> 1:length(branches_names_monitored_or_out))
-    time_mapping = Dict(datetimes .=> 1:length(datetimes))
     @constraint(
         model,
-        branch_flows_base[m in branches_names_monitored_or_out, t in datetimes],
-        fl[m, t, "base_case"] == ptdf_times_pnet[name_mapping[m], time_mapping[t]]
+        branch_flows_base[m in branches_names_monitored_or_out, t in fnm.datetimes],
+        fl[m, t, "base_case"] == sorted_ptdf[m, :].data' * p_net[:, t].data
     )
     @constraint(
         model,
-        branch_flows_conting[m in mon_branches_names, t in datetimes, c in cont_scenarios],
+        branch_flows_conting[m in mon_branches_names, t in fnm.datetimes, c in cont_scenarios],
         fl[m, t, c] == fl[m, t, "base_case"] + sum(
             lodfs[c][m, l] * fl[l, t, "base_case"] for l in branches_out_per_scenario_names[c]
         )
