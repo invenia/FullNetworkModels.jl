@@ -320,9 +320,9 @@ The constraint is named `energy_balance`.
 function con_energy_balance!(fnm::FullNetworkModel{<:ED}; slack=nothing)
     model = fnm.model
     system = fnm.system
+    datetimes = fnm.datetimes
     unit_codes = get_unit_codes(ThermalGen, system)
     load_names = get_load_names(PowerLoad, system)
-    datetimes = fnm.datetimes
     D = get_fixed_loads(system)
     p = model[:p]
     @constraint(
