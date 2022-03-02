@@ -50,20 +50,20 @@ To use the default slack options:
 ```julia
 fnm = unit_commitment(system, solver)
 ```
-Note that unit commitment templates default to hard constraints, while economic dispatch defaults to soft constraints with `1e4` slack penalty.
+Note that unit commitment templates default to hard constraints, while economic dispatch defaults to soft constraints.
 
 To use a single slack penalty value across all soft constraints:
 ```julia
-fnm = unit_commitment(system, solver; slack=1e4)
+fnm = unit_commitment(system, solver; slack=1e7)
 ```
 
 To use different slack penalties for specific soft constraints:
 ```julia
-fnm = unit_commitment(system, solver; slack=:energy_balance => 1e4)
+fnm = unit_commitment(system, solver; slack=:energy_balance => 1e7)
 ```
 or
 ```julia
-fnm = unit_commitment(system, solver; slack=[:energy_balance => 1e4, :ramp_rates => 1e3])
+fnm = unit_commitment(system, solver; slack=[:energy_balance => 1e7, :ramp_rates => 1e6])
 ```
 Note that in the examples above, any constraint not explicitly added as a `Pair` will be set as hard constraint.
 
