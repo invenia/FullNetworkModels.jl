@@ -258,7 +258,6 @@
         system_sl1 = deepcopy(TEST_SYSTEM_RT)
         Transformer1 = get_component(Branch, system_sl1, "Transformer1")
         set_rate!(Transformer1, 0.149) #Original flow 0.15
-        Transformer1.ext["rate_b"] = 0.955 #Original flow conting1: 0.3, conting2: 1.0
         Transformer1.ext["penalties"] = [1000.0, 2000.0]
 
         # Solve, slack 1 should be active in base-case and conting2 but not in conting1
@@ -268,13 +267,13 @@
         obj_sl1 = objective_value(fnm.model)
 
         # Verify that the branch flows are higher than the branch rate, and SL1 is active
-        @testset "branch bounds sl1 in base case and conting2" for c in ["base_case", "conting2"]
+        @testset "branch bounds sl1 in base case" begin
             m = "Transformer1"
             t_branch = get_component(Branch, system_sl1, m)
-            rate = c == "base_case" ? t_branch.rate : t_branch.ext["rate_b"]
-            @test value.(fnm.model[:fl][m, fnm.datetimes[1], c]) > rate
-            @test value.(fnm.model[:sl1_fl][m, fnm.datetimes[1], c]) > 0
-            @test value.(fnm.model[:sl2_fl][m, fnm.datetimes[1], c]) == 0
+            rate = t_branch.rate
+            @test value.(fnm.model[:fl][m, fnm.datetimes[end], "base_case"]) > rate
+            @test value.(fnm.model[:sl1_fl][m, fnm.datetimes[end], "base_case"]) > 0
+            @test value.(fnm.model[:sl2_fl][m, fnm.datetimes[end], "base_case"]) == 0
         end
 
         # Modify the branch limits of the system slightly more to activate the slack 2 on
@@ -292,7 +291,7 @@
         obj_sl2 = objective_value(fnm.model)
 
         # Verify that the branch flows are higher than the line rate, SL1 and SL2 are active
-        @testset "branch bounds sl2 in base case and conting2" for c in ["base_case", "conting2"]
+        @testset "branch bounds sl2 in base case and conting2" for c in TEST_SCENARIOS
             m = "Transformer1"
             t_branch = get_component(Branch, system_sl2, m)
             rate = c == "base_case" ? t_branch.rate : t_branch.ext["rate_b"]
@@ -300,17 +299,12 @@
             @test value.(fnm.model[:sl1_fl][m, fnm.datetimes[1], c]) > 0
             @test value.(fnm.model[:sl2_fl][m, fnm.datetimes[1], c]) > 0
         end
-        @testset "branch bounds sl1 in conting1" begin
-            @test value.(fnm.model[:fl]["Transformer1",fnm.datetimes[1], "conting1"]) > Transformer1.ext["rate_b"]
-            @test value.(fnm.model[:sl1_fl]["Transformer1",fnm.datetimes[1], "conting1"]) > 0.0
-            @test value.(fnm.model[:sl2_fl]["Transformer1",fnm.datetimes[1], "conting1"]) == 0.0
-        end
 
         # Modify the branch limits of the system to activate the all slack 2 for all scenarios
         system_sl2_all = deepcopy(TEST_SYSTEM_RT)
         Transformer1 = get_component(Branch, system_sl2_all, "Transformer1")
         set_rate!(Transformer1, 0.01) #Original flow 0.15
-        Transformer1.ext["rate_b"] = 0.05 #Original flow conting1: 0.3, conting2: 1.0
+        Transformer1.ext["rate_b"] = 0.01 #Original flow conting1: 0.3, conting2: 1.0
         Transformer1.ext["penalties"] = [1000.0, 2000.0]
 
         # Solve, slack 2 should be active in all cases
