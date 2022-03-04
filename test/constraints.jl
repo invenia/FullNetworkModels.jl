@@ -65,12 +65,12 @@ end
 function tests_regulation_requirements(fnm::FullNetworkModel{<:ED})
     t = first(fnm.datetimes)
     @test sprint(show, constraint_by_name(fnm.model, "regulation_requirements[1,$t]")) ==
-        "regulation_requirements[1,$t] : r_reg[3,$t] + Γ_reg_req[1,$t] ≥ 0.3"
+        "regulation_requirements[1,$t] : r_reg[3,$t] + sl_reg_req[1,$t] ≥ 0.3"
     @test sprint(show, constraint_by_name(fnm.model, "regulation_requirements[2,$t]")) ==
-        "regulation_requirements[2,$t] : r_reg[7,$t] + Γ_reg_req[2,$t] ≥ 0.4"
+        "regulation_requirements[2,$t] : r_reg[7,$t] + sl_reg_req[2,$t] ≥ 0.4"
     @test sprint(show, constraint_by_name(
         fnm.model, "regulation_requirements[$(FNM.MARKET_WIDE_ZONE),$t]"
-    )) == "regulation_requirements[$(FNM.MARKET_WIDE_ZONE),$t] : r_reg[7,$t] + r_reg[3,$t] + Γ_reg_req[$(FNM.MARKET_WIDE_ZONE),$t] ≥ 0.8"
+    )) == "regulation_requirements[$(FNM.MARKET_WIDE_ZONE),$t] : r_reg[7,$t] + r_reg[3,$t] + sl_reg_req[$(FNM.MARKET_WIDE_ZONE),$t] ≥ 0.8"
     return nothing
 end
 
@@ -92,13 +92,13 @@ function tests_operating_reserve_requirements(fnm::FullNetworkModel{<:ED})
     t = first(fnm.datetimes)
     @test sprint(show, constraint_by_name(
         fnm.model, "operating_reserve_requirements[1,$t]"
-    )) == "operating_reserve_requirements[1,$t] : r_reg[3,$t] + r_spin[3,$t] + r_on_sup[3,$t] + r_off_sup[3,$t] + Γ_or_req[1,$t] ≥ 0.4"
+    )) == "operating_reserve_requirements[1,$t] : r_reg[3,$t] + r_spin[3,$t] + r_on_sup[3,$t] + r_off_sup[3,$t] + sl_or_req[1,$t] ≥ 0.4"
     @test sprint(show, constraint_by_name(
         fnm.model, "operating_reserve_requirements[2,$t]"
-    )) == "operating_reserve_requirements[2,$t] : r_reg[7,$t] + r_spin[7,$t] + r_on_sup[7,$t] + r_off_sup[7,$t] + Γ_or_req[2,$t] ≥ 0.5"
+    )) == "operating_reserve_requirements[2,$t] : r_reg[7,$t] + r_spin[7,$t] + r_on_sup[7,$t] + r_off_sup[7,$t] + sl_or_req[2,$t] ≥ 0.5"
     @test sprint(show, constraint_by_name(
         fnm.model, "operating_reserve_requirements[$(FNM.MARKET_WIDE_ZONE),$t]"
-    )) == "operating_reserve_requirements[$(FNM.MARKET_WIDE_ZONE),$t] : r_reg[7,$t] + r_reg[3,$t] + r_spin[7,$t] + r_spin[3,$t] + r_on_sup[7,$t] + r_on_sup[3,$t] + r_off_sup[7,$t] + r_off_sup[3,$t] + Γ_or_req[$(FNM.MARKET_WIDE_ZONE),$t] ≥ 1.2"
+    )) == "operating_reserve_requirements[$(FNM.MARKET_WIDE_ZONE),$t] : r_reg[7,$t] + r_reg[3,$t] + r_spin[7,$t] + r_spin[3,$t] + r_on_sup[7,$t] + r_on_sup[3,$t] + r_off_sup[7,$t] + r_off_sup[3,$t] + sl_or_req[$(FNM.MARKET_WIDE_ZONE),$t] ≥ 1.2"
     return nothing
 end
 
@@ -115,16 +115,16 @@ function tests_ramp_rates(fnm; slack=nothing)
     if slack !== nothing
         @test sprint(show, constraint_by_name(
         fnm.model, "ramp_up[3,$t2]"
-        )) == "ramp_up[3,$t2] : -p[3,$t1] + p[3,$t2] - 15 u[3,$t1] - 30 v[3,$t2] - Γ_ramp[3,$t2] ≤ 0.0"
+        )) == "ramp_up[3,$t2] : -p[3,$t1] + p[3,$t2] - 15 u[3,$t1] - 30 v[3,$t2] - sl_ramp[3,$t2] ≤ 0.0"
         @test sprint(show, constraint_by_name(
             fnm.model, "ramp_down[3,$t2]"
-        )) == "ramp_down[3,$t2] : p[3,$t1] - p[3,$t2] - 15 u[3,$t2] - 30 w[3,$t2] - Γ_ramp[3,$t2] ≤ 0.0"
+        )) == "ramp_down[3,$t2] : p[3,$t1] - p[3,$t2] - 15 u[3,$t2] - 30 w[3,$t2] - sl_ramp[3,$t2] ≤ 0.0"
         @test sprint(show, constraint_by_name(
             fnm.model, "ramp_up_initial[3]"
-        )) == "ramp_up_initial[3] : p[3,$t1] - 30 v[3,$t1] - Γ_ramp[3,$t1] ≤ 16.0"
+        )) == "ramp_up_initial[3] : p[3,$t1] - 30 v[3,$t1] - sl_ramp[3,$t1] ≤ 16.0"
         @test sprint(show, constraint_by_name(
             fnm.model, "ramp_down_initial[3]"
-        )) == "ramp_down_initial[3] : -p[3,$t1] - 15 u[3,$t1] - 30 w[3,$t1] - Γ_ramp[3,$t1] ≤ -1.0"
+        )) == "ramp_down_initial[3] : -p[3,$t1] - 15 u[3,$t1] - 30 w[3,$t1] - sl_ramp[3,$t1] ≤ -1.0"
     else
         @test sprint(show, constraint_by_name(
         fnm.model, "ramp_up[3,$t2]"
