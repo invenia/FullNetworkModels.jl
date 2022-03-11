@@ -481,7 +481,7 @@ end
         bus_numbers,
         mon_branches_names,
         branches_names_monitored_or_out,
-        sorted_ptdf,
+        ptdf,
         lodfs
     )
 
@@ -503,19 +503,19 @@ function _con_branch_flows!(
     bus_numbers,
     mon_branches_names,
     branches_names_monitored_or_out,
-    sorted_ptdf,
+    ptdf,
     lodfs
 )
     model = fnm.model
     datetimes = fnm.datetimes
     p_net = model[:p_net]
-    @assert axes(sorted_ptdf, 2) == axes(p_net, 1) # we need this for vector multiplication
+    @assert axes(ptdf, 2) == axes(p_net, 1) # we need this for vector multiplication
     scenarios = collect(keys(lodfs)) # all scenarios (base case and contingencies)
     cont_scenarios = filter(x -> x ≠ "base_case", scenarios)
     @variable(model, fl[m in branches_names_monitored_or_out, t in datetimes, c in scenarios])
     branches_out_per_scenario_names = _get_branches_out_per_scenario_names(lodfs)
     # Compute this multiplication all at once for performance
-    ptdf_times_pnet = sorted_ptdf[branches_names_monitored_or_out, :].data * p_net.data
+    ptdf_times_pnet = ptdf[branches_names_monitored_or_out, :].data * p_net.data
     name_mapping = Dict(branches_names_monitored_or_out .=> 1:length(branches_names_monitored_or_out))
     time_mapping = Dict(datetimes .=> 1:length(datetimes))
     @constraint(
@@ -744,8 +744,7 @@ function con_thermal_branch!(fnm::FullNetworkModel)
     mon_branches_rates_b = get_branch_rates_b(mon_branches_names, system)
     mon_branches_break_points = get_branch_break_points(mon_branches_names, system)
     mon_branches_penalties = get_branch_penalties(mon_branches_names, system)
-    sys_ptdf = get_ptdf(system)
-    sorted_ptdf = _sort_ptdf_axes(sys_ptdf) # to enable vector multiplication with `p_net`
+    ptdf = get_ptdf(system)
     lodf_dict = get_lodf_dict(system)
     lodfs = _add_base_case_to_lodfs(lodf_dict) # Add base case to the LODF dictionary
     scenarios = collect(keys(lodfs)) # All scenarios (base case and contingency scenarios)
@@ -761,7 +760,7 @@ function con_thermal_branch!(fnm::FullNetworkModel)
         bus_numbers,
         mon_branches_names,
         branches_names_monitored_or_out,
-        sorted_ptdf,
+        ptdf,
         lodfs
     )
     _con_branch_flow_slacks!(

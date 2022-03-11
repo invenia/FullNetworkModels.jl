@@ -155,6 +155,8 @@
         @test ptdf_mat isa DenseAxisArray
         @test issetequal(axes(ptdf_mat, 1), ("Line1", "Line2", "Line3", "Transformer1"))
         @test issetequal(axes(ptdf_mat, 2), (1, 2, 3))
+        th = FullNetworkModels._PTDF_THRESHOLD
+        @test all(x -> x == 0 || abs(x) > th, get_ptdf(system))
 
         lodf_dict = get_lodf_dict(system)
         @test issetequal(keys(lodf_dict), ("conting1", "conting2"))
