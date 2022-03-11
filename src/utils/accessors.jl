@@ -681,10 +681,39 @@ end
     get_ptdf(system::System) -> DenseAxisArray
 
 Returns the PTDF matrix stored in the `system` as a `PTDF` device.
+This is a sorted and thresholded version of the PTDF used for adding branch constraints.
 """
 function get_ptdf(system::System)
     ptdf_device = only(get_components(PTDF, system))
-    return ptdf_device.ptdf_mat
+    ptdf = ptdf_device.ptdf_mat
+    _threshold!(ptdf)
+    return _sort_buses(ptdf)
+end
+
+const _PTDF_THRESHOLD = 1e-4
+"""
+    _threshold!(ptdf, threshold=$_PTDF_THRESHOLD)
+
+After calculating LODFs, the PTDF doesn't need to be as precise. We can safely
+replace small values with zeros, e.g. |x| < 1e-4, which results in significant performance
+improvements.
+
+See measurements in https://gitlab.invenia.ca/invenia/research/FullNetworkModels.jl/-/merge_requests/128
+"""
+@inline function _threshold!(ptdf::DenseAxisArray, threshold::Float64=_PTDF_THRESHOLD)
+    replace!(x -> abs(x) < threshold ? 0.0 : x, ptdf.data)
+end
+
+"""
+    _sort_buses(ptdf) -> DenseAxisArray
+
+Returns the same PTDF with the 2nd axis sorted with respect to the bus numbers. This is done
+to ensure that the axis is consistent with other defined variables (e.g. `p_net`) when
+performing vector multiplication.
+"""
+@inline function _sort_buses(ptdf)
+    sorted_bus_numbers = sort(axes(ptdf, 2))
+    return ptdf[:, sorted_bus_numbers]
 end
 
 """
