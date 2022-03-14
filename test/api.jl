@@ -157,6 +157,8 @@
         @test issetequal(axes(ptdf_mat, 2), (1, 2, 3))
         th = FullNetworkModels._PTDF_THRESHOLD
         @test all(x -> x == 0 || abs(x) > th, get_ptdf(system))
+        ptdf_mat_thresh = get_ptdf(system; threshold=0.05) # use a custom threshold
+        @test all(x -> x == 0 || abs(x) > 0.05, get_ptdf(system))
 
         lodf_dict = get_lodf_dict(system)
         @test issetequal(keys(lodf_dict), ("conting1", "conting2"))
