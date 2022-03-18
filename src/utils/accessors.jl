@@ -44,6 +44,15 @@ function get_unit_codes(gentype::Type{<:Generator}, system::System)
 end
 
 """
+    get_bus_names(system::System) -> Vector{<:AbstractString}
+
+Returns the augmented names of all buses in `system`.
+"""
+function get_bus_names(system::System)
+    return map(get_name, get_components(Bus, system))
+end
+
+"""
     get_unit_codes_perbus(gentype::Type{<:Generator}, system::System) -> Dict
 
 Returns the unit codes of all generators per bus in `system` under type `gentype`.
@@ -51,7 +60,7 @@ Returns the unit codes of all generators per bus in `system` under type `gentype
 function get_unit_codes_perbus(gentype::Type{<:Generator}, system::System)
     bus_names = get_bus_names(system)
     gens = get_components(gentype, system)
-    unit_codes_perbus = Dict{Int, Vector{Int}}(b => Int[] for b in bus_names)
+    unit_codes_perbus = Dict{String, Vector{Int}}(b => Int[] for b in bus_names)
     for g in gens
         push!(unit_codes_perbus[g.bus.name], parse(Int, get_name(g)))
     end
@@ -76,7 +85,7 @@ Returns the names of the bids in `system` that are of type `bidtype`.
 function get_bid_names_perbus(bidtype::Type{<:Device}, system::System)
     bus_names = get_bus_names(system)
     bids = get_components(bidtype, system)
-    bid_names_perbus = Dict{Int, Vector{String}}(b => String[] for b in bus_names)
+    bid_names_perbus = Dict{String, Vector{String}}(b => String[] for b in bus_names)
     for b in bids
         push!(bid_names_perbus[b.bus.name], get_name(b))
     end
@@ -100,7 +109,7 @@ Returns the names of all loads per bus in `system` under type `loadtype`.
 function get_load_names_perbus(loadtype::Type{<:StaticLoad}, system::System)
     bus_names = get_bus_names(system)
     loads = get_components(loadtype, system)
-    load_names_perbus = Dict{Int, Vector{String}}(b => String[] for b in bus_names)
+    load_names_perbus = Dict{String, Vector{String}}(b => String[] for b in bus_names)
     for l in loads
         push!(load_names_perbus[l.bus.name], get_name(l))
     end
