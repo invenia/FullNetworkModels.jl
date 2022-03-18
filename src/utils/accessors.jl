@@ -696,7 +696,7 @@ This is a sorted and thresholded version of the PTDF used for adding branch cons
 function get_ptdf(system::System; threshold::Float64=_PTDF_THRESHOLD)
     ptdf_device = only(get_components(PTDF, system))
     ptdf = ptdf_device.ptdf_mat
-    _threshold!(ptdf; threshold)
+    _threshold!(ptdf, threshold)
     return _sort_buses(ptdf)
 end
 
