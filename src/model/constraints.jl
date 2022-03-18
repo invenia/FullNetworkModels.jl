@@ -405,7 +405,7 @@ function latex(::typeof(_con_nodal_net_injection_uc!))
 end
 
 """
-    _con_nodal_net_injection!(fnm::FullNetworkModel{ED}, bus_numbers, D, unit_codes_perbus, load_names_perbus)
+    _con_nodal_net_injection!(fnm::FullNetworkModel{ED}, bus_names, D, unit_codes_perbus, load_names_perbus)
 
 Adds the Net Nodal Injection constraints to the full network model. The constraints calculate
 the net injection per node for all the buses of the system.
@@ -416,14 +416,14 @@ $(latex(_con_nodal_net_injection_ed!))
 
 The constraint is named `nodal_net_injection`.
 """
-function _con_nodal_net_injection!(fnm::FullNetworkModel{<:ED}, bus_numbers, D, unit_codes_perbus, load_names_perbus)
+function _con_nodal_net_injection!(fnm::FullNetworkModel{<:ED}, bus_names, D, unit_codes_perbus, load_names_perbus)
     model = fnm.model
-    @variable(model, p_net[n in bus_numbers, t in fnm.datetimes])
+    @variable(model, p_net[n in bus_names, t in fnm.datetimes])
     p = model[:p]
     p_net = model[:p_net]
     @constraint(
         model,
-        nodal_net_injection[n in bus_numbers, t in fnm.datetimes],
+        nodal_net_injection[n in bus_names, t in fnm.datetimes],
         p_net[n, t] ==
             sum(p[g, t] for g in unit_codes_perbus[n]) -
             sum(D[f, t] for f in load_names_perbus[n])
@@ -432,7 +432,7 @@ function _con_nodal_net_injection!(fnm::FullNetworkModel{<:ED}, bus_numbers, D, 
 end
 
 """
-_con_nodal_net_injection!(fnm::FullNetworkModel{UC}, bus_numbers, D, unit_codes_perbus, load_names_perbus)
+    _con_nodal_net_injection!(fnm::FullNetworkModel{UC}, bus_names, D, unit_codes_perbus, load_names_perbus)
 
 Adds the Net Nodal Injection constraints to the full network model. The constraints calculate
 the net injection per node for all the buses of the system.
@@ -443,13 +443,13 @@ $(latex(_con_nodal_net_injection_uc!))
 
 The constraint is named `nodal_net_injection`.
 """
-function _con_nodal_net_injection!(fnm::FullNetworkModel{<:UC}, bus_numbers, D, unit_codes_perbus, load_names_perbus)
+function _con_nodal_net_injection!(fnm::FullNetworkModel{<:UC}, bus_names, D, unit_codes_perbus, load_names_perbus)
     model = fnm.model
     system = fnm.system
     inc_names_perbus = get_bid_names_perbus(Increment, system)
     dec_names_perbus = get_bid_names_perbus(Decrement, system)
     psd_names_perbus = get_bid_names_perbus(PriceSensitiveDemand, system)
-    @variable(model, p_net[n in bus_numbers, t in fnm.datetimes])
+    @variable(model, p_net[n in bus_names, t in fnm.datetimes])
     p = model[:p]
     p_net = model[:p_net]
     inc = model[:inc]
@@ -457,7 +457,7 @@ function _con_nodal_net_injection!(fnm::FullNetworkModel{<:UC}, bus_numbers, D, 
     psd = model[:psd]
     @constraint(
         model,
-        nodal_net_injection[n in bus_numbers, t in fnm.datetimes],
+        nodal_net_injection[n in bus_names, t in fnm.datetimes],
         p_net[n, t] ==
         sum(p[g, t] for g in unit_codes_perbus[n]) +
             sum(inc[i, t] for i in inc_names_perbus[n]) -
@@ -478,7 +478,6 @@ end
 """
     _con_branch_flows!(
         fnm::FullNetworkModel,
-        bus_numbers,
         mon_branches_names,
         branches_names_monitored_or_out,
         ptdf,
@@ -500,7 +499,6 @@ for the contingency scenarios.
 """
 function _con_branch_flows!(
     fnm::FullNetworkModel,
-    bus_numbers,
     mon_branches_names,
     branches_names_monitored_or_out,
     ptdf,
@@ -735,7 +733,7 @@ The constraints are named `nodal_net_injection`, `branch_flows_base`, `branch_fl
 function con_thermal_branch!(fnm::FullNetworkModel)
     #Shared Data
     system = fnm.system
-    bus_numbers = get_bus_numbers(system)
+    bus_names = get_bus_names(system)
     D = get_fixed_loads(system)
     unit_codes_perbus = get_unit_codes_perbus(ThermalStandard, system)
     load_names_perbus = get_load_names_perbus(PowerLoad, system)
@@ -753,11 +751,10 @@ function con_thermal_branch!(fnm::FullNetworkModel)
     # out under some contingency.
     branches_names_monitored_or_out = union(branches_out_names, mon_branches_names)
     #Add the nodal net injections for the base-case
-    _con_nodal_net_injection!(fnm, bus_numbers, D, unit_codes_perbus, load_names_perbus)
+    _con_nodal_net_injection!(fnm, bus_names, D, unit_codes_perbus, load_names_perbus)
     #Add the branch flows constraints for all scenarios
     _con_branch_flows!(
         fnm,
-        bus_numbers,
         mon_branches_names,
         branches_names_monitored_or_out,
         ptdf,

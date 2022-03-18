@@ -180,7 +180,7 @@ function tests_branch_flow_limits(T, fnm::FullNetworkModel)
     end
     system = fnm.system
     mon_branches_names = get_monitored_branch_names(Branch, system)
-    bus_numbers = get_bus_numbers(system)
+    bus_names = get_bus_names(system)
     load_names_perbus = get_load_names_perbus(PowerLoad, system)
     D = get_fixed_loads(system)
     pg = Array{String}(undef, 3)
@@ -193,7 +193,7 @@ function tests_branch_flow_limits(T, fnm::FullNetworkModel)
             pg[1] = " -p[3,$t]"
             pg[2] = " -p[7,$t] +"
             pg[3] = ""
-            for n in bus_numbers
+            for n in bus_names
                 if n !== 1
                     d_net = -sum(D[f, t] for f in load_names_perbus[n])
                     inc_aux = ""
@@ -218,7 +218,7 @@ function tests_branch_flow_limits(T, fnm::FullNetworkModel)
             pg[1] = " -p[3,$t] +"
             pg[2] = " -p[7,$t] +"
             pg[3] = ""
-            for n in bus_numbers
+            for n in bus_names
                 if n !== 1
                     d_net = -sum(D[f, t] for f in load_names_perbus[n])
                 end
