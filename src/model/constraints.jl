@@ -417,10 +417,10 @@ $(latex(_con_nodal_net_injection_ed!))
 The constraint is named `nodal_net_injection`.
 """
 function _con_nodal_net_injection!(fnm::FullNetworkModel{<:ED}, bus_names, D, unit_codes_perbus, load_names_perbus)
+    bus_names = sort(bus_names) # we do this to ensure index consistency with the PTDF
     model = fnm.model
     @variable(model, p_net[n in bus_names, t in fnm.datetimes])
     p = model[:p]
-    p_net = model[:p_net]
     @constraint(
         model,
         nodal_net_injection[n in bus_names, t in fnm.datetimes],
@@ -444,6 +444,7 @@ $(latex(_con_nodal_net_injection_uc!))
 The constraint is named `nodal_net_injection`.
 """
 function _con_nodal_net_injection!(fnm::FullNetworkModel{<:UC}, bus_names, D, unit_codes_perbus, load_names_perbus)
+    bus_names = sort(bus_names) # we do this to ensure index consistency with the PTDF
     model = fnm.model
     system = fnm.system
     inc_names_perbus = get_bid_names_perbus(Increment, system)
@@ -451,7 +452,6 @@ function _con_nodal_net_injection!(fnm::FullNetworkModel{<:UC}, bus_names, D, un
     psd_names_perbus = get_bid_names_perbus(PriceSensitiveDemand, system)
     @variable(model, p_net[n in bus_names, t in fnm.datetimes])
     p = model[:p]
-    p_net = model[:p_net]
     inc = model[:inc]
     dec = model[:dec]
     psd = model[:psd]
