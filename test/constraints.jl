@@ -158,7 +158,7 @@ function tests_energy_balance(fnm::FullNetworkModel{<:UC})
     @testset "Constraints were correctly defined" for t in fnm.datetimes
         system_load = sum(D[f, t] for f in load_names)
         @test sprint(show, constraint_by_name(fnm.model, "energy_balance[$t]")) ==
-            "energy_balance[$t] : p[7,$t] + p[3,$t] + inc[111_1,$t] - dec[222_1,$t] - psd[333_1,$t] = $(system_load)"
+            "energy_balance[$t] : p[7,$t] + p[3,$t] + inc[111_Bus1,$t] - dec[222_Bus1,$t] - psd[333_Bus1,$t] = $(system_load)"
     end
     return nothing
 end
@@ -178,63 +178,13 @@ function tests_branch_flow_limits(T, fnm::FullNetworkModel)
         @test has_constraint(fnm.model, "branch_flow_sl1_two_base")
         @test has_constraint(fnm.model, "branch_flow_sl1_two_cont")
     end
-    system = fnm.system
-    mon_branches_names = get_monitored_branch_names(Branch, system)
-    bus_names = get_bus_names(system)
-    load_names_perbus = get_load_names_perbus(PowerLoad, system)
-    D = get_fixed_loads(system)
-    pg = Array{String}(undef, 3)
-    if T == UC
-        inc_names_perbus = get_bid_names_perbus(Increment, system)
-        dec_names_perbus = get_bid_names_perbus(Decrement, system)
-        psd_names_perbus = get_bid_names_perbus(PriceSensitiveDemand, system)
-        @testset "Nodal net injection" for t in fnm.datetimes
-            d_net = 0.0
-            pg[1] = " -p[3,$t]"
-            pg[2] = " -p[7,$t] +"
-            pg[3] = ""
-            for n in bus_names
-                if n !== 1
-                    d_net = -sum(D[f, t] for f in load_names_perbus[n])
-                    inc_aux = ""
-                    dec_aux = ""
-                    psd_aux = ""
-                else
-                    inc_names_aux = inc_names_perbus[n][1]
-                    dec_names_aux = dec_names_perbus[n][1]
-                    psd_names_aux = psd_names_perbus[n][1]
-                    inc_aux = " - inc[$inc_names_aux,$t] +"
-                    dec_aux = " dec[$dec_names_aux,$t] +"
-                    psd_aux = " psd[$psd_names_aux,$t] +"
-                end
-                pg_aux = pg[n]
-                @test sprint(show, constraint_by_name(fnm.model, "nodal_net_injection[$n,$t]")) ==
-                "nodal_net_injection[$n,$t] :$pg_aux$inc_aux$dec_aux$psd_aux p_net[$n,$t] = $d_net"
-            end
-        end
-    else #ED
-        @testset "Nodal net injection" for t in fnm.datetimes
-            d_net = 0.0
-            pg[1] = " -p[3,$t] +"
-            pg[2] = " -p[7,$t] +"
-            pg[3] = ""
-            for n in bus_names
-                if n !== 1
-                    d_net = -sum(D[f, t] for f in load_names_perbus[n])
-                end
-                pg_aux = pg[n]
-                @test sprint(show, constraint_by_name(fnm.model, "nodal_net_injection[$n,$t]")) ==
-                "nodal_net_injection[$n,$t] :$pg_aux p_net[$n,$t] = $d_net"
-            end
-        end
-    end
 
     @testset "Branch flows constraints" for t in fnm.datetimes
         m = "Transformer1"
         (c1, c2) = ("conting1", "conting2")
         (ptdf2, ptdf3)  = ("0.12500000000000003", "0.12499999999999997")
         @test sprint(show, constraint_by_name(fnm.model, "branch_flows_base[$m,$t]")) ==
-        "branch_flows_base[$m,$t] : -$ptdf2 p_net[2,$t] + $ptdf3 p_net[3,$t] + fl[$m,$t,base_case] = 0.0"
+        "branch_flows_base[$m,$t] : -$ptdf2 p_net[Bus2,$t] + $ptdf3 p_net[Bus3,$t] + fl[$m,$t,base_case] = 0.0"
         @test sprint(show, constraint_by_name(fnm.model, "branch_flows_conting[$m,$t,$c1]")) ==
         "branch_flows_conting[$m,$t,$c1] : -0.5 fl[Line2,$t,base_case] - fl[$m,$t,base_case] + fl[$m,$t,$c1] = 0.0"
         @test sprint(show, constraint_by_name(fnm.model, "branch_flows_conting[$m,$t,$c2]")) ==

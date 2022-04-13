@@ -13,7 +13,7 @@
     ta = TimeArray(datetimes, fill(1e4, n_periods))
     add_time_series!(high_demand_system, load1, SingleTimeSeries("active_power", ta))
     transform_single_time_series!(high_demand_system, n_periods, Hour(0))
-    @test get_fixed_loads(high_demand_system)["Load1_2", :] ==
+    @test get_fixed_loads(high_demand_system)[load1.name, :] ==
         DenseAxisArray(fill(1e4, n_periods), datetimes)
     @test !basic_feasibility_checks(high_demand_system)
 

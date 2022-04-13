@@ -107,14 +107,14 @@ end
         tests_thermal_startup_cost(fnm)
     end
     @testset "obj_bids!" begin
-        system, _ = fake_3bus_system(MISO, DA; n_periods=2)
+        system = fake_3bus_system(MISO, DA; n_periods=2)
         fnm = FullNetworkModel{UC}(system, Clp.Optimizer)
         var_bids!(fnm)
         obj_bids!(fnm)
         # Check if objective function accurately reflects the bids in the system
         # All bids have just one block equal to $100/pu
         # https://gitlab.invenia.ca/invenia/research/FullNetworkDataPrep.jl/-/blob/16f570e9116d86a2ce65e2e08aa702cefa268cc5/src/testutils.jl#L162
-        inc_name, dec_name, psd_name = ("111_1", "222_1", "333_1")
+        inc_name, dec_name, psd_name = ("111_Bus1", "222_Bus1", "333_Bus1")
         inc_aux, dec_aux, psd_aux = fnm.model[:inc_aux], fnm.model[:dec_aux], fnm.model[:psd_aux]
         t1, t2 = fnm.datetimes[1:2]
         @test objective_function(fnm.model) == 100 * (
