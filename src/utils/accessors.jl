@@ -46,10 +46,10 @@ end
 """
     get_bus_names(system::System) -> Vector{<:AbstractString}
 
-Returns the augmented names of all buses in `system`.
+Returns the sorted augmented names of all buses in `system`.
 """
 function get_bus_names(system::System)
-    return map(get_name, get_components(Bus, system))
+    return sort(map(get_name, get_components(Bus, system)))
 end
 
 """
