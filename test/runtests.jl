@@ -17,8 +17,8 @@ using Test
 using TimeSeries
 
 const FNM = FullNetworkModels
-const TEST_SYSTEM, _ = fake_3bus_system(MISO, DA)
-const TEST_SYSTEM_RT, _ = fake_3bus_system(MISO, DA; commitment_forecasts=true)
+const TEST_SYSTEM = fake_3bus_system(MISO, DA)
+const TEST_SYSTEM_RT = fake_3bus_system(MISO, DA; commitment_forecasts=true)
 const TEST_LODF_DICT = get_lodf_dict(TEST_SYSTEM)
 const TEST_SCENARIOS = vcat("base_case", keys(TEST_LODF_DICT)...)
 

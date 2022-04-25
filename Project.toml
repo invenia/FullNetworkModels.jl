@@ -1,7 +1,7 @@
 name = "FullNetworkModels"
 uuid = "73927447-18cb-4351-9246-c402eb8d0c47"
 authors = ["Invenia Technical Computing Corporation"]
-version = "5.4.0"
+version = "5.5.0"
 
 [deps]
 Dates = "ade2ca70-3891-5945-98fb-dc099432e06a"
@@ -12,11 +12,11 @@ PowerSystemsExtras = "5c12387c-8993-487c-b7f8-95b63bb251f1"
 TimerOutputs = "a759f4b9-e2f1-59dc-863e-4aeb61b1ea8f"
 
 [compat]
-Cbc = "0.8"
-Clp = "0.8"
+Cbc = "1"
+Clp = "1"
 ElectricityMarkets = "1.14"
-FullNetworkDataPrep = "0.19.15"
-JuMP = "0.21, 0.22"
+FullNetworkDataPrep = "0.23"
+JuMP = "1"
 Memento = "1.1"
 PowerSystems = "1.5"
 PowerSystemsExtras = "0.1.5"

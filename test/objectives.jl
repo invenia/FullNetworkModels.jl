@@ -107,7 +107,7 @@ end
         tests_thermal_startup_cost(fnm)
     end
     @testset "obj_bids!" begin
-        system, _ = fake_3bus_system(MISO, DA; n_periods=2)
+        system = fake_3bus_system(MISO, DA; n_periods=2)
         fnm = FullNetworkModel{UC}(system, Clp.Optimizer)
         var_bids!(fnm)
         obj_bids!(fnm)
