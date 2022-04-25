@@ -1,6 +1,6 @@
 @testset "Templates" begin
     @testset "unit_commitment" begin
-        fnm = unit_commitment(TEST_SYSTEM, Cbc.Optimizer)
+        fnm = unit_commitment(TEST_SYSTEM)
         datetimes = fnm.datetimes
         tests_thermal_variable(fnm, "p")
         tests_commitment(fnm)
@@ -69,8 +69,6 @@
         fnm = unit_commitment_branch_flow_limits(TEST_SYSTEM, Cbc.Optimizer)
         tests_branch_flow_limits(UC, fnm)
 
-        # Solve the original UC with thermal branch constraints
-        fnm = unit_commitment_branch_flow_limits(TEST_SYSTEM, Cbc.Optimizer)
         optimize!(fnm)
         # Should be feasible
         @test termination_status(fnm.model) == TerminationStatusCode(1)
@@ -184,7 +182,7 @@
     end
 
     @testset "economic_dispatch" begin
-        fnm = economic_dispatch(TEST_SYSTEM_RT, Clp.Optimizer)
+        fnm = economic_dispatch(TEST_SYSTEM_RT)
         tests_thermal_variable(fnm, "p")
         tests_generation_limits(fnm)
         tests_thermal_variable_cost(fnm)
@@ -234,9 +232,7 @@
     @testset "economic_dispatch_branch_flow_limits" begin
         fnm = economic_dispatch_branch_flow_limits(TEST_SYSTEM_RT, Clp.Optimizer)
         tests_branch_flow_limits(ED, fnm)
-
         # Solve the original ED with thermal branch constraints
-        fnm = economic_dispatch_branch_flow_limits(TEST_SYSTEM_RT, Clp.Optimizer)
         optimize!(fnm)
         # Should be feasible
         @test termination_status(fnm.model) == TerminationStatusCode(1)

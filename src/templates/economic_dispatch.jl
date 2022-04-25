@@ -1,6 +1,6 @@
 """
     economic_dispatch(
-        system::System, solver, datetimes=get_forecast_timestamps(system); slack=1e6
+        system::System, solver=nothing, datetimes=get_forecast_timestamps(system); slack=1e6
     ) -> FullNetworkModel{ED}
 
 Defines the economic dispatch default template.
@@ -42,7 +42,7 @@ Keyword arguments:
    For more info on specifying slacks, refer to the [docs on soft constraints](@ref soft_constraints).
 """
 function economic_dispatch(
-    system::System, solver, datetimes=get_forecast_timestamps(system); slack=1e6
+    system::System, solver=nothing, datetimes=get_forecast_timestamps(system); slack=1e6
 )
     # Get the individual slack values to be used in each soft constraint
     @timeit_debug get_timer("FNTimer") "specify slacks" sl = _expand_slacks(slack)
@@ -73,7 +73,7 @@ end
 
 """
     economic_dispatch_branch_flow_limits(
-        system::System, solver, datetimes=get_forecast_timestamps(system); slack=1e6
+        system::System, solver=nothing, datetimes=get_forecast_timestamps(system); slack=1e6
     ) -> FullNetworkModel{ED}
 
 Defines the economic dispatch template with base case thermal branch constraints.
@@ -116,7 +116,7 @@ Keyword arguments:
  - `slack=1e6`: The slack penalty for the soft constraints.
 """
 function economic_dispatch_branch_flow_limits(
-    system::System, solver, datetimes=get_forecast_timestamps(system); slack=1e6
+    system::System, solver=nothing, datetimes=get_forecast_timestamps(system); slack=1e6
 )
     # Get the individual slack values to be used in each soft constraint
     @timeit_debug get_timer("FNTimer") "specify slacks" sl = _expand_slacks(slack)

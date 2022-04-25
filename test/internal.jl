@@ -8,7 +8,7 @@
         @test FNM._get_resolution_in_minutes(TEST_SYSTEM) == 60
     end
     @testset "_add_to_objective!" begin
-        model = Model(Clp.Optimizer)
+        model = Model()
         @variable(model, x[1:5] >= 0)
         @objective(model, Min, sum(x))
         expr = 2 * x[3]
@@ -17,7 +17,7 @@
     end
     @testset "_variable_cost" begin
         system = fake_3bus_system(MISO, DA; n_periods=2)
-        fnm = unit_commitment(system, Cbc.Optimizer)
+        fnm = unit_commitment(system)
         unit_codes = get_unit_codes(ThermalGen, fnm.system)
         offer_curves = get_offer_curves(fnm.system)
         Λ, block_lims, n_blocks = FNM._curve_properties(offer_curves)
