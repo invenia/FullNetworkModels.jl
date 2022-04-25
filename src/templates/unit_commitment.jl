@@ -56,7 +56,7 @@ See also [`unit_commitment_no_ramps`](@ref).
    For more info on specifying slacks, refer to the [docs on soft constraints](@ref soft_constraints).
 """
 function unit_commitment(
-    system::System, solver, datetimes=get_forecast_timestamps(system);
+    system::System, solver=nothing, datetimes=get_forecast_timestamps(system);
     relax_integrality=false, slack=nothing
 )
     # Get the individual slack values to be used in each soft constraint
@@ -124,7 +124,7 @@ See also [`unit_commitment`](@ref) and [`unit_commitment_branch_flow_limits`](@r
    For more info on specifying slacks, refer to the [docs on soft constraints](@ref soft_constraints).
 """
 function unit_commitment_no_ramps(
-    system::System, solver, datetimes=get_forecast_timestamps(system);
+    system::System, solver=nothing, datetimes=get_forecast_timestamps(system);
     relax_integrality=false, slack=nothing
 )
     # Get the individual slack values to be used in each soft constraint
@@ -226,7 +226,7 @@ See also [`unit_commitment`](@ref) and [`unit_commitment_no_ramps`](@ref).
    For more info on specifying slacks, refer to the [docs on soft constraints](@ref soft_constraints).
 """
 function unit_commitment_branch_flow_limits(
-    system::System, solver, datetimes=get_forecast_timestamps(system);
+    system::System, solver=nothing, datetimes=get_forecast_timestamps(system);
     relax_integrality=false, slack=nothing
 )
     # Get the individual slack values to be used in each soft constraint
@@ -293,7 +293,7 @@ See also [`unit_commitment_branch_flow_limits`](@ref) and [`unit_commitment_no_r
    For more info on specifying slacks, refer to the [docs on soft constraints](@ref soft_constraints).
 """
 function unit_commitment_no_ramps_branch_flow_limits(
-    system::System, solver, datetimes=get_forecast_timestamps(system);
+    system::System, solver=nothing, datetimes=get_forecast_timestamps(system);
     relax_integrality=false, slack=nothing
 )
     # Get the individual slack values to be used in each soft constraint
