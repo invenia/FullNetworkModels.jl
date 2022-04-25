@@ -1,6 +1,6 @@
 """
     economic_dispatch(
-        system::System, solver, datetimes=get_forecast_timestamps(system); slack=1e6
+        system::System, solver=nothing, datetimes=get_forecast_timestamps(system); slack=1e6
     ) -> FullNetworkModel{ED}
 
 Defines the economic dispatch default template.
@@ -73,7 +73,7 @@ end
 
 """
     economic_dispatch_branch_flow_limits(
-        system::System, solver, datetimes=get_forecast_timestamps(system); slack=1e6
+        system::System, solver=nothing, datetimes=get_forecast_timestamps(system); slack=1e6
     ) -> FullNetworkModel{ED}
 
 Defines the economic dispatch template with base case thermal branch constraints.

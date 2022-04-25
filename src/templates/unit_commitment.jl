@@ -1,6 +1,6 @@
 """
     unit_commitment(
-        system::System, solver, datetimes=get_forecast_timestamps(system);
+        system::System, solver=nothing, datetimes=get_forecast_timestamps(system);
         relax_integrality=false, slack=nothing
     ) -> FullNetworkModel{UC}
 
@@ -100,7 +100,7 @@ end
 
 """
     unit_commitment_no_ramps(
-        system::System, solver, datetimes=get_forecast_timestamps(system);
+        system::System, solver=nothing, datetimes=get_forecast_timestamps(system);
         relax_integrality=false
     ) -> FullNetworkModel{UC}
 
@@ -166,7 +166,7 @@ end
 
 """
     unit_commitment_branch_flow_limits(
-        system::System, solver, datetimes=get_forecast_timestamps(system);
+        system::System, solver=nothing, datetimes=get_forecast_timestamps(system);
         relax_integrality=false
     ) -> FullNetworkModel{UC}
 
@@ -271,7 +271,7 @@ end
 
 """
     unit_commitment_no_ramps_branch_flow_limits(
-        system::System, solver, datetimes=get_forecast_timestamps(system);
+        system::System, solver=nothing, datetimes=get_forecast_timestamps(system);
         relax_integrality=false
     ) -> FullNetworkModel{UC}
 
