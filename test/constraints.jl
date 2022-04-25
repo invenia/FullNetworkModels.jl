@@ -309,13 +309,13 @@ end
 @testset "Constraints" begin
     @testset "con_generation_limits!" begin
         @testset "ED with gen generator status as a parameter" begin
-            fnm = FullNetworkModel{ED}(TEST_SYSTEM_RT, Clp.Optimizer)
+            fnm = FullNetworkModel{ED}(TEST_SYSTEM_RT)
             var_thermal_generation!(fnm)
             con_generation_limits!(fnm)
             tests_generation_limits(fnm)
         end
         @testset "UC with both thermal generation and commitment added" begin
-            fnm = FullNetworkModel{UC}(TEST_SYSTEM, Cbc.Optimizer)
+            fnm = FullNetworkModel{UC}(TEST_SYSTEM)
             var_thermal_generation!(fnm)
             var_commitment!(fnm)
             con_generation_limits!(fnm)
@@ -323,7 +323,7 @@ end
         end
     end
     @testset "Ancillary service constraints UC" begin
-        fnm = FullNetworkModel{UC}(TEST_SYSTEM, Cbc.Optimizer)
+        fnm = FullNetworkModel{UC}(TEST_SYSTEM)
         var_thermal_generation!(fnm)
         var_commitment!(fnm)
         var_ancillary_services!(fnm)
@@ -341,7 +341,7 @@ end
         end
     end
     @testset "Ancillary service constraints ED" begin
-        fnm = FullNetworkModel{ED}(TEST_SYSTEM_RT, Clp.Optimizer)
+        fnm = FullNetworkModel{ED}(TEST_SYSTEM_RT)
         var_thermal_generation!(fnm)
         var_ancillary_services!(fnm)
         @testset "con_ancillary_limits!" begin
@@ -359,7 +359,7 @@ end
     end
     @testset "Ramp constraints $T" for T in (UC, ED)
         @testset "Hard constraints" begin
-            fnm = FullNetworkModel{T}(TEST_SYSTEM, Cbc.Optimizer)
+            fnm = FullNetworkModel{T}(TEST_SYSTEM)
             var_thermal_generation!(fnm)
             var_commitment!(fnm)
             var_startup_shutdown!(fnm)
@@ -370,7 +370,7 @@ end
         end
 
         @testset "Soft constraints" begin
-            fnm = FullNetworkModel{T}(TEST_SYSTEM, Cbc.Optimizer)
+            fnm = FullNetworkModel{T}(TEST_SYSTEM)
             var_thermal_generation!(fnm)
             var_commitment!(fnm)
             var_startup_shutdown!(fnm)
@@ -383,7 +383,7 @@ end
     @testset "Energy balance constraints $T" for (T, t_system, slack) in
         ((UC, TEST_SYSTEM, nothing), (ED, TEST_SYSTEM_RT, 1e4))
         @testset "con_energy_balance!" begin
-            fnm = FullNetworkModel{T}(t_system, Clp.Optimizer)
+            fnm = FullNetworkModel{T}(t_system)
             var_thermal_generation!(fnm)
             T == UC && var_bids!(fnm)
             con_energy_balance!(fnm, slack=slack)
@@ -442,7 +442,7 @@ end
     @testset "Thermal branch constraints $T" for (T, t_system) in
         ((UC, TEST_SYSTEM), (ED, TEST_SYSTEM_RT))
         @testset "_con_branch_flow_limits!" begin
-            fnm = FullNetworkModel{T}(t_system, Clp.Optimizer)
+            fnm = FullNetworkModel{T}(t_system)
             var_thermal_generation!(fnm)
             T == UC && var_bids!(fnm)
             con_thermal_branch!(fnm)
