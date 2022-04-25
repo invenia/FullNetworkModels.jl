@@ -44,7 +44,7 @@ function tests_bid_variables(fnm, label, bidtype)
 end
 
 @testset "Variables" begin
-    fnm = FullNetworkModel{UC}(TEST_SYSTEM, Cbc.Optimizer)
+    fnm = FullNetworkModel{UC}(TEST_SYSTEM)
     @testset "var_thermal_generation!" begin
         var_thermal_generation!(fnm)
         tests_thermal_variable(fnm, "p")
