@@ -12,7 +12,6 @@ PowerSystemsExtras = "5c12387c-8993-487c-b7f8-95b63bb251f1"
 TimerOutputs = "a759f4b9-e2f1-59dc-863e-4aeb61b1ea8f"
 
 [compat]
-JuMP = "0.21, 0.22, 0.23"
 Cbc = "1"
 Clp = "1"
 ElectricityMarkets = "1.14"
