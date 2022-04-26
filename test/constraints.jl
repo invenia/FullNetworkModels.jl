@@ -356,7 +356,7 @@ end
         add_time_series!(system, gen3, SingleTimeSeries("offer_curve", ta))
 
         # Check that the more expensive generator is not committed
-        fnm = _simple_template(system, UC, Cbc.Optimizer)
+        fnm = _simple_template(system, UC, HiGHS.Optimizer)
         optimize!(fnm)
         u = value.(fnm.model[:u])
         @test u[7, :].data == zeros(24)
@@ -368,7 +368,7 @@ end
         add_time_series!(system, gen7, SingleTimeSeries("must_run", ta))
 
         # Check that generator 7 is now committed throughout the day
-        fnm = _simple_template(system, UC, Cbc.Optimizer)
+        fnm = _simple_template(system, UC, HiGHS.Optimizer)
         optimize!(fnm)
         u = value.(fnm.model[:u])
         @test u[7, :].data == ones(24)
@@ -384,7 +384,7 @@ end
         add_time_series!(system, gen7, SingleTimeSeries("availability", ta))
 
         # Check that gen3 was not committed during the last hour
-        fnm = _simple_template(system, UC, Cbc.Optimizer)
+        fnm = _simple_template(system, UC, HiGHS.Optimizer)
         optimize!(fnm)
         u = value.(fnm.model[:u])
         p = value.(fnm.model[:p])

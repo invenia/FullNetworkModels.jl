@@ -12,10 +12,9 @@ PowerSystemsExtras = "5c12387c-8993-487c-b7f8-95b63bb251f1"
 TimerOutputs = "a759f4b9-e2f1-59dc-863e-4aeb61b1ea8f"
 
 [compat]
-Cbc = "1"
-Clp = "1"
 ElectricityMarkets = "1.14"
 FullNetworkDataPrep = "0.24"
+HiGHS = "1"
 JuMP = "1"
 Memento = "1.1"
 PowerSystems = "1.5"
@@ -25,13 +24,12 @@ TimerOutputs = "0.5"
 julia = "1.5"
 
 [extras]
-Cbc = "9961bab8-2fa3-5c5a-9d89-47fab24efd76"
-Clp = "e2554f3b-3117-50c0-817c-e040a3ddf72d"
 ElectricityMarkets = "fc2b1cf9-69e4-584d-aa69-fb07a6454787"
 FullNetworkDataPrep = "a21943b2-60f3-11e9-2dbc-73f7bf1f23ac"
+HiGHS = "87dc4568-4c63-4d18-b0c0-bb2238e4078b"
 MathOptInterface = "b8f27783-ece8-5eb3-8dc8-9495eed66fee"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 TimeSeries = "9e3dc215-6440-5c97-bce1-76c03772f85e"
 
 [targets]
-test = ["Cbc", "Clp", "ElectricityMarkets", "FullNetworkDataPrep", "MathOptInterface", "Test", "TimeSeries"]
+test = ["ElectricityMarkets", "FullNetworkDataPrep", "HiGHS", "MathOptInterface", "Test", "TimeSeries"]
