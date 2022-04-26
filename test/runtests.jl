@@ -1,15 +1,14 @@
-using Cbc
-using Clp
 using Dates
 using ElectricityMarkets
-using FullNetworkDataPrep: DA, RT
 using FullNetworkDataPrep.TestUtils: fake_3bus_system
+using FullNetworkDataPrep: DA, RT
 using FullNetworkModels
 using FullNetworkModels: _expand_slacks
+using HiGHS
+using JuMP.Containers: DenseAxisArray
+using JuMP
 using MathOptInterface: TerminationStatusCode
 using Memento.TestUtils: @test_log
-using JuMP
-using JuMP.Containers: DenseAxisArray
 using PowerSystems
 using PowerSystemsExtras
 using PowerSystemsExtras: PTDF
