@@ -9,21 +9,20 @@ To run simulations with these models, see [FullNetworkSimulations.jl](https://in
 You can model MISO market clearing processes with [the template formulations](@ref templates),
 for example:
 ```julia
-using Cbc  # MIP solver
-using Clp  # LP solver
 using Dates
 using ElectricityMarkets
 using FullNetworkDataPrep
 using FullNetworkModels
+using HiGHS  # solver
 using JuMP
 
 date = Date(2020, 08, 06)
 da_system = build_system(MISO, DA, date)  # requires NDA access
-uc_model = unit_commitment(da_system, Cbc.Optimizer)
+uc_model = unit_commitment(da_system, HiGHS.Optimizer)
 optimize!(uc_model)
 
 rt_system = build_system(MISO, RT, date)
-ed_model = economic_dispatch(rt_system, Clp.Optimizer)
+ed_model = economic_dispatch(rt_system, HiGHS.Optimizer)
 optimize!(ed_model)
 ```
 
@@ -37,11 +36,11 @@ To build your own models, you can use the [modelling functions](@ref modelling).
 
 ## [Using soft constraints](@id soft_constraints)
 
-Templates accept a keyword argument `slack` that can be used to specify the slack penalty to be used by certain constraints, therefore modelling them as soft constraints. 
-By construction, if the value of the slack penalty is `nothing`, it means the constraint should be modelled as a hard constraint. 
+Templates accept a keyword argument `slack` that can be used to specify the slack penalty to be used by certain constraints, therefore modelling them as soft constraints.
+By construction, if the value of the slack penalty is `nothing`, it means the constraint should be modelled as a hard constraint.
 The following symbols can be used to specify soft constraints: `:energy_balance`, `:ramp_rates`, `:ancillary_requirements`.
 
-!!! note "Thermal branch constraints" 
+!!! note "Thermal branch constraints"
     Thermal branch constraints are always soft constraints according to the branch data coming from the data prep stage, and this cannot be adjusted using the `slack` kwarg.
 
 There are several ways to specify slack penalties:

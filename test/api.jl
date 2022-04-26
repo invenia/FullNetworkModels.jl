@@ -212,15 +212,15 @@
         # test model has no solver
         @test solver_name(fnm.model) === solver_name(Model())
 
-        set_optimizer(fnm, Clp.Optimizer)
-        @test solver_name(fnm.model) == "Clp"
+        set_optimizer(fnm, HiGHS.Optimizer)
+        @test solver_name(fnm.model) == "HiGHS"
 
-        set_optimizer_attribute(fnm, "PrimalTolerance", 1e-2)
-        @test get_optimizer_attribute(fnm, "PrimalTolerance") == 1e-2
+        set_optimizer_attribute(fnm, "primal_feasibility_tolerance", 1e-2)
+        @test get_optimizer_attribute(fnm, "primal_feasibility_tolerance") == 1e-2
 
-        set_optimizer_attributes(fnm, "PrimalTolerance" => 1e-3, "MaximumIterations" => 10_000)
-        @test get_optimizer_attribute(fnm, "PrimalTolerance") == 1e-3
-        @test get_optimizer_attribute(fnm, "MaximumIterations") == 10_000
+        set_optimizer_attributes(fnm, "primal_feasibility_tolerance" => 1e-3, "simplex_iteration_limit" => 10_000)
+        @test get_optimizer_attribute(fnm, "primal_feasibility_tolerance") == 1e-3
+        @test get_optimizer_attribute(fnm, "simplex_iteration_limit") == 10_000
 
         optimize!(fnm)
         @test solve_time(fnm.model) > 0
