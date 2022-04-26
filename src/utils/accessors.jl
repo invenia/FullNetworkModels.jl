@@ -44,16 +44,25 @@ function get_unit_codes(gentype::Type{<:Generator}, system::System)
 end
 
 """
+    get_bus_names(system::System) -> Vector{<:AbstractString}
+
+Returns the sorted augmented names of all buses in `system`.
+"""
+function get_bus_names(system::System)
+    return sort(map(get_name, get_components(Bus, system)))
+end
+
+"""
     get_unit_codes_perbus(gentype::Type{<:Generator}, system::System) -> Dict
 
 Returns the unit codes of all generators per bus in `system` under type `gentype`.
 """
 function get_unit_codes_perbus(gentype::Type{<:Generator}, system::System)
-    bus_numbers = get_bus_numbers(system)
+    bus_names = get_bus_names(system)
     gens = get_components(gentype, system)
-    unit_codes_perbus = Dict{Int, Vector{Int}}(b => Int[] for b in bus_numbers)
+    unit_codes_perbus = Dict{String, Vector{Int}}(b => Int[] for b in bus_names)
     for g in gens
-        push!(unit_codes_perbus[g.bus.number], parse(Int, get_name(g)))
+        push!(unit_codes_perbus[g.bus.name], parse(Int, get_name(g)))
     end
     return unit_codes_perbus
 end
@@ -74,11 +83,11 @@ end
 Returns the names of the bids in `system` that are of type `bidtype`.
 """
 function get_bid_names_perbus(bidtype::Type{<:Device}, system::System)
-    bus_numbers = get_bus_numbers(system)
+    bus_names = get_bus_names(system)
     bids = get_components(bidtype, system)
-    bid_names_perbus = Dict{Int, Vector{String}}(b => String[] for b in bus_numbers)
+    bid_names_perbus = Dict{String, Vector{String}}(b => String[] for b in bus_names)
     for b in bids
-        push!(bid_names_perbus[b.bus.number], get_name(b))
+        push!(bid_names_perbus[b.bus.name], get_name(b))
     end
     return bid_names_perbus
 end
@@ -98,11 +107,11 @@ end
 Returns the names of all loads per bus in `system` under type `loadtype`.
 """
 function get_load_names_perbus(loadtype::Type{<:StaticLoad}, system::System)
-    bus_numbers = get_bus_numbers(system)
+    bus_names = get_bus_names(system)
     loads = get_components(loadtype, system)
-    load_names_perbus = Dict{Int, Vector{String}}(b => String[] for b in bus_numbers)
+    load_names_perbus = Dict{String, Vector{String}}(b => String[] for b in bus_names)
     for l in loads
-        push!(load_names_perbus[l.bus.number], get_name(l))
+        push!(load_names_perbus[l.bus.name], get_name(l))
     end
     return load_names_perbus
 end
@@ -707,13 +716,13 @@ end
 """
     _sort_buses(ptdf) -> DenseAxisArray
 
-Returns the same PTDF with the 2nd axis sorted with respect to the bus numbers. This is done
+Returns the same PTDF with the 2nd axis sorted with respect to the bus names. This is done
 to ensure that the axis is consistent with other defined variables (e.g. `p_net`) when
 performing vector multiplication.
 """
 @inline function _sort_buses(ptdf)
-    sorted_bus_numbers = sort(axes(ptdf, 2))
-    return ptdf[:, sorted_bus_numbers]
+    sorted_bus_names = sort(axes(ptdf, 2))
+    return ptdf[:, sorted_bus_names]
 end
 
 """

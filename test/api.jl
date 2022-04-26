@@ -45,10 +45,11 @@
         datetimes = fnm.datetimes
         n_periods = get_forecast_horizon(system)
         unit_codes = get_unit_codes(ThermalGen, system)
+        @test issetequal(get_bus_names(system), ("Bus1", "Bus2", "Bus3"))
 
         @test issetequal(unit_codes, (7, 3))
         load_names = get_load_names(PowerLoad, system)
-        @test issetequal(load_names, ("Load1_2", "Load2_3"))
+        @test issetequal(load_names, ("Load1_Bus2", "Load2_Bus3"))
         @test load_names isa Vector{<:AbstractString}
 
         @test @inferred(get_forecast_timestamps(system)) == t1:Hour(1):t2
@@ -136,25 +137,25 @@
         )
 
         @test get_unit_codes_perbus(ThermalGen, system) == Dict(
-            1 => [3], 2 => [7], 3 => []
+            "Bus1" => [3], "Bus2" => [7], "Bus3" => []
         )
         @test get_load_names_perbus(PowerLoad, system) == Dict(
-            1 => [], 2 => ["Load1_2"], 3 => ["Load2_3"]
+            "Bus1" => [], "Bus2" => ["Load1_Bus2"], "Bus3" => ["Load2_Bus3"]
         )
         @test get_bid_names_perbus(Increment, system) == Dict(
-            1 => ["111_1"], 2 => [], 3 => []
+            "Bus1" => ["111_Bus1"], "Bus2" => [], "Bus3" => []
         )
         @test get_bid_names_perbus(Decrement, system) == Dict(
-            1 => ["222_1"], 2 => [], 3 => []
+            "Bus1" => ["222_Bus1"], "Bus2" => [], "Bus3" => []
         )
         @test get_bid_names_perbus(PriceSensitiveDemand, system) == Dict(
-            1 => ["333_1"], 2 => [], 3 => []
+            "Bus1" => ["333_Bus1"], "Bus2" => [], "Bus3" => []
         )
 
         ptdf_mat = get_ptdf(system)
         @test ptdf_mat isa DenseAxisArray
         @test issetequal(axes(ptdf_mat, 1), ("Line1", "Line2", "Line3", "Transformer1"))
-        @test issetequal(axes(ptdf_mat, 2), (1, 2, 3))
+        @test issetequal(axes(ptdf_mat, 2), ("Bus1", "Bus2",  "Bus3"))
         th = FullNetworkModels._PTDF_THRESHOLD
         @test all(x -> x == 0 || abs(x) > th, get_ptdf(system))
         ptdf_mat_thresh = get_ptdf(system; threshold=0.05) # use a custom threshold
