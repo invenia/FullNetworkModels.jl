@@ -3,6 +3,7 @@ function _convert_jump_number(x)
 end
 
 function tests_thermal_variable_cost(fnm)
+    set_names!(fnm)
     @testset "Variables and constraints were created with correct names and indices" begin
         @test has_variable(fnm.model, "p_aux")
         @test has_constraint(fnm.model, "gen_block_limits")
@@ -17,6 +18,7 @@ function tests_thermal_variable_cost(fnm)
 end
 
 function tests_thermal_linear_cost(fnm, var, f)
+    set_names!(fnm)
     unit_codes = get_unit_codes(ThermalGen, fnm.system)
     cost = f(fnm.system)
     str = string(objective_function(fnm.model))
@@ -32,6 +34,7 @@ tests_thermal_noload_cost(fnm) = tests_thermal_linear_cost(fnm, :u, get_noload_c
 tests_thermal_startup_cost(fnm) = tests_thermal_linear_cost(fnm, :v, get_startup_cost)
 
 function tests_ancillary_costs(fnm)
+    set_names!(fnm)
     unit_codes = get_unit_codes(ThermalGen, fnm.system)
     cost_reg = get_regulation_cost(fnm.system)
     cost_spin = get_spinning_cost(fnm.system)
