@@ -43,19 +43,16 @@ function _has_names(fnm::FullNetworkModel)
 end
 
 function _set_names!(arr::AbstractArray, key::Symbol)
-    for i in eachindex(arr)
-        @inbounds JuMP.set_name(arr[i], _name(key, Tuple(i)))
-    end
-end
-
-# For DenseAxisArrays `eachindex` doesn't use the names indexes, so use `axes` directly.
-function _set_names!(arr::JuMP.Containers.DenseAxisArray, key::Symbol)
-    for i in Iterators.product(axes(arr)...)
+    for i in _eachnamedindex(arr)
         @inbounds JuMP.set_name(arr[i...], _name(key, i))
     end
 end
 
-# match JuMP's naming style, which has no spaces in indexes
+# Iterate tuples containing the named indices of the given array.
+_eachnamedindex(arr::JuMP.Containers.SparseAxisArray) = Iterators.map(Tuple, eachindex(arr))
+_eachnamedindex(arr::JuMP.Containers.DenseAxisArray) = Iterators.product(axes(arr)...)
+
+# Match JuMP's naming style which has no spaces in indices.
 _name(base, idxs::Tuple) = string(base, "[", join(idxs, ","), "]")
 
 @testset "FullNetworkModels.jl" begin
