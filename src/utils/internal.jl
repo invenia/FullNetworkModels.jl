@@ -27,9 +27,9 @@ Arguments:
 function _variable_cost(model::Model, names, datetimes, n_blocks, Λ, v, sense)
     v_aux = model[Symbol(v, :_aux)]
     variable_cost = AffExpr(0.0)
-    for n in names, t in datetimes, q in 1:n_blocks[n, t]
+    for n in names, t in datetimes, q in 1:n_blocks(n, t)
         # Faster version of `variable_cost += Λ[n, t][q] * v_aux[n, t, q]`
-        add_to_expression!(variable_cost, Λ[n, t][q], v_aux[n, t, q])
+        add_to_expression!(variable_cost, Λ(n, t)[q], v_aux[n, t, q])
     end
     # Apply sense to expression - same as `variable_cost *= sense`
     map_coefficients_inplace!(x -> sense * x, variable_cost)
@@ -44,14 +44,31 @@ Adds a linear cost (cost * variable) to the objective, where the cost is fetched
 """
 function _obj_thermal_linear_cost!(
     fnm::FullNetworkModel, var::Symbol, f;
-    unit_codes=get_unit_codes(ThermalGen, fnm.system)
+    unit_codes=keys(get_generators(fnm.system))
 )
     model = fnm.model
-    cost = f(fnm.system, fnm.datetimes)
+    cost = f(fnm.system)
     x = model[var]
     obj_cost = AffExpr()
     for g in unit_codes, t in fnm.datetimes
-        add_to_expression!(obj_cost, cost[g, t], x[g, t])
+        add_to_expression!(obj_cost, cost(g, t), x[g, t])
+    end
+    _add_to_objective!(model, obj_cost)
+    return fnm
+end
+
+function _obj_static_cost!(
+    fnm::FullNetworkModel, var::Symbol, field::Symbol;
+    unit_codes=keys(get_generators(fnm.system))
+)
+    model = fnm.model
+    cost = map(get_generators(fnm.system)) do gen
+        getproperty(gen, field)
+    end
+    x = model[var]
+    obj_cost = AffExpr()
+    for g in unit_codes, t in fnm.datetimes
+        add_to_expression!(obj_cost, cost[g], x[g, t])
     end
     _add_to_objective!(model, obj_cost)
     return fnm
@@ -80,7 +97,7 @@ function _curve_properties(curves; blocks=false)
     return prices, limits, n_blocks
 end
 
-"""
+#=="""
     _generators_by_reserve_zone(system::System) -> Dict
 
 Returns the unit codes of the generators in each reserve zone.
@@ -207,14 +224,17 @@ Returns a dictionary with the names of the branches on outage for each one of th
 function _get_branches_out_per_scenario_names(lodfs)
     branches_out_per_scenario_names = Dict{String, Vector{String}}()
     for (k, v) in lodfs
-        branches_out_per_scenario_names[k] = axes(v, 2)
+        branches_out_per_scenario_names[k] = axiskeys(v, 2)
     end
     return branches_out_per_scenario_names
 end
 
-###
-### Slacks
-###
+"""
+function _add_base_case_to_lodfs(lodfs)
+    lodf_base = DenseAxisArray(Matrix{Float64}(undef, 0, 0), String[], String[])
+    lodfs = merge(lodfs,Dict("base_case"=>lodf_base))
+    return lodfs
+end==#
 
 """
     Slacks(values)

@@ -1,12 +1,11 @@
 module FullNetworkModels
 
+using AxisKeys
 using Dates
+using FullNetworkSystems
 using JuMP
 using JuMP.Containers: DenseAxisArray
 using Memento
-using PowerSystems
-using PowerSystemsExtras
-using PowerSystemsExtras: PTDF # to avoid conflict with PowerSystems.jl
 using TimerOutputs
 
 const LOGGER = getlogger(@__MODULE__)

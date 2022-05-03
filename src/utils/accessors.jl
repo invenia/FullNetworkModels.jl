@@ -20,7 +20,7 @@ function has_constraint(model::Model, con::Symbol)
 end
 has_constraint(model::Model, con::String) = has_constraint(model, Symbol(con))
 
-"""
+#=="""
     get_forecast_timestamps(system::System) -> Vector{DateTime}
 
 Returns a vector with all forecast timestamps stored in `system`.
@@ -684,10 +684,11 @@ function get_availability(
     system::System, datetimes::Vector{DateTime}=get_forecast_timestamps(system)
 )
     return get_generator_time_series(system, "availability", datetimes)
-end
+end==#
 
-"""
-    get_ptdf(system::System; threshold=$_SF_THRESHOLD) -> DenseAxisArray
+const _PTDF_THRESHOLD = 1e-4
+#=="""
+    get_ptdf(system::System; threshold=$_PTDF_THRESHOLD) -> DenseAxisArray
 
 Returns the PTDF matrix stored in the `system` as a `PTDF` device.
 This is a sorted and thresholded version of the PTDF used for adding branch constraints.
@@ -695,9 +696,9 @@ This is a sorted and thresholded version of the PTDF used for adding branch cons
 function get_ptdf(system::System; threshold::Float64=_SF_THRESHOLD)
     ptdf_device = only(get_components(PTDF, system))
     ptdf = ptdf_device.ptdf_mat
-    new_ptdf = _threshold(ptdf, threshold)
-    return _sort_buses(new_ptdf)
-end
+    _threshold!(ptdf, threshold)
+    return _sort_buses(ptdf)
+end==#
 
 """
     _threshold(shift_factor, threshold=$_SF_THRESHOLD)
@@ -711,10 +712,8 @@ practice to threshold the shift factor values.
 See measurements on safe PTDF thresholding in
 https://gitlab.invenia.ca/invenia/research/FullNetworkModels.jl/-/merge_requests/128
 """
-function _threshold(shift_factor::DenseAxisArray, threshold::Float64=_SF_THRESHOLD)
-    new_sf_data = replace(x -> abs(x) < threshold ? 0.0 : x, shift_factor.data)
-    new_sf = DenseAxisArray(new_sf_data, axes(shift_factor)...)
-    return new_sf
+@inline function _threshold!(ptdf::KeyedArray, threshold::Float64=_PTDF_THRESHOLD)
+    replace!(x -> abs(x) < threshold ? 0.0 : x, ptdf)
 end
 
 """
@@ -724,23 +723,17 @@ Returns the same PTDF with the 2nd axis sorted with respect to the bus names. Th
 to ensure that the axis is consistent with other defined variables (e.g. `p_net`) when
 performing vector multiplication.
 """
-@inline function _sort_buses(ptdf)
-    sorted_bus_names = sort(axes(ptdf, 2))
-    return ptdf[:, sorted_bus_names]
+@inline function _sort_buses!(ptdf, bus_names)
+    return ptdf(:, bus_names)
 end
 
-"""
-    get_lodf_dict(system::System; threshold=$_SF_THRESHOLD) -> Dict{String, DenseAxisArray}
+#=="""
+    get_lodf_dict(system::System) -> Dict{String, DenseAxisArray}
 
 Returns the LODF dictionary that points contingencies to branches going out that
 is thresholded and stored in the `system` as an `LODFDict` device.
 """
 function get_lodf_dict(system::System; threshold::Float64=_SF_THRESHOLD)
     lodf_device = only(get_components(LODFDict, system))
-    lodf_dict = lodf_device.lodf_dict
-    new_lodf_dict = empty(lodf_dict)
-    for (contingency, lodf) in lodf_dict
-        new_lodf_dict[contingency] = _threshold(lodf, threshold)
-    end
-    return new_lodf_dict
-end
+    return lodf_device.lodf_dict
+end==#

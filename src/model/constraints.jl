@@ -46,19 +46,19 @@ function con_generation_limits!(fnm::FullNetworkModel{<:UC})
 
     p = model[:p]
     u = model[:u]
-    unit_codes = get_unit_codes(ThermalGen, system)
-    Pmin = get_pmin(system, datetimes)
-    Pmax = get_pmax(system, datetimes)
+    unit_codes = keys(get_generators(fnm.system))
+    Pmin = get_pmin_timeseries(system)
+    Pmax = get_pmax_timeseries(system)
 
     @constraint(
         model,
         generation_min[g in unit_codes, t in datetimes],
-        Pmin[g, t] * u[g, t] <= p[g, t]
+        Pmin(g, t) * u[g, t] <= p[g, t]
     )
     @constraint(
         model,
         generation_max[g in unit_codes, t in datetimes],
-        p[g, t] <= Pmax[g, t] * u[g, t]
+        p[g, t] <= Pmax(g, t) * u[g, t]
     )
     return fnm
 end
@@ -78,20 +78,20 @@ function con_generation_limits!(fnm::FullNetworkModel{<:ED})
     datetimes = fnm.datetimes
 
     p = model[:p]
-    unit_codes = get_unit_codes(ThermalGen, system)
-    U = get_commitment_status(system, datetimes)
-    Pmin = get_pmin(system, datetimes)
-    Pmax = get_pmax(system, datetimes)
+    unit_codes = keys(get_generators(fnm.system))
+    U = get_commitment_status(system)
+    Pmin = get_pmin_timeseries(system)
+    Pmax = get_pmax_timeseries(system)
 
     @constraint(
         model,
         generation_min[g in unit_codes, t in datetimes],
-        Pmin[g, t] * U[g, t] <= p[g, t]
+        Pmin(g, t) * U(g, t) <= p[g, t]
     )
     @constraint(
         model,
         generation_max[g in unit_codes, t in datetimes],
-        p[g, t] <= Pmax[g, t] * U[g, t]
+        p[g, t] <= Pmax(g, t) * U(g, t)
     )
     return fnm
 end
@@ -127,11 +127,15 @@ The constraints added are named, respectively, `ancillary_max`, `ancillary_min`,
 function con_ancillary_limits!(fnm::FullNetworkModel{<:UC})
     system = fnm.system
     datetimes = fnm.datetimes
-    unit_codes = get_unit_codes(ThermalGen, system)
-    Pmax = get_pmax(system, datetimes)
-    Pregmax = get_regmax(system, datetimes)
-    Pmin = get_pmin(system, datetimes)
-    Pregmin = get_regmin(system, datetimes)
+    unit_codes = keys(get_generators(fnm.system))
+    Pmax_keyed = get_pmax_timeseries(system)
+    Pmax = DenseAxisArray(Pmax_keyed, axiskeys(Pmax_keyed)...)
+    Pregmax_keyed = get_regmax_timeseries(system)
+    Pregmax = DenseAxisArray(Pregmax_keyed, axiskeys(Pregmax_keyed)...)
+    Pmin_keyed = get_pmin_timeseries(system)
+    Pmin = DenseAxisArray(Pmin_keyed, axiskeys(Pmin_keyed)...)
+    Pregmin_keyed = get_regmin_timeseries(system)
+    Pregmin = DenseAxisArray(Pregmin_keyed, axiskeys(Pregmin_keyed)...)
 
     model = fnm.model
     u = model[:u]
@@ -159,13 +163,13 @@ The constraints added are named, respectively, `ancillary_max`, `ancillary_min`,
 function con_ancillary_limits!(fnm::FullNetworkModel{<:ED})
     system = fnm.system
     datetimes = fnm.datetimes
-    unit_codes = get_unit_codes(ThermalGen, system)
-    Pmax = get_pmax(system, datetimes)
-    Pregmax = get_regmax(system, datetimes)
-    Pmin = get_pmin(system, datetimes)
-    Pregmin = get_regmin(system, datetimes)
-    U = get_commitment_status(system, datetimes)
-    U_reg = get_commitment_reg_status(system, datetimes)
+    unit_codes = keys(get_generators(fnm.system))
+    Pmax = get_pmax_timeseries(system)
+    Pregmax = get_regmax_timeseries(system)
+    Pmin = get_pmin_timeseries(system)
+    Pregmin = get_regmin_timeseries(system)
+    U = get_commitment_status(system)
+    U_reg = get_commitment_reg_status(system)
 
     model = fnm.model
     _con_ancillary_max!(model, unit_codes, datetimes, Pmax, Pregmax, U, U_reg)
@@ -205,8 +209,8 @@ function con_regulation_requirements!(fnm::FullNetworkModel, slack)
     model = fnm.model
     system = fnm.system
     datetimes = fnm.datetimes
-    reserve_zones = get_reserve_zones(system)
-    zone_gens = _generators_by_reserve_zone(system)
+    reserve_zones = keys(get_zones(system))
+    zone_gens = gens_per_zone(system)
     reg_requirements = get_regulation_requirements(system)
     r_reg = model[:r_reg]
     @constraint(
@@ -251,8 +255,8 @@ function con_operating_reserve_requirements!(fnm::FullNetworkModel, slack)
     model = fnm.model
     system = fnm.system
     datetimes = fnm.datetimes
-    reserve_zones = get_reserve_zones(system)
-    zone_gens = _generators_by_reserve_zone(system)
+    reserve_zones = keys(get_zones(system))
+    zone_gens = gens_per_zone(system)
     or_requirements = get_operating_reserve_requirements(system)
     r_reg = model[:r_reg]
     r_spin = model[:r_spin]
@@ -321,9 +325,10 @@ function con_energy_balance!(fnm::FullNetworkModel{<:ED}; slack=nothing)
     model = fnm.model
     system = fnm.system
     datetimes = fnm.datetimes
-    unit_codes = get_unit_codes(ThermalGen, system)
-    load_names = get_load_names(PowerLoad, system)
-    D = get_fixed_loads(system)
+    unit_codes = keys(get_generators(fnm.system))
+    D_keyed = get_load_timeseries(system)
+    D = DenseAxisArray(D_keyed, axiskeys(D_keyed)...)
+    load_names = axiskeys(D_keyed, 1)
     p = model[:p]
     @constraint(
         model,
@@ -359,12 +364,15 @@ function con_energy_balance!(fnm::FullNetworkModel{<:UC}; slack=nothing)
     model = fnm.model
     system = fnm.system
     datetimes = fnm.datetimes
-    unit_codes = get_unit_codes(ThermalGen, system)
-    load_names = get_load_names(PowerLoad, system)
-    inc_names = get_bid_names(Increment, system)
-    dec_names = get_bid_names(Decrement, system)
-    psd_names = get_bid_names(PriceSensitiveDemand, system)
-    D = get_fixed_loads(system, datetimes)
+    unit_codes = keys(get_generators(fnm.system))
+    D_keyed = get_load_timeseries(system)
+    D = DenseAxisArray(D_keyed, axiskeys(D_keyed)...)
+    load_names = axiskeys(D_keyed, 1)
+
+    inc_names = axiskeys(get_bids_timeseries(fnm.system, :increment), 1)
+    dec_names = axiskeys(get_bids_timeseries(fnm.system, :decrement), 1)
+    psd_names = axiskeys(get_bids_timeseries(fnm.system, :price_sensitive_demand), 1)
+
     p = model[:p]
     inc = model[:inc]
     dec = model[:dec]
@@ -425,7 +433,7 @@ function _con_nodal_net_injection!(fnm::FullNetworkModel{<:ED}, bus_names, D, un
         nodal_net_injection[n in bus_names, t in fnm.datetimes],
         p_net[n, t] ==
             sum(p[g, t] for g in unit_codes_perbus[n]) -
-            sum(D[f, t] for f in load_names_perbus[n])
+            sum(D(f, t) for f in load_names_perbus[n])
     )
     return fnm
 end
@@ -445,9 +453,9 @@ The constraint is named `nodal_net_injection`.
 function _con_nodal_net_injection!(fnm::FullNetworkModel{<:UC}, bus_names, D, unit_codes_perbus, load_names_perbus)
     model = fnm.model
     system = fnm.system
-    inc_names_perbus = get_bid_names_perbus(Increment, system)
-    dec_names_perbus = get_bid_names_perbus(Decrement, system)
-    psd_names_perbus = get_bid_names_perbus(PriceSensitiveDemand, system)
+    inc_names_perbus = get_incs_per_bus(system)
+    dec_names_perbus = get_decs_per_bus(system)
+    psd_names_perbus = get_psds_per_bus(system)
     @variable(model, p_net[n in bus_names, t in fnm.datetimes])
     p = model[:p]
     inc = model[:inc]
@@ -505,7 +513,7 @@ function _con_branch_flows!(
     model = fnm.model
     datetimes = fnm.datetimes
     p_net = model[:p_net]
-    @assert axes(ptdf, 2) == axes(p_net, 1) # we need this for vector multiplication
+    @assert axiskeys(ptdf, 2) == axes(p_net, 1) # we need this for vector multiplication
     contingencies = collect(keys(lodfs))
     all_scenarios = vcat("base_case", contingencies)
     @variable(
@@ -513,7 +521,7 @@ function _con_branch_flows!(
     )
     branches_out_per_scenario_names = _get_branches_out_per_scenario_names(lodfs)
     # Compute this multiplication all at once for performance
-    ptdf_times_pnet = ptdf[branches_names_monitored_or_out, :].data * p_net.data
+    ptdf_times_pnet = ptdf[branches_names_monitored_or_out, :] * p_net
     name_mapping = Dict(branches_names_monitored_or_out .=> 1:length(branches_names_monitored_or_out))
     time_mapping = Dict(datetimes .=> 1:length(datetimes))
     @constraint(
@@ -558,9 +566,7 @@ for the lower boundary.
 """
 function _con_branch_flow_limits!(
     fnm::FullNetworkModel,
-    mon_branches_names,
-    mon_branches_rates_a,
-    mon_branches_rates_b,
+    mon_branches,
     contingencies
 )
     model = fnm.model
@@ -571,23 +577,23 @@ function _con_branch_flow_limits!(
     @constraint(
         model,
         branch_flow_max_base[m in mon_branches_names, t in fnm.datetimes, c in ["base_case"]],
-        fl[m, t, c] <= mon_branches_rates_a[m] + sl1_fl[m, t, c] + sl2_fl[m, t, c]
+        fl[m, t, c] <= mon_branches[m].rate_a + sl1_fl[m, t, c] + sl2_fl[m, t, c]
     )
     @constraint(
         model,
         branch_flow_min_base[m in mon_branches_names, t in fnm.datetimes, c in ["base_case"]],
-        fl[m, t, c] >= - mon_branches_rates_a[m] - sl1_fl[m, t, c] - sl2_fl[m, t, c]
+        fl[m, t, c] >= - mon_branches[m].rate_a - sl1_fl[m, t, c] - sl2_fl[m, t, c]
     )
     # Contingency Scenarios
     @constraint(
         model,
         branch_flow_max_cont[m in mon_branches_names, t in fnm.datetimes, c in contingencies],
-        fl[m, t, c] <= mon_branches_rates_b[m] + sl1_fl[m, t, c] + sl2_fl[m, t, c]
+        fl[m, t, c] <= mon_branches[m].rate_b + sl1_fl[m, t, c] + sl2_fl[m, t, c]
     )
     @constraint(
         model,
         branch_flow_min_cont[m in mon_branches_names, t in fnm.datetimes, c in contingencies],
-        fl[m, t, c] >= - mon_branches_rates_b[m] - sl1_fl[m, t, c] - sl2_fl[m, t, c]
+        fl[m, t, c] >= - mon_branches[m].rate_b - sl1_fl[m, t, c] - sl2_fl[m, t, c]
     )
     return fnm
 end
@@ -644,24 +650,20 @@ for the second step slack.
 """
 function _con_branch_flow_slacks!(
     fnm::FullNetworkModel,
-    mon_branches_names,
-    mon_branches_rates_a,
-    mon_branches_rates_b,
-    mon_branches_break_points,
-    mon_branches_penalties,
+    mon_branches,
     contingencies
 )
     model = fnm.model
     system = fnm.system
     datetimes = fnm.datetimes
     all_scenarios = vcat("base_case", contingencies)
-    # Add slacks
-    @variable(model, sl1_fl[m in mon_branches_names, t in datetimes, c in all_scenarios] >= 0)
-    @variable(model, sl2_fl[m in mon_branches_names, t in datetimes, c in all_scenarios] >= 0)
+    #Add slacks
+    @variable(model, sl1_fl[m in keys(mon_branches), t in datetimes, c in all_scenarios] >= 0)
+    @variable(model, sl2_fl[m in keys(mon_branches), t in datetimes, c in all_scenarios] >= 0)
 
-    (branches_zero_break_points,
-    branches_one_break_points,
-    branches_two_break_points) = _get_branch_num_break_points_names(Branch, system)
+    (
+        branches_zero_break_points, branches_one_break_points, branches_two_break_points
+    ) = branches_by_breakpoints(system)
 
     # Constraints Zero Break points
     @constraint(
@@ -684,22 +686,22 @@ function _con_branch_flow_slacks!(
     @constraint(
         model,
         branch_flow_sl1_two_base[m in branches_two_break_points, t in datetimes, c in ["base_case"]],
-        sl1_fl[m, t, c] <= (mon_branches_break_points[m][2]-mon_branches_break_points[m][1])*(mon_branches_rates_a[m]/100)
+        sl1_fl[m, t, c] <= (mon_branches[m].break_points[2]-mon_branches[m].break_points[1])*(mon_branches[m].rate_a/100)
     )
     # Constraints Two Break Points Contingency Scenarios
     @constraint(
         model,
         branch_flow_sl1_two_cont[m in branches_two_break_points, t in datetimes, c in contingencies],
-        sl1_fl[m, t, c] <= (mon_branches_break_points[m][2]-mon_branches_break_points[m][1])*(mon_branches_rates_b[m]/100)
+        sl1_fl[m, t, c] <= (mon_branches[m].break_points[2]-mon_branches[m].break_points[1])*(mon_branches[m].rate_b/100)
     )
     # Add slacks penalties to the objective
     slack_cost = AffExpr()
     for m in branches_one_break_points, t in datetimes, c in all_scenarios
-        add_to_expression!(slack_cost, sl1_fl[m, t, c] * mon_branches_penalties[m][1])
+        add_to_expression!(slack_cost, sl1_fl[m, t, c] * mon_branches[m].penalties[1])
     end
     for m in branches_two_break_points, t in datetimes, c in all_scenarios
-        add_to_expression!(slack_cost, sl1_fl[m, t, c] * mon_branches_penalties[m][1])
-        add_to_expression!(slack_cost, sl2_fl[m, t, c] * mon_branches_penalties[m][2])
+        add_to_expression!(slack_cost, sl1_fl[m, t, c] * mon_branches[m].penalties[1])
+        add_to_expression!(slack_cost, sl2_fl[m, t, c] * mon_branches[m].penalties[2])
     end
     _add_to_objective!(model, slack_cost)
     return fnm
@@ -742,19 +744,27 @@ The constraints are named `nodal_net_injection`, `branch_flows_base`, `branch_fl
 function con_thermal_branch!(fnm::FullNetworkModel; threshold=_SF_THRESHOLD)
     #Shared Data
     system = fnm.system
-    bus_names = get_bus_names(system)
-    D = get_fixed_loads(system)
-    unit_codes_perbus = get_unit_codes_perbus(ThermalStandard, system)
-    load_names_perbus = get_load_names_perbus(PowerLoad, system)
-    mon_branches_names = get_monitored_branch_names(Branch, system)
-    mon_branches_rates_a = get_branch_rates(mon_branches_names, system)
-    mon_branches_rates_b = get_branch_rates_b(mon_branches_names, system)
-    mon_branches_break_points = get_branch_break_points(mon_branches_names, system)
-    mon_branches_penalties = get_branch_penalties(mon_branches_names, system)
-    ptdf = get_ptdf(system; threshold)
-    lodfs = get_lodf_dict(system; threshold)
-    contingencies = collect(keys(lodfs))
-    branches_out_names = Vector{String}(unique(vcat(axes.(values(lodfs), 2)...)))
+    bus_names = keys(get_buses(system))
+    D_keyed = get_load_timeseries(system)
+    D = DenseAxisArray(D_keyed, axiskeys(D_keyed)...)
+    unit_codes_perbus = get_gens_per_bus(system)
+    load_names_perbus = get_loads_per_bus(system)
+
+    mon_branches = filter(br -> br.is_monitored, get_branches(system))
+    mon_branches_names = keys(mon_branches)
+
+    ptdf = get_ptdf(system)
+    _threshold!(ptdf)
+    _sort_buses!(ptdf, bus_names)
+    lodfs = get_lodf(system)
+    insert!(
+        lodfs,
+        "base_case",
+        KeyedArray(Matrix{Float64}(undef, 0, 0), (String[], String[]))
+    )
+    #lodfs = _add_base_case_to_lodfs(lodf_dict) # Add base case to the LODF Dictionary
+    scenarios = collect(keys(lodfs)) # All scenarios (base case and contingency scenarios)
+    branches_out_names = unique(vcat(axiskeys.(values(lodfs), 2)...))
     # The flows need to be defined only for the branches that are monitored or going
     # out under some contingency.
     branches_names_monitored_or_out = union(branches_out_names, mon_branches_names)
@@ -770,19 +780,13 @@ function con_thermal_branch!(fnm::FullNetworkModel; threshold=_SF_THRESHOLD)
     )
     _con_branch_flow_slacks!(
         fnm,
-        mon_branches_names,
-        mon_branches_rates_a,
-        mon_branches_rates_b,
-        mon_branches_break_points,
-        mon_branches_penalties,
-        contingencies,
+        mon_branches,
+        scenarios,
     )
     _con_branch_flow_limits!(
         fnm,
-        mon_branches_names,
-        mon_branches_rates_a,
-        mon_branches_rates_b,
-        contingencies
+        mon_branches,
+        scenarios
     )
     return fnm
 end
@@ -859,30 +863,30 @@ function _con_zero_non_providers!(model::Model, system::System, unit_codes, date
     # Units that provide each service
     reg_providers = get_regulation_providers(system)
     spin_providers = get_spinning_providers(system)
-    on_sup_providers = get_on_sup_providers(system)
-    off_sup_providers = get_off_sup_providers(system)
+    on_sup_providers = get_sup_on_providers(system)
+    off_sup_providers = get_sup_off_providers(system)
     r_reg = model[:r_reg]
     r_spin = model[:r_spin]
     r_on_sup = model[:r_on_sup]
     r_off_sup = model[:r_off_sup]
     @constraint(
         model,
-        zero_reg[g in setdiff(unit_codes, reg_providers), t in datetimes],
+        zero_reg[g in setdiff(Set(unit_codes), reg_providers), t in datetimes],
         r_reg[g, t] == 0
     )
     @constraint(
         model,
-        zero_spin[g in setdiff(unit_codes, spin_providers), t in datetimes],
+        zero_spin[g in setdiff(Set(unit_codes), spin_providers), t in datetimes],
         r_spin[g, t] == 0
     )
     @constraint(
         model,
-        zero_on_sup[g in setdiff(unit_codes, on_sup_providers), t in datetimes],
+        zero_on_sup[g in setdiff(Set(unit_codes), on_sup_providers), t in datetimes],
         r_on_sup[g, t] == 0
     )
     @constraint(
         model,
-        zero_off_sup[g in setdiff(unit_codes, off_sup_providers), t in datetimes],
+        zero_off_sup[g in setdiff(Set(unit_codes), off_sup_providers), t in datetimes],
         r_off_sup[g, t] == 0
     )
     return model
@@ -891,9 +895,10 @@ end
 # For UC, add additional `zero_u_reg` constraint. `u_reg` here should be a variable.
 function _con_zero_non_providers!(model::Model, system::System, unit_codes, datetimes, u_reg)
     reg_providers = get_regulation_providers(system)
+    non_providers = setdiff(Set(unit_codes), reg_providers)
     @constraint(
         model,
-        zero_u_reg[g in setdiff(unit_codes, reg_providers), t in datetimes],
+        zero_u_reg[g in non_providers, t in datetimes],
         u_reg[g, t] == 0
     )
     return _con_zero_non_providers!(model, system, unit_codes, datetimes)
@@ -912,9 +917,9 @@ function con_ancillary_ramp_rates!(fnm::FullNetworkModel)
     model = fnm.model
     system = fnm.system
     datetimes = fnm.datetimes
-    unit_codes = get_unit_codes(ThermalGen, system)
+    generators = get_generators(system)
+    unit_codes = keys(generators)
     # Get ramp rates in pu/min
-    RR = get_ramp_rates(system)
     r_reg = model[:r_reg]
     r_spin = model[:r_spin]
     r_on_sup = model[:r_on_sup]
@@ -923,13 +928,13 @@ function con_ancillary_ramp_rates!(fnm::FullNetworkModel)
     @constraint(
         model,
         ramp_regulation[g in unit_codes, t in datetimes],
-        r_reg[g, t] <= 5 * RR[g]
+        r_reg[g, t] <= 5 * generators[g].ramp_up
     )
     # Allocated reserves can't be over 10 minutes of ramping
     @constraint(
         model,
         ramp_spin_sup[g in unit_codes, t in datetimes],
-        r_spin[g, t] + r_on_sup[g, t] + r_off_sup[g, t] <= 10 * RR[g]
+        r_spin[g, t] + r_on_sup[g, t] + r_off_sup[g, t] <= 10 * generators[g].ramp_up
     )
     return fnm
 end
@@ -947,21 +952,21 @@ function con_generation_ramp_rates!(fnm::FullNetworkModel; slack=nothing)
     model = fnm.model
     system = fnm.system
     datetimes = fnm.datetimes
-    unit_codes = get_unit_codes(ThermalGen, system)
-    RR = get_ramp_rates(system)
-    SU = get_startup_limits(system)
+    generators = get_generators(system)
+    unit_codes = keys(generators)
+
     P0 = get_initial_generation(system)
-    Pmax = get_pmax(system)
+    Pmax = get_pmax_timeseries(system)
     U0 = get_initial_commitment(system)
-    Δt = _get_resolution_in_minutes(system)
+    Δt = Dates.value(Minute(first(diff(datetimes))))
     Δh = Hour(Δt / 60) # assume hourly resolution
     h1 = first(datetimes)
     # We only consider the initial ramp for the units available in the first hour.
     # This is done to avoid situations where a unit has initial generation coming from the
     # previous day, but is marked as unavailable in hour 1, which leads to infeasibility
     # because it cannot ramp down to zero.
-    A = get_availability(system)
-    units_available_in_first_hour = @views axes(A, 1)[A.data[:, 1] .== 1]
+    A = get_availability_timeseries(system)
+    units_available_in_first_hour = @views axiskeys(A, 1)[A[:, 1] .== 1]
 
     p = model[:p]
     u = model[:u]
@@ -971,12 +976,12 @@ function con_generation_ramp_rates!(fnm::FullNetworkModel; slack=nothing)
     @constraint(
         model,
         ramp_up[g in unit_codes, t in datetimes[2:end]],
-        p[g, t] - p[g, t - Δh] <= Δt * RR[g] * u[g, t - Δh] + SU[g, t] * v[g, t]
+        p[g, t] - p[g, t - Δh] <= Δt * generators[g].ramp_up * u[g, t - Δh] + generators[g].startup_cost * v[g, t]
     )
     @constraint(
         model,
         ramp_up_initial[g in units_available_in_first_hour],
-        p[g, h1] - P0[g] <= Δt * RR[g] * U0[g] + SU[g, h1] * v[g, h1]
+        p[g, h1] - P0(g) <= Δt * generators[g].ramp_up * U0(g) + generators[g].startup_cost * v[g, h1]
     )
     # Ramp down - generation can't go down more than ramp capacity (defined in pu/min).
     # We consider SU = SD.
@@ -991,12 +996,12 @@ function con_generation_ramp_rates!(fnm::FullNetworkModel; slack=nothing)
         model,
         ramp_down[g in unit_codes, t in datetimes[2:end]],
         p[g, t - Δh] - p[g, t] <=
-            Δt * RR[g] * u[g, t] + SU[g, t] * w[g, t] + (1 - A[g, t]) * Pmax[g, t - Δh]
+            Δt * generators[g].ramp_up * u[g, t] + generators[g].startup_cost * w[g, t] + (1 - A(g, t)) * Pmax(g, t - Δh)
     )
     @constraint(
         model,
         ramp_down_initial[g in units_available_in_first_hour],
-        P0[g] - p[g, h1] <= Δt * RR[g] * u[g, h1] + SU[g, h1] * w[g, h1]
+        P0(g) - p[g, h1] <= Δt * generators[g].ramp_up * u[g, h1] + generators[g].startup_cost * w[g, h1]
     )
 
     # If the constraints are supposed to be soft constraints, add slacks
@@ -1043,14 +1048,13 @@ $(latex(con_must_run!))
 The constraint is named `must_run`.
 """
 function con_must_run!(fnm::FullNetworkModel)
-    unit_codes = get_unit_codes(ThermalGen, fnm.system)
-    MR = get_must_run_flag(fnm.system, fnm.datetimes)
-    model = fnm.model
-    u = model[:u]
+    unit_codes = keys(get_generators(fnm.system))
+    MR = get_must_run_timeseries(fnm.system)
+    u = fnm.model[:u]
     # We constrain the commitment variable to be >= the must run flag, this way if the flag
     # is zero it has no impact, and if it is 1 it forces the commitment to be 1.
     @constraint(
-        model, must_run[g in unit_codes, t in fnm.datetimes], u[g, t] >= MR[g, t],
+        fnm.model, must_run[g in unit_codes, t in fnm.datetimes], u[g, t] >= MR(g, t)
     )
     return fnm
 end
@@ -1071,14 +1075,13 @@ $(latex(con_availability!))
 The constraint is named `availability`.
 """
 function con_availability!(fnm::FullNetworkModel)
-    unit_codes = get_unit_codes(ThermalGen, fnm.system)
-    A = get_availability(fnm.system, fnm.datetimes)
-    model = fnm.model
-    u = model[:u]
+    unit_codes = keys(get_generators(fnm.system))
+    A = get_availability_timeseries(fnm.system)
+    u = fnm.model[:u]
     # We constrain the commitment variable to be <= the availability flag, this way if the
     # unit is unavailable it cannot be committed, and if it is available there is no impact.
     @constraint(
-        model, availability[g in unit_codes, t in fnm.datetimes], u[g, t] <= A[g, t],
+        fnm.model, availability[g in unit_codes, t in fnm.datetimes], u[g, t] <= A(g, t)
     )
     return fnm
 end

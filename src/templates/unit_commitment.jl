@@ -2,14 +2,14 @@ const _DEFAULT_UC_SLACK = nothing
 
 """
     unit_commitment(
-        system::System, solver=nothing, datetimes=get_forecast_timestamps(system);
+        system::SystemDA, solver=nothing, datetimes=get_datetimes(system);
         relax_integrality=false, slack=nothing, threshold=$_SF_THRESHOLD,
         branch_flows::Bool=false, ramp_rates::Bool=true,
     ) -> FullNetworkModel{UC}
 
 Defines the unit commitment formulation.
 
-Receives a `System` and returns a [`FullNetworkModel`](@ref) with the formulation:
+Receives a `SystemDA` and returns a [`FullNetworkModel`](@ref) with the formulation:
 
 $(_write_formulation(
     objectives=[
@@ -52,9 +52,9 @@ And if thermal branch flow limits are included, via `branch_flows=true`:
 $(latex(con_thermal_branch!))
 
 # Arguments
- - `system::System`: The PowerSystems system that provides the input data.
+ - `system::SystemDA`: The PowerSystemDAs system that provides the input data.
  - `solver`: The solver of choice, e.g. `HiGHS.Optimizer`.
- - `datetimes=get_forecast_timestamps(system)`: The time periods considered in the model.
+ - `datetimes=get_datetimes(system)`: The time periods considered in the model.
 
 # Keywords
  - `relax_integrality=false`: If set to `true`, binary variables will be relaxed.
@@ -65,7 +65,7 @@ $(latex(con_thermal_branch!))
  - `ramp_rates::Bool=true`: Whether or not to include ramp rate constraints.
 """
 function unit_commitment(
-    system::System, solver=nothing, datetimes=get_forecast_timestamps(system);
+    system::SystemDA, solver=nothing, datetimes=get_datetimes(system);
     relax_integrality=false, slack=_DEFAULT_UC_SLACK, threshold=_SF_THRESHOLD,
     branch_flows::Bool=false, ramp_rates::Bool=true
 )
@@ -129,7 +129,7 @@ fnm = uc(system, solver)
 function unit_commitment(; slack=_DEFAULT_UC_SLACK, keywords...)
     slack = Slacks(slack)  # if we've an invalid `slack` argument, force error ASAP.
     return function _unit_commitment(
-        system::System, solver=nothing, datetimes=get_forecast_timestamps(system)
+        system::SystemDA, solver=nothing, datetimes=get_datetimes(system)
     )
         return unit_commitment(system, solver, datetimes; slack=slack, keywords...)
     end

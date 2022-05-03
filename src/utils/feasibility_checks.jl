@@ -11,8 +11,8 @@ sanity checks to catch simple data issues.
 """
 function basic_feasibility_checks(system::System)
     feasibility = true
-    unit_codes = get_unit_codes(ThermalGen, system)
-    Pmax = get_pmax(system)
+    unit_codes = keys(get_generators(system))
+    Pmax = get_pmax_timeseries(system)
     feasibility *= _total_demand_feasibility(system, unit_codes, Pmax)
     feasibility *= _initial_ramp_feasibility(system, unit_codes, Pmax)
     feasibility *= _ancillary_requirement_feasibility(system)
@@ -26,16 +26,16 @@ Verifies that the system is able to attend its demand in each hour by looking at
 system-wide generation capacity.
 """
 function _total_demand_feasibility(system, unit_codes, Pmax)
-    loads = get_fixed_loads(system)
-    load_names = get_load_names(PowerLoad, system)
-    datetimes = get_forecast_timestamps(system)
+    loads = get_loads_timeseries(system)
+    load_names = axiskeys(loads, 1)
+    datetimes = get_datetimes(system)
     n_periods = length(datetimes)
     gen_capacity = Vector{Float64}(undef, n_periods)
     system_load = Vector{Float64}(undef, n_periods)
     infeasible_periods = DateTime[]
     for (i, t) in enumerate(datetimes)
-        gen_capacity[i] = sum(Pmax[g, t] for g in unit_codes)
-        system_load[i] = sum(loads[l, t] for l in load_names)
+        gen_capacity[i] = sum(Pmax(g, t) for g in unit_codes)
+        system_load[i] = sum(loads(l, t) for l in load_names)
         if gen_capacity[i] < system_load[i]
             push!(infeasible_periods, t)
         end
@@ -63,13 +63,14 @@ allowed output at t=1.
 function _initial_ramp_feasibility(system, unit_codes, Pmax)
     U0 = get_initial_commitment(system)
     P0 = get_initial_generation(system)
-    Pmin = get_pmin(system)
-    RR = get_ramp_rates(system)
-    Δt = _get_resolution_in_minutes(system)
-    h1 = first(get_forecast_timestamps(system))
+    Pmin = get_pmin_timeseries(system)
+    generators = get_generators(system)
+    datetimes = get_datetimes(system)
+    Δt = Dates.values(Minute(step(daatetimes)))
+    h1 = first(datetimes)
     for g in unit_codes
-        if U0[g] == 1
-            if P0[g] > Pmax[g, h1] + Δt * RR[g] || P0[g] < Pmin[g, h1] - Δt * RR[g]
+        if U0(g) == 1
+            if P0(g) > Pmax(g, h1) + Δt * generators[g].ramp_up || P0(g) < Pmin(g, h1) - Δt * generators[g].ramp_up
                 warn(LOGGER, "Initial ramp constraints are being violated. Problem will be infeasible if hard constraints for ramps are used.")
                 return false
             end
@@ -88,8 +89,8 @@ be known beforehand. Nonetheless, this is a bound that has virtually zero probab
 being exceeded by the requirements unless there is some data issue.
 """
 function _ancillary_requirement_feasibility(system)
-    regmax = get_regmax(system)
-    zone_gens = _generators_by_reserve_zone(system)
+    regmax = get_regmax_timeseries(system)
+    zone_gens = gens_per_zone(system)
     reg_reqs = get_regulation_requirements(system)
     or_reqs = get_operating_reserve_requirements(system)
     reg_units = get_regulation_providers(system)
@@ -99,18 +100,18 @@ function _ancillary_requirement_feasibility(system)
         get_on_sup_providers(system),
         get_off_sup_providers(system),
     )
-    datetimes = get_forecast_timestamps(system)
-    for t in datetimes, zone in get_reserve_zones(system)
+    datetimes = get_datetimes(system)
+    for t in datetimes, zone in keys(get_zones(system))
         # Get the units providing regulation within that zone
         reg_zone_units = intersect(zone_gens[zone], reg_units)
-        total_regmax = sum(regmax[g, t] for g in reg_zone_units)
+        total_regmax = sum(regmax(g, t) for g in reg_zone_units)
         if total_regmax < reg_reqs[zone]
             warn(LOGGER, "There's not enough regulation to attend zonal regulation requirements; problem will be infeasible.")
             return false
         end
         # Get the units providing OR services within that zone
         or_zone_units = intersect(zone_gens[zone], or_units)
-        total_regmax = sum(regmax[g, t] for g in or_zone_units)
+        total_regmax = sum(regmax(g, t) for g in or_zone_units)
         if total_regmax < or_reqs[zone]
             warn(LOGGER, "There's not enough regulation to attend zonal operating reserve requirements; problem will be infeasible.")
             return false
