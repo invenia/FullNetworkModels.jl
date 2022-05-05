@@ -515,15 +515,15 @@ function _con_branch_flows!(
     )
     branches_out_per_scenario_names = map(l -> axes(l, 2), lodfs)
     # Compute this multiplication all at once for performance
-    @timeit_debug get_timer("FNTimer") "mat mul" ptdf_times_pnet = ptdf(branches_names_monitored_or_out, :) * p_net.data
+    ptdf_times_pnet = ptdf(branches_names_monitored_or_out, :) * p_net.data
     name_mapping = Dict(branches_names_monitored_or_out .=> 1:length(branches_names_monitored_or_out))
     time_mapping = Dict(datetimes .=> 1:length(datetimes))
-    @timeit_debug get_timer("FNTimer") "constraint 1" @constraint(
+    @constraint(
         model,
         branch_flows_base[m in branches_names_monitored_or_out, t in datetimes],
         fl[m, t, "base_case"] == ptdf_times_pnet[name_mapping[m], time_mapping[t]]
     )
-    @timeit_debug get_timer("FNTimer") "constraint 2" @constraint(
+    @constraint(
         model,
         branch_flows_conting[m in mon_branches_names, t in datetimes, c in contingencies],
         fl[m, t, c] == fl[m, t, "base_case"] + sum(
@@ -766,22 +766,22 @@ function con_thermal_branch!(fnm::FullNetworkModel; threshold=_SF_THRESHOLD)
     # out under some contingency.
     branches_names_monitored_or_out = union(branches_out_names, mon_branches_names)
     #Add the nodal net injections for the base-case
-    @timeit_debug get_timer("FNTimer") "_con_nodal_net_injection" _con_nodal_net_injection!(fnm, bus_names, D, unit_codes_perbus, load_names_perbus)
+    _con_nodal_net_injection!(fnm, bus_names, D, unit_codes_perbus, load_names_perbus)
     #Add the branch flows constraints for all scenarios
-    @timeit_debug get_timer("FNTimer") "_con_branch_flows" _con_branch_flows!(
+    _con_branch_flows!(
         fnm,
         mon_branches_names,
         branches_names_monitored_or_out,
         ptdf,
         lodfs_converted
     )
-    @timeit_debug get_timer("FNTimer") "_con_branch_flow_slacks" _con_branch_flow_slacks!(
+    _con_branch_flow_slacks!(
         fnm,
         mon_branches,
         mon_branches_names,
         scenarios,
     )
-    @timeit_debug get_timer("FNTimer") "_con_branch_flow_limits" _con_branch_flow_limits!(
+    _con_branch_flow_limits!(
         fnm,
         mon_branches,
         mon_branches_names,
