@@ -52,11 +52,15 @@ function obj_thermal_variable_cost!(fnm::FullNetworkModel{T}) where T
     system = fnm.system
     datetimes = fnm.datetimes
     unit_codes = keys(get_generators(system))
-    offer_curves = get_offer_curve_timeseries(system)
+    offer_curves = _keyed_to_dense(get_offer_curve_timeseries(system))
     # Get properties of the offer curves: prices, block MW limits, number of blocks
     Λ, block_lims, n_blocks = _curve_properties(offer_curves)
     # Add variables and constraints for thermal generation blocks
-    u = T === UC ? model[:u] : get_commitment_status(system)
+    if T === UC
+        u = model[:u]
+    else
+        u = _keyed_to_dense(get_commitment_status(system))
+    end
     _var_thermal_gen_blocks!(model, unit_codes, block_lims, datetimes, n_blocks, u)
     # Add thermal variable cost to objective
     _obj_thermal_variable_cost!(model, unit_codes, datetimes, n_blocks, Λ)
@@ -133,20 +137,20 @@ function _var_thermal_gen_blocks!(
     model::Model, unit_codes, block_lims, datetimes, n_blocks, u)
     @variable(
         model,
-        p_aux[g in unit_codes, t in datetimes, q in 1:n_blocks(g, t)] >= 0
+        p_aux[g in unit_codes, t in datetimes, q in 1:n_blocks[g, t]] >= 0
     )
     # Add constraints linking `p` to `p_aux`
     p = model[:p]
     @constraint(
         model,
         generation_definition[g in unit_codes, t in datetimes],
-        p[g, t] == sum(p_aux[g, t, q] for q in 1:n_blocks(g, t))
+        p[g, t] == sum(p_aux[g, t, q] for q in 1:n_blocks[g, t])
     )
     # Add upper bounds to `p_aux`. For UC, `u` is a variable. For ED, `u` is a parameter.
     @constraint(
         model,
-        gen_block_limits[g in unit_codes, t in datetimes, q in 1:n_blocks(g, t)],
-        p_aux[g, t, q] <= block_lims(g, t)[q] * u[g, t]
+        gen_block_limits[g in unit_codes, t in datetimes, q in 1:n_blocks[g, t]],
+        p_aux[g, t, q] <= block_lims[g, t][q] * u[g, t]
     )
     return model
 end
@@ -198,8 +202,8 @@ function obj_bids!(fnm::FullNetworkModel)
     datetimes = fnm.datetimes
     total_bid_cost = AffExpr()
     for (v, bidtype) in ((:inc, :increment), (:dec, :decrement), (:psd, :price_sensitive_demand))
-        bids = get_bids_timeseries(system, bidtype)
-        bid_names = axiskeys(bids, 1)
+        bids = _keyed_to_dense(get_bids_timeseries(system, bidtype))
+        bid_names = axes(bids, 1)
         # Get properties of the bid curves: prices, block MW limits, number of blocks
         Λ, block_lims, n_blocks = _curve_properties(bids; blocks=true)
         # Add variables and constraints for bid blocks and cost to objective function
@@ -222,20 +226,20 @@ function _var_bid_blocks!(model::Model, bid_names, block_lims, datetimes, n_bloc
     # otherwise `model[:x]` is undefined.
     model[v_aux] = @variable(
         model,
-        [b in bid_names, t in datetimes, q in 1:n_blocks(b, t)],
+        [b in bid_names, t in datetimes, q in 1:n_blocks[b, t]],
         lower_bound = 0,
         base_name = "$v_aux"
     )
     model[def] = @constraint(
         model,
         [b in bid_names, t in datetimes],
-        model[v][b, t] == sum(model[v_aux][b, t, q] for q in 1:n_blocks(b, t)),
+        model[v][b, t] == sum(model[v_aux][b, t, q] for q in 1:n_blocks[b, t]),
         base_name = "$def"
     )
     model[lims] = @constraint(
         model,
-        [b in bid_names, t in datetimes, q in 1:n_blocks(b, t)],
-        model[v_aux][b, t, q] <= block_lims(b, t)[q],
+        [b in bid_names, t in datetimes, q in 1:n_blocks[b, t]],
+        model[v_aux][b, t, q] <= block_lims[b, t][q],
         base_name = "$lims"
     )
     return model
