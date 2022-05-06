@@ -83,7 +83,7 @@ rather than
 @constraint(
 	model,
 	flows_base[m in monitored, t in datetimes],
-	flows_base[m, t, "base_case"] == X[m, t]
+	flow[m, t, "base_case"] == X[m, t]
 )
 ```
 
