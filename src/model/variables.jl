@@ -201,9 +201,9 @@ $(latex(var_bids!))
 The created variables are named `inc`, `dec`, `psd`.
 """
 function var_bids!(fnm::FullNetworkModel)
-    inc_names = axiskeys(get_bids_timeseries(fnm.system, :increment), 1)
-    dec_names = axiskeys(get_bids_timeseries(fnm.system, :decrement), 1)
-    psd_names = axiskeys(get_bids_timeseries(fnm.system, :price_sensitive_demand), 1)
+    inc_names = axiskeys(get_bids(fnm.system, :increment), 1)
+    dec_names = axiskeys(get_bids(fnm.system, :decrement), 1)
+    psd_names = axiskeys(get_bids(fnm.system, :price_sensitive_demand), 1)
     @variable(fnm.model, inc[i in inc_names, t in fnm.datetimes] >= 0)
     @variable(fnm.model, dec[d in dec_names, t in fnm.datetimes] >= 0)
     @variable(fnm.model, psd[s in psd_names, t in fnm.datetimes] >= 0)

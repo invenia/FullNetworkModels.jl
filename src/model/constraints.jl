@@ -47,8 +47,8 @@ function con_generation_limits!(fnm::FullNetworkModel{<:UC})
     p = model[:p]
     u = model[:u]
     unit_codes = keys(get_generators(fnm.system))
-    Pmin = _keyed_to_dense(get_pmin_timeseries(system))
-    Pmax = _keyed_to_dense(get_pmax_timeseries(system))
+    Pmin = _keyed_to_dense(get_pmin(system))
+    Pmax = _keyed_to_dense(get_pmax(system))
 
     @constraint(
         model,
@@ -80,8 +80,8 @@ function con_generation_limits!(fnm::FullNetworkModel{<:ED})
     p = model[:p]
     unit_codes = keys(get_generators(fnm.system))
     U = _keyed_to_dense(get_commitment_status(system))
-    Pmin = _keyed_to_dense(get_pmin_timeseries(system))
-    Pmax = _keyed_to_dense(get_pmax_timeseries(system))
+    Pmin = _keyed_to_dense(get_pmin(system))
+    Pmax = _keyed_to_dense(get_pmax(system))
 
     @constraint(
         model,
@@ -128,10 +128,10 @@ function con_ancillary_limits!(fnm::FullNetworkModel{<:UC})
     system = fnm.system
     datetimes = fnm.datetimes
     unit_codes = keys(get_generators(fnm.system))
-    Pmax = _keyed_to_dense(get_pmax_timeseries(system))
-    Pregmax = _keyed_to_dense(get_regmax_timeseries(system))
-    Pmin = _keyed_to_dense(get_pmin_timeseries(system))
-    Pregmin = _keyed_to_dense(get_regmin_timeseries(system))
+    Pmax = _keyed_to_dense(get_pmax(system))
+    Pregmax = _keyed_to_dense(get_regmax(system))
+    Pmin = _keyed_to_dense(get_pmin(system))
+    Pregmin = _keyed_to_dense(get_regmin(system))
 
     model = fnm.model
     u = model[:u]
@@ -160,10 +160,10 @@ function con_ancillary_limits!(fnm::FullNetworkModel{<:ED})
     system = fnm.system
     datetimes = fnm.datetimes
     unit_codes = keys(get_generators(fnm.system))
-    Pmax = _keyed_to_dense(get_pmax_timeseries(system))
-    Pregmax = _keyed_to_dense(get_regmax_timeseries(system))
-    Pmin = _keyed_to_dense(get_pmin_timeseries(system))
-    Pregmin = _keyed_to_dense(get_regmin_timeseries(system))
+    Pmax = _keyed_to_dense(get_pmax(system))
+    Pregmax = _keyed_to_dense(get_regmax(system))
+    Pmin = _keyed_to_dense(get_pmin(system))
+    Pregmin = _keyed_to_dense(get_regmin(system))
     U = _keyed_to_dense(get_commitment_status(system))
     U_reg = _keyed_to_dense(get_commitment_reg_status(system))
 
@@ -322,7 +322,7 @@ function con_energy_balance!(fnm::FullNetworkModel{<:ED}; slack=nothing)
     system = fnm.system
     datetimes = fnm.datetimes
     unit_codes = keys(get_generators(fnm.system))
-    D = _keyed_to_dense(get_load_timeseries(system))
+    D = _keyed_to_dense(get_load(system))
     load_names = axes(D, 1)
     p = model[:p]
     @constraint(
@@ -360,12 +360,12 @@ function con_energy_balance!(fnm::FullNetworkModel{<:UC}; slack=nothing)
     system = fnm.system
     datetimes = fnm.datetimes
     unit_codes = keys(get_generators(fnm.system))
-    D = _keyed_to_dense(get_load_timeseries(system))
+    D = _keyed_to_dense(get_load(system))
     load_names = axes(D, 1)
 
-    inc_names = axiskeys(get_bids_timeseries(fnm.system, :increment), 1)
-    dec_names = axiskeys(get_bids_timeseries(fnm.system, :decrement), 1)
-    psd_names = axiskeys(get_bids_timeseries(fnm.system, :price_sensitive_demand), 1)
+    inc_names = axiskeys(get_bids(fnm.system, :increment), 1)
+    dec_names = axiskeys(get_bids(fnm.system, :decrement), 1)
+    psd_names = axiskeys(get_bids(fnm.system, :price_sensitive_demand), 1)
 
     p = model[:p]
     inc = model[:inc]
@@ -741,7 +741,7 @@ function con_thermal_branch!(fnm::FullNetworkModel; threshold=_SF_THRESHOLD)
     #Shared Data
     system = fnm.system
     bus_names = sort(keys(get_buses(system)))
-    D = _keyed_to_dense(get_load_timeseries(system))
+    D = _keyed_to_dense(get_load(system))
     unit_codes_perbus = get_gens_per_bus(system)
     load_names_perbus = get_loads_per_bus(system)
 
@@ -955,7 +955,7 @@ function con_generation_ramp_rates!(fnm::FullNetworkModel; slack=nothing)
     unit_codes = keys(generators)
 
     P0 = _keyed_to_dense(get_initial_generation(system))
-    Pmax = _keyed_to_dense(get_pmax_timeseries(system))
+    Pmax = _keyed_to_dense(get_pmax(system))
     U0 = _keyed_to_dense(get_initial_commitment(system))
     Δt = Dates.value(Minute(first(diff(datetimes))))
     Δh = Hour(Δt / 60) # assume hourly resolution
@@ -964,7 +964,7 @@ function con_generation_ramp_rates!(fnm::FullNetworkModel; slack=nothing)
     # This is done to avoid situations where a unit has initial generation coming from the
     # previous day, but is marked as unavailable in hour 1, which leads to infeasibility
     # because it cannot ramp down to zero.
-    A = _keyed_to_dense(get_availability_timeseries(system))
+    A = _keyed_to_dense(get_availability(system))
     units_available_in_first_hour = @views axes(A, 1)[A.data[:, 1] .== 1]
 
     p = model[:p]
@@ -1048,7 +1048,7 @@ The constraint is named `must_run`.
 """
 function con_must_run!(fnm::FullNetworkModel)
     unit_codes = keys(get_generators(fnm.system))
-    MR = _keyed_to_dense(get_must_run_timeseries(fnm.system))
+    MR = _keyed_to_dense(get_must_run(fnm.system))
     u = fnm.model[:u]
     # We constrain the commitment variable to be >= the must run flag, this way if the flag
     # is zero it has no impact, and if it is 1 it forces the commitment to be 1.
@@ -1075,7 +1075,7 @@ The constraint is named `availability`.
 """
 function con_availability!(fnm::FullNetworkModel)
     unit_codes = keys(get_generators(fnm.system))
-    A = _keyed_to_dense(get_availability_timeseries(fnm.system))
+    A = _keyed_to_dense(get_availability(fnm.system))
     u = fnm.model[:u]
     # We constrain the commitment variable to be <= the availability flag, this way if the
     # unit is unavailable it cannot be committed, and if it is available there is no impact.

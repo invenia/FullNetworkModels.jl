@@ -52,7 +52,7 @@ function obj_thermal_variable_cost!(fnm::FullNetworkModel{T}) where T
     system = fnm.system
     datetimes = fnm.datetimes
     unit_codes = keys(get_generators(system))
-    offer_curves = _keyed_to_dense(get_offer_curve_timeseries(system))
+    offer_curves = _keyed_to_dense(get_offer_curve(system))
     # Get properties of the offer curves: prices, block MW limits, number of blocks
     Λ, block_lims, n_blocks = _curve_properties(offer_curves)
     # Add variables and constraints for thermal generation blocks
@@ -119,16 +119,16 @@ $(latex(obj_ancillary_costs!))
 """
 function obj_ancillary_costs!(fnm::FullNetworkModel)
     _obj_thermal_linear_cost!(
-        fnm, :r_reg, get_regulation_timeseries; unit_codes=get_regulation_providers(fnm.system)
+        fnm, :r_reg, get_regulation; unit_codes=get_regulation_providers(fnm.system)
     )
     _obj_thermal_linear_cost!(
-        fnm, :r_spin, get_spinning_timeseries; unit_codes=get_spinning_providers(fnm.system)
+        fnm, :r_spin, get_spinning; unit_codes=get_spinning_providers(fnm.system)
     )
     _obj_thermal_linear_cost!(
-        fnm, :r_on_sup, get_supplemental_on_timeseries; unit_codes=get_sup_on_providers(fnm.system)
+        fnm, :r_on_sup, get_supplemental_on; unit_codes=get_sup_on_providers(fnm.system)
     )
     _obj_thermal_linear_cost!(
-        fnm, :r_off_sup, get_supplemental_off_timeseries; unit_codes=get_sup_off_providers(fnm.system)
+        fnm, :r_off_sup, get_supplemental_off; unit_codes=get_sup_off_providers(fnm.system)
     )
     return fnm
 end
@@ -202,7 +202,7 @@ function obj_bids!(fnm::FullNetworkModel)
     datetimes = fnm.datetimes
     total_bid_cost = AffExpr()
     for (v, bidtype) in ((:inc, :increment), (:dec, :decrement), (:psd, :price_sensitive_demand))
-        bids = _keyed_to_dense(get_bids_timeseries(system, bidtype))
+        bids = _keyed_to_dense(get_bids(system, bidtype))
         bid_names = axes(bids, 1)
         # Get properties of the bid curves: prices, block MW limits, number of blocks
         Λ, block_lims, n_blocks = _curve_properties(bids; blocks=true)
