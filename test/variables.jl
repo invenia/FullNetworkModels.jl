@@ -1,4 +1,5 @@
 function tests_thermal_variable(fnm, label)
+    set_names!(fnm)
     @testset "Variables named `$label` were created with the correct indices" begin
         @test has_variable(fnm.model, label)
         @test issetequal(
@@ -11,6 +12,7 @@ function tests_thermal_variable(fnm, label)
 end
 
 function tests_commitment(fnm)
+    set_names!(fnm)
     tests_thermal_variable(fnm, "u")
     @testset "Created variables are binary" begin
         @test all(is_binary, fnm.model[:u].data)
@@ -19,6 +21,7 @@ function tests_commitment(fnm)
 end
 
 function tests_startup_shutdown(fnm)
+    set_names!(fnm)
     tests_thermal_variable(fnm, "v")
     tests_thermal_variable(fnm, "w")
     t1, t2 = fnm.datetimes[1:2]
@@ -33,6 +36,7 @@ function tests_startup_shutdown(fnm)
 end
 
 function tests_bid_variables(fnm, label, bidtype)
+    set_names!(fnm)
     @testset "Variables named `$label` were created with the correct indices" begin
         @test has_variable(fnm.model, label)
         @test issetequal(

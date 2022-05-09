@@ -131,21 +131,22 @@ end
 
 function _var_thermal_gen_blocks!(
     model::Model, unit_codes, block_lims, datetimes, n_blocks, u)
-    @variable(
+    model[:p_aux] = p_aux = @variable(
         model,
-        p_aux[g in unit_codes, t in datetimes, q in 1:n_blocks[g, t]] >= 0
+        [g in unit_codes, t in datetimes, q in 1:n_blocks[g, t]],
+        lower_bound=0
     )
     # Add constraints linking `p` to `p_aux`
     p = model[:p]
-    @constraint(
+    model[:generation_definition] = @constraint(
         model,
-        generation_definition[g in unit_codes, t in datetimes],
+        [g in unit_codes, t in datetimes],
         p[g, t] == sum(p_aux[g, t, q] for q in 1:n_blocks[g, t])
     )
     # Add upper bounds to `p_aux`. For UC, `u` is a variable. For ED, `u` is a parameter.
-    @constraint(
+    model[:gen_block_limits] = @constraint(
         model,
-        gen_block_limits[g in unit_codes, t in datetimes, q in 1:n_blocks[g, t]],
+        [g in unit_codes, t in datetimes, q in 1:n_blocks[g, t]],
         p_aux[g, t, q] <= block_lims[g, t][q] * u[g, t]
     )
     return model
@@ -223,20 +224,17 @@ function _var_bid_blocks!(model::Model, bid_names, block_lims, datetimes, n_bloc
     model[v_aux] = @variable(
         model,
         [b in bid_names, t in datetimes, q in 1:n_blocks[b, t]],
-        lower_bound = 0,
-        base_name = "$v_aux"
+        lower_bound=0
     )
     model[def] = @constraint(
         model,
         [b in bid_names, t in datetimes],
-        model[v][b, t] == sum(model[v_aux][b, t, q] for q in 1:n_blocks[b, t]),
-        base_name = "$def"
+        model[v][b, t] == sum(model[v_aux][b, t, q] for q in 1:n_blocks[b, t])
     )
     model[lims] = @constraint(
         model,
         [b in bid_names, t in datetimes, q in 1:n_blocks[b, t]],
-        model[v_aux][b, t, q] <= block_lims[b, t][q],
-        base_name = "$lims"
+        model[v_aux][b, t, q] <= block_lims[b, t][q]
     )
     return model
 end

@@ -1,4 +1,5 @@
 function tests_generation_limits(fnm)
+    set_names!(fnm)
     @testset "Test if constraints were created with the correct indices" begin
         @test has_constraint(fnm.model, "generation_min")
         @test has_constraint(fnm.model, "generation_max")
@@ -11,6 +12,7 @@ function tests_generation_limits(fnm)
 end
 
 function tests_ancillary_limits(fnm::FullNetworkModel{<:UC})
+    set_names!(fnm)
     t = first(fnm.datetimes)
     @test sprint(show, constraint_by_name(fnm.model, "ancillary_max[7,$t]")) ==
         "ancillary_max[7,$t] : p[7,$t] - 8 u[7,$t] + r_reg[7,$t] + r_spin[7,$t] + r_on_sup[7,$t] + 0.5 u_reg[7,$t] ≤ 0.0"
@@ -33,6 +35,7 @@ end
 # The output of these `sprint`s change depending on the value of U; we assume it's always 1
 # since that's how we're defining the test system.
 function tests_ancillary_limits(fnm::FullNetworkModel{<:ED})
+    set_names!(fnm)
     t = first(fnm.datetimes)
     @test sprint(show, constraint_by_name(fnm.model, "ancillary_max[7,$t]")) ==
         "ancillary_max[7,$t] : p[7,$t] + r_reg[7,$t] + r_spin[7,$t] + r_on_sup[7,$t] ≤ 7.5"
@@ -51,6 +54,7 @@ function tests_ancillary_limits(fnm::FullNetworkModel{<:ED})
 end
 
 function tests_regulation_requirements(fnm::FullNetworkModel{<:UC})
+    set_names!(fnm)
     t = first(fnm.datetimes)
     @test sprint(show, constraint_by_name(fnm.model, "regulation_requirements[1,$t]")) ==
         "regulation_requirements[1,$t] : r_reg[3,$t] ≥ 0.3"
@@ -63,6 +67,7 @@ function tests_regulation_requirements(fnm::FullNetworkModel{<:UC})
 end
 
 function tests_regulation_requirements(fnm::FullNetworkModel{<:ED})
+    set_names!(fnm)
     t = first(fnm.datetimes)
     @test sprint(show, constraint_by_name(fnm.model, "regulation_requirements[1,$t]")) ==
         "regulation_requirements[1,$t] : r_reg[3,$t] + sl_reg_req[1,$t] ≥ 0.3"
@@ -75,6 +80,7 @@ function tests_regulation_requirements(fnm::FullNetworkModel{<:ED})
 end
 
 function tests_operating_reserve_requirements(fnm::FullNetworkModel{<:UC})
+    set_names!(fnm)
     t = first(fnm.datetimes)
     @test sprint(show, constraint_by_name(
         fnm.model, "operating_reserve_requirements[1,$t]"
@@ -89,6 +95,7 @@ function tests_operating_reserve_requirements(fnm::FullNetworkModel{<:UC})
 end
 
 function tests_operating_reserve_requirements(fnm::FullNetworkModel{<:ED})
+    set_names!(fnm)
     t = first(fnm.datetimes)
     @test sprint(show, constraint_by_name(
         fnm.model, "operating_reserve_requirements[1,$t]"
@@ -103,6 +110,7 @@ function tests_operating_reserve_requirements(fnm::FullNetworkModel{<:ED})
 end
 
 function tests_ramp_rates(fnm; slack=nothing)
+    set_names!(fnm)
     t1, t2 = fnm.datetimes[1:2]
     @test sprint(show, constraint_by_name(
         fnm.model, "ramp_regulation[3,$t1]"
@@ -143,6 +151,7 @@ function tests_ramp_rates(fnm; slack=nothing)
 end
 
 function tests_energy_balance(fnm::FullNetworkModel{<:ED})
+    set_names!(fnm)
     load_names = get_load_names(PowerLoad, fnm.system)
     D = get_fixed_loads(fnm.system)
     @testset "Constraints were correctly defined" for t in fnm.datetimes
@@ -153,6 +162,7 @@ function tests_energy_balance(fnm::FullNetworkModel{<:ED})
     return nothing
 end
 function tests_energy_balance(fnm::FullNetworkModel{<:UC})
+    set_names!(fnm)
     load_names = get_load_names(PowerLoad, fnm.system)
     D = get_fixed_loads(fnm.system)
     @testset "Constraints were correctly defined" for t in fnm.datetimes
@@ -164,6 +174,7 @@ function tests_energy_balance(fnm::FullNetworkModel{<:UC})
 end
 
 function tests_branch_flow_limits(T, fnm::FullNetworkModel)
+    set_names!(fnm)
     model = fnm.model
     system = fnm.system
 
@@ -242,6 +253,7 @@ function _simple_template(
     obj_bids!(fnm)
     set_optimizer(fnm, solver)
     set_silent(fnm.model) # to reduce test verbosity
+    set_names!(fnm)
     return fnm
 end
 
@@ -257,6 +269,7 @@ function _simple_template(
     obj_thermal_variable_cost!(fnm)
     set_optimizer(fnm, solver)
     set_silent(fnm.model) # to reduce test verbosity
+    set_names!(fnm)
     return fnm
 end
 
@@ -287,10 +300,12 @@ end
         end
         @testset "con_regulation_requirements!" begin
             con_regulation_requirements!(fnm)
+            set_names!(fnm; force=true)  # added new constraints which need names
             tests_regulation_requirements(fnm)
         end
         @testset "con_operating_reserve_requirements!" begin
             con_operating_reserve_requirements!(fnm)
+            set_names!(fnm; force=true)  # added new constraints which need names
             tests_operating_reserve_requirements(fnm)
         end
     end
@@ -304,10 +319,12 @@ end
         end
         @testset "con_regulation_requirements!" begin
             con_regulation_requirements!(fnm)
+            set_names!(fnm; force=true)  # added new constraints which need names
             tests_regulation_requirements(fnm)
         end
         @testset "con_operating_reserve_requirements!" begin
             con_operating_reserve_requirements!(fnm)
+            set_names!(fnm; force=true)  # added new constraints which need names
             tests_operating_reserve_requirements(fnm)
         end
     end
