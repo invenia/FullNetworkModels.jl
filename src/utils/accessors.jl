@@ -696,12 +696,12 @@ This is a sorted and thresholded version of the PTDF used for adding branch cons
 function get_ptdf(system::System; threshold::Float64=_SF_THRESHOLD)
     ptdf_device = only(get_components(PTDF, system))
     ptdf = ptdf_device.ptdf_mat
-    _threshold!(ptdf, threshold)
-    return _sort_buses(ptdf)
+    new_ptdf = _threshold(ptdf, threshold)
+    return _sort_buses(new_ptdf)
 end
 
 """
-    _threshold!(shift_factor, threshold=$_SF_THRESHOLD)
+    _threshold(shift_factor, threshold=$_SF_THRESHOLD)
 
 Allows to threshold the shift factor values (PTDF/LODF) such that
 |x| < threshold is set to 0.0. This is useful to improve the computational performance of
@@ -712,8 +712,10 @@ practice to threshold the shift factor values.
 See measurements on safe PTDF thresholding in
 https://gitlab.invenia.ca/invenia/research/FullNetworkModels.jl/-/merge_requests/128
 """
-@inline function _threshold!(shift_factor::DenseAxisArray, threshold::Float64=_SF_THRESHOLD)
-    replace!(x -> abs(x) < threshold ? 0.0 : x, shift_factor.data)
+function _threshold(shift_factor::DenseAxisArray, threshold::Float64=_SF_THRESHOLD)
+    new_sf_data = replace(x -> abs(x) < threshold ? 0.0 : x, shift_factor.data)
+    new_sf = DenseAxisArray(new_sf_data, axes(shift_factor)...)
+    return new_sf
 end
 
 """
@@ -737,8 +739,11 @@ is thresholded and stored in the `system` as an `LODFDict` device.
 function get_lodf_dict(system::System; threshold::Float64=_SF_THRESHOLD)
     lodf_device = only(get_components(LODFDict, system))
     lodf_dict = lodf_device.lodf_dict
-    for v in values(lodf_dict)
-        _threshold!(v, threshold)
+    # Create a new thresholded LODF dict with the same types as the original one
+    K, V = eltype.((keys(lodf_dict), values(lodf_dict)))
+    new_lodf_dict = Dict{K, V}()
+    for (k, v) in lodf_dict
+        new_lodf_dict[k] = _threshold(v, threshold)
     end
-    return lodf_dict
+    return new_lodf_dict
 end
