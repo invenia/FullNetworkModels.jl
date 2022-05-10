@@ -156,14 +156,18 @@
         @test ptdf_mat isa DenseAxisArray
         @test issetequal(axes(ptdf_mat, 1), ("Line1", "Line2", "Line3", "Transformer1"))
         @test issetequal(axes(ptdf_mat, 2), ("Bus1", "Bus2",  "Bus3"))
-        th = FullNetworkModels._PTDF_THRESHOLD
-        @test all(x -> x == 0 || abs(x) > th, get_ptdf(system))
+        th = FullNetworkModels._SF_THRESHOLD
+        @test all(x -> x == 0 || abs(x) > th, ptdf_mat)
         ptdf_mat_thresh = get_ptdf(system; threshold=0.05) # use a custom threshold
-        @test all(x -> x == 0 || abs(x) > 0.05, get_ptdf(system))
+        @test all(x -> x == 0 || abs(x) > 0.05, ptdf_mat_thresh)
 
         lodf_dict = get_lodf_dict(system)
         @test issetequal(keys(lodf_dict), ("conting1", "conting2"))
         @test eltype(values(lodf_dict)) == DenseAxisArray
+        lodf_dict_thresh = get_lodf_dict(system; threshold=0.05)
+        for v in values(lodf_dict_thresh)
+            @test all(x -> x == 0 || abs(x) > 0.05, v)
+        end
 
         @testset "Get data for specific datetimes" begin
             datetimes = get_forecast_timestamps(system)[5:8]

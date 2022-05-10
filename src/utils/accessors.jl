@@ -686,14 +686,14 @@ function get_availability(
     return get_generator_time_series(system, "availability", datetimes)
 end
 
-const _PTDF_THRESHOLD = 1e-4
+const _SF_THRESHOLD = 1e-4
 """
-    get_ptdf(system::System; threshold=$_PTDF_THRESHOLD) -> DenseAxisArray
+    get_ptdf(system::System; threshold=$_SF_THRESHOLD) -> DenseAxisArray
 
 Returns the PTDF matrix stored in the `system` as a `PTDF` device.
 This is a sorted and thresholded version of the PTDF used for adding branch constraints.
 """
-function get_ptdf(system::System; threshold::Float64=_PTDF_THRESHOLD)
+function get_ptdf(system::System; threshold::Float64=_SF_THRESHOLD)
     ptdf_device = only(get_components(PTDF, system))
     ptdf = ptdf_device.ptdf_mat
     _threshold!(ptdf, threshold)
@@ -701,16 +701,19 @@ function get_ptdf(system::System; threshold::Float64=_PTDF_THRESHOLD)
 end
 
 """
-    _threshold!(ptdf, threshold=$_PTDF_THRESHOLD)
+    _threshold!(shift_factor, threshold=$_SF_THRESHOLD)
 
-After calculating LODFs, the PTDF doesn't need to be as precise. We can safely replace small
-values with zeros, e.g. |x| < 1e-4, which results in significant performance improvements.
-Moreover, we know that ISOs sometimes apply thresholds to PTDFs to speed up OPF.
+Allows to threshold the shift factor values (PTDF/LODF) such that
+|x| < threshold is set to 0.0. This is useful to improve the computational performance of
+OPF as PTDF does not need to be as precise after LODFs are calculated so they can safely be
+thresholded by a small threshold (e.g. 1e-4). This can also be used to comply with ISOs'
+practice to threshold the shift factor values.
 
-See measurements in https://gitlab.invenia.ca/invenia/research/FullNetworkModels.jl/-/merge_requests/128
+See measurements on safe PTDF thresholding in
+https://gitlab.invenia.ca/invenia/research/FullNetworkModels.jl/-/merge_requests/128
 """
-@inline function _threshold!(ptdf::DenseAxisArray, threshold::Float64=_PTDF_THRESHOLD)
-    replace!(x -> abs(x) < threshold ? 0.0 : x, ptdf.data)
+@inline function _threshold!(shift_factor::DenseAxisArray, threshold::Float64=_SF_THRESHOLD)
+    replace!(x -> abs(x) < threshold ? 0.0 : x, shift_factor.data)
 end
 
 """
@@ -726,12 +729,16 @@ performing vector multiplication.
 end
 
 """
-    get_lodf_dict(system::System) -> Dict{String, DenseAxisArray}
+    get_lodf_dict(system::System; threshold=$_SF_THRESHOLD) -> Dict{String, DenseAxisArray}
 
-Returns the LODF dictionary that points contingencies to branches going out that is stored
-in the `system` as an `LODFDict` device.
+Returns the LODF dictionary that points contingencies to branches going out that
+is thresholded and stored in the `system` as an `LODFDict` device.
 """
-function get_lodf_dict(system::System)
+function get_lodf_dict(system::System; threshold::Float64=_SF_THRESHOLD)
     lodf_device = only(get_components(LODFDict, system))
-    return lodf_device.lodf_dict
+    lodf_dict = lodf_device.lodf_dict
+    for v in values(lodf_dict)
+        _threshold!(v, threshold)
+    end
+    return lodf_dict
 end
