@@ -735,7 +735,7 @@ $(latex(_con_branch_flow_limits!))
 The constraints are named `nodal_net_injection`, `branch_flows_base`, `branch_flows_conting`,
 `branch_flow_max` (for the high boundary) and `branch_flow_min` (for the lower boundary) respectively.
 """
-function con_thermal_branch!(fnm::FullNetworkModel)
+function con_thermal_branch!(fnm::FullNetworkModel; threshold=_SF_THRESHOLD)
     #Shared Data
     system = fnm.system
     bus_names = get_bus_names(system)
@@ -747,8 +747,8 @@ function con_thermal_branch!(fnm::FullNetworkModel)
     mon_branches_rates_b = get_branch_rates_b(mon_branches_names, system)
     mon_branches_break_points = get_branch_break_points(mon_branches_names, system)
     mon_branches_penalties = get_branch_penalties(mon_branches_names, system)
-    ptdf = get_ptdf(system)
-    lodf_dict = get_lodf_dict(system)
+    ptdf = get_ptdf(system; threshold)
+    lodf_dict = get_lodf_dict(system; threshold)
     lodfs = _add_base_case_to_lodfs(lodf_dict) # Add base case to the LODF dictionary
     scenarios = collect(keys(lodfs)) # All scenarios (base case and contingency scenarios)
     branches_out_names = unique(vcat(axes.(values(lodfs), 2)...))
@@ -801,7 +801,7 @@ function _con_ancillary_max!(model::Model, unit_codes, datetimes, Pmax, Pregmax,
 end
 
 "Lower bound on generation - ancillary services"
-function _con_ancillary_min!(model::Model, unit_codes, datetimes, Pmin, Pregmin, u ,u_reg)
+function _con_ancillary_min!(model::Model, unit_codes, datetimes, Pmin, Pregmin, u, u_reg)
     p = model[:p]
     r_reg = model[:r_reg]
     # `u`/`u_reg` may be variables or parameters (which we'd usually write as `U`/`U_reg`).
