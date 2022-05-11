@@ -491,6 +491,7 @@ end
     set_silent(fnm.model) # to reduce test verbosity
     optimize!(fnm)
 
+    # Apply a threshold of 1.0, meaning that all shift factors will be zero
     fnm_thresh = unit_commitment_branch_flow_limits(
         system, HiGHS.Optimizer; relax_integrality=true, threshold=1.0
     )
