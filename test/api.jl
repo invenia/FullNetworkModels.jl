@@ -169,6 +169,16 @@
             @test all(x -> x == 0 || abs(x) > 0.05, v)
         end
 
+        @testset "`get_ptdf` and `get_lodf_dict` are non-mutating" begin
+            ptdf_1 = get_ptdf(system; threshold = 1.0)
+            ptdf_2 = get_ptdf(system; threshold = 1e-5)
+            @test any(x -> x != 0 || abs(x) < 0.1, ptdf_2)
+
+            lodf_1 = first(values(get_lodf_dict(system; threshold = 1.0)))
+            lodf_2 = first(values(get_lodf_dict(system; threshold = 1e-5)))
+            @test any(x -> x != 0 || abs(x) < 0.1, lodf_2)
+        end
+
         @testset "Get data for specific datetimes" begin
             datetimes = get_forecast_timestamps(system)[5:8]
             n_periods = length(datetimes)
