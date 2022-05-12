@@ -479,3 +479,27 @@ end
         test_templates(first(datetimes))
     end
 end
+
+@testset "Shift factor thresholding" begin
+    system = deepcopy(TEST_SYSTEM)
+    loads = collect(get_components(PowerLoad, system))
+    set_active_power!(loads[1], 10.0) # increase load to induce congestion
+
+    fnm = unit_commitment_branch_flow_limits(
+        system, HiGHS.Optimizer; relax_integrality=true
+    )
+    set_silent(fnm.model) # to reduce test verbosity
+    optimize!(fnm)
+
+    # Apply a threshold of 1.0, meaning that all shift factors will be zero
+    fnm_thresh = unit_commitment_branch_flow_limits(
+        system, HiGHS.Optimizer; relax_integrality=true, threshold=1.0
+    )
+    set_silent(fnm_thresh.model) # to reduce test verbosity
+    optimize!(fnm_thresh)
+
+    # There is congestion due to high load
+    @test any(!=(0), dual.(fnm.model[:branch_flow_max_base]))
+    # No congestion since the shift factors were thresholded to zero
+    @test all(==(0), dual.(fnm_thresh.model[:branch_flow_max_base]))
+end

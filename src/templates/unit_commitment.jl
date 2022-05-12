@@ -101,7 +101,7 @@ end
 """
     unit_commitment_no_ramps(
         system::System, solver=nothing, datetimes=get_forecast_timestamps(system);
-        relax_integrality=false
+        relax_integrality=false, slack=nothing
     ) -> FullNetworkModel{UC}
 
 Defines the unit commitment template with no ramp constraints.
@@ -167,7 +167,7 @@ end
 """
     unit_commitment_branch_flow_limits(
         system::System, solver=nothing, datetimes=get_forecast_timestamps(system);
-        relax_integrality=false
+        relax_integrality=false, slack=nothing, threshold=_SF_THRESHOLD
     ) -> FullNetworkModel{UC}
 
 Defines the unit commitment default template.
@@ -224,10 +224,11 @@ See also [`unit_commitment`](@ref) and [`unit_commitment_no_ramps`](@ref).
  - `relax_integrality=false`: If set to `true`, binary variables will be relaxed.
  - `slack=nothing`: The slack penalty for the soft constraints.
    For more info on specifying slacks, refer to the [docs on soft constraints](@ref soft_constraints).
+ - `threshold=_SF_THRESHOLD`: The threshold (cutoff value) to be applied to the shift factors.
 """
 function unit_commitment_branch_flow_limits(
     system::System, solver=nothing, datetimes=get_forecast_timestamps(system);
-    relax_integrality=false, slack=nothing
+    relax_integrality=false, slack=nothing, threshold=_SF_THRESHOLD
 )
     # Get the individual slack values to be used in each soft constraint
     @timeit_debug get_timer("FNTimer") "specify slacks" sl = _expand_slacks(slack)
@@ -252,7 +253,7 @@ function unit_commitment_branch_flow_limits(
         con_energy_balance!(fnm; slack=sl[:energy_balance])
         con_must_run!(fnm)
         con_availability!(fnm)
-        @timeit_debug get_timer("FNTimer") "thermal branch constraints" con_thermal_branch!(fnm)
+        @timeit_debug get_timer("FNTimer") "thermal branch constraints" con_thermal_branch!(fnm; threshold)
     end
     # Objectives
     @timeit_debug get_timer("FNTimer") "add objectives to model" begin
@@ -272,7 +273,7 @@ end
 """
     unit_commitment_no_ramps_branch_flow_limits(
         system::System, solver=nothing, datetimes=get_forecast_timestamps(system);
-        relax_integrality=false
+        relax_integrality=false, slack=nothing, threshold=_SF_THRESHOLD
     ) -> FullNetworkModel{UC}
 
 Defines the unit commitment template with branch flow limits but no ramp constraints.
@@ -291,10 +292,11 @@ See also [`unit_commitment_branch_flow_limits`](@ref) and [`unit_commitment_no_r
  - `relax_integrality=false`: If set to `true`, binary variables will be relaxed.
  - `slack=nothing`: The slack penalty for the soft constraints.
    For more info on specifying slacks, refer to the [docs on soft constraints](@ref soft_constraints).
+ - `threshold=_SF_THRESHOLD`: The threshold (cutoff value) to be applied to the shift factors.
 """
 function unit_commitment_no_ramps_branch_flow_limits(
     system::System, solver=nothing, datetimes=get_forecast_timestamps(system);
-    relax_integrality=false, slack=nothing
+    relax_integrality=false, slack=nothing, threshold=_SF_THRESHOLD
 )
     # Get the individual slack values to be used in each soft constraint
     @timeit_debug get_timer("FNTimer") "specify slacks" sl = _expand_slacks(slack)
@@ -317,7 +319,7 @@ function unit_commitment_no_ramps_branch_flow_limits(
         con_energy_balance!(fnm; slack=sl[:energy_balance])
         con_must_run!(fnm)
         con_availability!(fnm)
-        @timeit_debug get_timer("FNTimer") "thermal branch constraints" con_thermal_branch!(fnm)
+        @timeit_debug get_timer("FNTimer") "thermal branch constraints" con_thermal_branch!(fnm; threshold)
     end
     # Objectives
     @timeit_debug get_timer("FNTimer") "add objectives to model" begin

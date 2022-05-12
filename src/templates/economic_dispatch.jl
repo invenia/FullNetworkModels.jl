@@ -73,7 +73,8 @@ end
 
 """
     economic_dispatch_branch_flow_limits(
-        system::System, solver=nothing, datetimes=get_forecast_timestamps(system); slack=1e6
+        system::System, solver=nothing, datetimes=get_forecast_timestamps(system);
+        slack=1e6, threshold=_SF_THRESHOLD
     ) -> FullNetworkModel{ED}
 
 Defines the economic dispatch template with base case thermal branch constraints.
@@ -114,6 +115,7 @@ Arguments:
 
 Keyword arguments:
  - `slack=1e6`: The slack penalty for the soft constraints.
+ - `threshold=_SF_THRESHOLD`: The threshold (cutoff value) to be applied to the shift factors.
 """
 function economic_dispatch_branch_flow_limits(
     system::System, solver=nothing, datetimes=get_forecast_timestamps(system); slack=1e6

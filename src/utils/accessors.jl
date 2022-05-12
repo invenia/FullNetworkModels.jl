@@ -686,7 +686,6 @@ function get_availability(
     return get_generator_time_series(system, "availability", datetimes)
 end
 
-const _SF_THRESHOLD = 1e-4
 """
     get_ptdf(system::System; threshold=$_SF_THRESHOLD) -> DenseAxisArray
 
