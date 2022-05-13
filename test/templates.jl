@@ -76,7 +76,7 @@
 
         # Verify that the branch flows are within bounds
         monitored_branches_names = get_monitored_branch_names(Branch, TEST_SYSTEM)
-        @testset "branch bounds" for c in TEST_SCENARIOS
+        @testset "branch bounds" for c in TEST_CONTINGENCIES
             for m in monitored_branches_names
                 t_branch = get_component(Branch, TEST_SYSTEM, m)
                 rate = c == "base_case" ? t_branch.rate : t_branch.ext["rate_b"]
@@ -153,7 +153,7 @@
 
         # Verify that the branch flows are higher than the line rate, SL1 and SL2 are active
         # in all cases SL1 should be at their maximum value
-        @testset "branch bounds sl2 all cases" for c in TEST_SCENARIOS
+        @testset "branch bounds sl2 all cases" for c in TEST_CONTINGENCIES
             m = "Transformer1"
             t_branch = get_component(Branch, system_sl2_all, m)
             rate = c == "base_case" ? t_branch.rate : t_branch.ext["rate_b"]
@@ -240,7 +240,7 @@
 
         # Verify that the branch flows are within bounds
         monitored_branches_names = get_monitored_branch_names(Branch, TEST_SYSTEM_RT)
-        @testset "branch bounds" for c in TEST_SCENARIOS
+        @testset "branch bounds" for c in TEST_CONTINGENCIES
             for m in monitored_branches_names
                 t_branch = get_component(Branch, TEST_SYSTEM_RT, m)
                 rate = c == "base_case" ? t_branch.rate : t_branch.ext["rate_b"]
@@ -287,7 +287,7 @@
         obj_sl2 = objective_value(fnm.model)
 
         # Verify that the branch flows are higher than the line rate, SL1 and SL2 are active
-        @testset "branch bounds sl2 in base case and conting2" for c in TEST_SCENARIOS
+        @testset "branch bounds sl2 in base case and conting2" for c in TEST_CONTINGENCIES
             m = "Transformer1"
             t_branch = get_component(Branch, system_sl2, m)
             rate = c == "base_case" ? t_branch.rate : t_branch.ext["rate_b"]
@@ -311,7 +311,7 @@
 
         # Verify that the branch flows are higher than the line rate, SL1 and SL2 are active
         # in all cases SL1 should be at their maximum value
-        @testset "branch bounds sl2 all cases" for c in TEST_SCENARIOS
+        @testset "branch bounds sl2 all cases" for c in TEST_CONTINGENCIES
             m = "Transformer1"
             t_branch = get_component(Branch, system_sl2_all, m)
             rate = c == "base_case" ? t_branch.rate : t_branch.ext["rate_b"]
@@ -340,7 +340,7 @@
         @test termination_status(fnm.model) == TerminationStatusCode(1)
         obj_bkpt_one = objective_value(fnm.model)
 
-        @testset "branch bounds sl1 one breakpoint" for c in TEST_SCENARIOS
+        @testset "branch bounds sl1 one breakpoint" for c in TEST_CONTINGENCIES
             m = "Transformer1"
             t_branch = get_component(Branch, system_bkpt_one, m)
             rate = c == "base_case" ? t_branch.rate : t_branch.ext["rate_b"]
@@ -361,7 +361,7 @@
         @test termination_status(fnm.model) == TerminationStatusCode(1)
         obj_bkpt_zero = objective_value(fnm.model)
 
-        @testset "branch bounds sl1 one breakpoint" for c in TEST_SCENARIOS
+        @testset "branch bounds sl1 one breakpoint" for c in TEST_CONTINGENCIES
             m = "Transformer1"
             t_branch = get_component(Branch, system_bkpt_zero, m)
             rate = c == "base_case" ? t_branch.rate : t_branch.ext["rate_b"]

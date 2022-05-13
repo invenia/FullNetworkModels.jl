@@ -212,7 +212,7 @@ function tests_branch_flow_limits(T, fnm::FullNetworkModel)
     mon_branches_rates_b = get_branch_rates_b(mon_branches_names, system)
     @testset "Thermal Branch Limits" begin
         for t in fnm.datetimes
-            for m in mon_branches_names, c in TEST_SCENARIOS
+            for m in mon_branches_names, c in TEST_CONTINGENCIES
                 rate = c =="base_case" ? mon_branches_rates_a[m] : mon_branches_rates_b[m]
                 if c == "base_case"
                     @test sprint(show, constraint_by_name(model, "branch_flow_max_base[$m,$t,$c]")) ==
