@@ -193,24 +193,26 @@ function tests_branch_flow_limits(T, fnm::FullNetworkModel)
         @test has_constraint(model, "branch_flow_sl1_two_cont")
     end
 
-    @testset "Branch flows constraints" for t in fnm.datetimes
-        m = "Transformer1"
-        (c1, c2) = ("conting1", "conting2")
-        (ptdf2, ptdf3)  = ("0.12500000000000003", "0.12499999999999997")
-        @test sprint(show, constraint_by_name(model, "branch_flows_base[$m,$t]")) ==
-        "branch_flows_base[$m,$t] : -$ptdf2 p_net[Bus2,$t] + $ptdf3 p_net[Bus3,$t] + fl[$m,$t,base_case] = 0.0"
-        @test sprint(show, constraint_by_name(model, "branch_flows_conting[$m,$t,$c1]")) ==
-        "branch_flows_conting[$m,$t,$c1] : -0.5 fl[Line2,$t,base_case] - fl[$m,$t,base_case] + fl[$m,$t,$c1] = 0.0"
-        @test sprint(show, constraint_by_name(model, "branch_flows_conting[$m,$t,$c2]")) ==
-        "branch_flows_conting[$m,$t,$c2] : fl[$m,$t,$c2] - fl[Line3,$t,base_case] - fl[Line2,$t,base_case] - fl[$m,$t,base_case] = 0.0"
+    @testset "Branch flows constraints" begin
+        for t in fnm.datetimes
+            m = "Transformer1"
+            (c1, c2) = ("conting1", "conting2")
+            (ptdf2, ptdf3)  = ("0.12500000000000003", "0.12499999999999997")
+            @test sprint(show, constraint_by_name(model, "branch_flows_base[$m,$t]")) ==
+            "branch_flows_base[$m,$t] : -$ptdf2 p_net[Bus2,$t] + $ptdf3 p_net[Bus3,$t] + fl[$m,$t,base_case] = 0.0"
+            @test sprint(show, constraint_by_name(model, "branch_flows_conting[$m,$t,$c1]")) ==
+            "branch_flows_conting[$m,$t,$c1] : -0.5 fl[Line2,$t,base_case] - fl[$m,$t,base_case] + fl[$m,$t,$c1] = 0.0"
+            @test sprint(show, constraint_by_name(model, "branch_flows_conting[$m,$t,$c2]")) ==
+            "branch_flows_conting[$m,$t,$c2] : -fl[Line3,$t,base_case] - fl[Line2,$t,base_case] - fl[$m,$t,base_case] + fl[$m,$t,$c2] = 0.0"
+        end
     end
 
     mon_branches_names = get_monitored_branch_names(Branch, system)
     mon_branches_rates_a = get_branch_rates(mon_branches_names, system)
     mon_branches_rates_b = get_branch_rates_b(mon_branches_names, system)
-    @testset "Thermal Branch Limits" for t in fnm.datetimes
-        for c in TEST_SCENARIOS
-            for m in mon_branches_names
+    @testset "Thermal Branch Limits" begin
+        for t in fnm.datetimes
+            for m in mon_branches_names, c in TEST_CONTINGENCIES
                 rate = c =="base_case" ? mon_branches_rates_a[m] : mon_branches_rates_b[m]
                 if c == "base_case"
                     @test sprint(show, constraint_by_name(model, "branch_flow_max_base[$m,$t,$c]")) ==
@@ -224,13 +226,13 @@ function tests_branch_flow_limits(T, fnm::FullNetworkModel)
                     "branch_flow_min_cont[$m,$t,$c] : fl[$m,$t,$c] + sl1_fl[$m,$t,$c] + sl2_fl[$m,$t,$c] ≥ -$rate"
                 end
             end
+            @test constraint_by_name(model, "branch_flow_max_base[\"Line2\",$t,\"base_case\"]") === nothing
+            @test constraint_by_name(model, "branch_flow_min_base[\"Line2\",$t,\"base_case\"]") === nothing
+            @test constraint_by_name(model, "branch_flow_max_cont[\"Line2\",$t,\"conting1\"]") === nothing
+            @test constraint_by_name(model, "branch_flow_min_cont[\"Line2\",$t,\"conting1\"]") === nothing
+            @test constraint_by_name(model, "branch_flow_max_cont[\"Line2\",$t,\"conting2\"]") === nothing
+            @test constraint_by_name(model, "branch_flow_min_cont[\"Line2\",$t,\"conting2\"]") === nothing
         end
-        @test constraint_by_name(model, "branch_flow_max_base[\"Line2\",$t,\"base_case\"]") === nothing
-        @test constraint_by_name(model, "branch_flow_min_base[\"Line2\",$t,\"base_case\"]") === nothing
-        @test constraint_by_name(model, "branch_flow_max_cont[\"Line2\",$t,\"conting1\"]") === nothing
-        @test constraint_by_name(model, "branch_flow_min_cont[\"Line2\",$t,\"conting1\"]") === nothing
-        @test constraint_by_name(model, "branch_flow_max_cont[\"Line2\",$t,\"conting2\"]") === nothing
-        @test constraint_by_name(model, "branch_flow_min_cont[\"Line2\",$t,\"conting2\"]") === nothing
     end
     return nothing
 end
