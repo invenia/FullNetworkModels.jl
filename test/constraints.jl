@@ -202,27 +202,25 @@ function tests_branch_flow_limits(T, fnm::FullNetworkModel)
         @test sprint(show, constraint_by_name(model, "branch_flows_conting[$m,$t,$c1]")) ==
         "branch_flows_conting[$m,$t,$c1] : -0.5 fl[Line2,$t,base_case] - fl[$m,$t,base_case] + fl[$m,$t,$c1] = 0.0"
         @test sprint(show, constraint_by_name(model, "branch_flows_conting[$m,$t,$c2]")) ==
-        "branch_flows_conting[$m,$t,$c2] : fl[$m,$t,$c2] - fl[Line3,$t,base_case] - fl[Line2,$t,base_case] - fl[$m,$t,base_case] = 0.0"
+        "branch_flows_conting[$m,$t,$c2] : -fl[Line3,$t,base_case] - fl[Line2,$t,base_case] - fl[$m,$t,base_case] + fl[$m,$t,$c2] = 0.0"
     end
 
     mon_branches_names = get_monitored_branch_names(Branch, system)
     mon_branches_rates_a = get_branch_rates(mon_branches_names, system)
     mon_branches_rates_b = get_branch_rates_b(mon_branches_names, system)
-    @testset "Thermal Branch Limits" for t in fnm.datetimes
-        for c in TEST_SCENARIOS
-            for m in mon_branches_names
-                rate = c =="base_case" ? mon_branches_rates_a[m] : mon_branches_rates_b[m]
-                if c == "base_case"
-                    @test sprint(show, constraint_by_name(model, "branch_flow_max_base[$m,$t,$c]")) ==
-                    "branch_flow_max_base[$m,$t,$c] : fl[$m,$t,$c] - sl1_fl[$m,$t,$c] - sl2_fl[$m,$t,$c] ≤ $rate"
-                    @test sprint(show, constraint_by_name(model, "branch_flow_min_base[$m,$t,$c]")) ==
-                    "branch_flow_min_base[$m,$t,$c] : fl[$m,$t,$c] + sl1_fl[$m,$t,$c] + sl2_fl[$m,$t,$c] ≥ -$rate"
-                else
-                    @test sprint(show, constraint_by_name(model, "branch_flow_max_cont[$m,$t,$c]")) ==
-                    "branch_flow_max_cont[$m,$t,$c] : fl[$m,$t,$c] - sl1_fl[$m,$t,$c] - sl2_fl[$m,$t,$c] ≤ $rate"
-                    @test sprint(show, constraint_by_name(model, "branch_flow_min_cont[$m,$t,$c]")) ==
-                    "branch_flow_min_cont[$m,$t,$c] : fl[$m,$t,$c] + sl1_fl[$m,$t,$c] + sl2_fl[$m,$t,$c] ≥ -$rate"
-                end
+    @testset "Thermal Branch Limits" begin
+        for m in mon_branches_names, t in fnm.datetimes, c in TEST_SCENARIOS
+            rate = c =="base_case" ? mon_branches_rates_a[m] : mon_branches_rates_b[m]
+            if c == "base_case"
+                @test sprint(show, constraint_by_name(model, "branch_flow_max_base[$m,$t,$c]")) ==
+                "branch_flow_max_base[$m,$t,$c] : fl[$m,$t,$c] - sl1_fl[$m,$t,$c] - sl2_fl[$m,$t,$c] ≤ $rate"
+                @test sprint(show, constraint_by_name(model, "branch_flow_min_base[$m,$t,$c]")) ==
+                "branch_flow_min_base[$m,$t,$c] : fl[$m,$t,$c] + sl1_fl[$m,$t,$c] + sl2_fl[$m,$t,$c] ≥ -$rate"
+            else
+                @test sprint(show, constraint_by_name(model, "branch_flow_max_cont[$m,$t,$c]")) ==
+                "branch_flow_max_cont[$m,$t,$c] : fl[$m,$t,$c] - sl1_fl[$m,$t,$c] - sl2_fl[$m,$t,$c] ≤ $rate"
+                @test sprint(show, constraint_by_name(model, "branch_flow_min_cont[$m,$t,$c]")) ==
+                "branch_flow_min_cont[$m,$t,$c] : fl[$m,$t,$c] + sl1_fl[$m,$t,$c] + sl2_fl[$m,$t,$c] ≥ -$rate"
             end
         end
         @test constraint_by_name(model, "branch_flow_max_base[\"Line2\",$t,\"base_case\"]") === nothing
