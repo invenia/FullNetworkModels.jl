@@ -211,19 +211,6 @@ function _get_branches_out_per_scenario_names(lodfs)
     end
     return branches_out_per_scenario_names
 end
-"""
-    _add_base_case_to_lodfs(lodfs) -> Dict{String, DenseAxisArray}
-
-Adds the base_case scenario with an empty DenseAxisArray to the dictionary of LODFs (the input
-dictionary only contains the contingency scenarios). The output will be the dictionary of
-scenarios => LODFs which includes base_case and contingency scenarios.
-
-"""
-function _add_base_case_to_lodfs(lodfs)
-    lodf_base = DenseAxisArray(Matrix{Float64}(undef, 0, 0), String[], String[])
-    lodfs = merge(lodfs,Dict("base_case"=>lodf_base))
-    return lodfs
-end
 
 """
     _expand_slacks(slacks) -> Dict{Symbol,<:Union{Float64,Nothing}}

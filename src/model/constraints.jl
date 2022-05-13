@@ -511,7 +511,6 @@ function _con_branch_flows!(
     p_net = model[:p_net]
     @assert axes(ptdf, 2) == axes(p_net, 1) # we need this for vector multiplication
     scenarios = collect(keys(lodfs)) # all scenarios (base case and contingencies)
-    cont_scenarios = filter(x -> x ≠ "base_case", scenarios)
     model[:fl] = fl = @variable(model, [m in branches_names_monitored_or_out, t in datetimes, c in scenarios])
     branches_out_per_scenario_names = _get_branches_out_per_scenario_names(lodfs)
     # Compute this multiplication all at once for performance
@@ -525,7 +524,7 @@ function _con_branch_flows!(
     )
     model[:branch_flows_conting] = @constraint(
         model,
-        [m in mon_branches_names, t in datetimes, c in cont_scenarios],
+        [m in mon_branches_names, t in datetimes, c in scenarios],
         fl[m, t, c] == fl[m, t, "base_case"] + sum(
             lodfs[c][m, l] * fl[l, t, "base_case"] for l in branches_out_per_scenario_names[c]
         )
@@ -569,7 +568,6 @@ function _con_branch_flow_limits!(
     fl = model[:fl]
     sl1_fl = model[:sl1_fl]
     sl2_fl = model[:sl2_fl]
-    cont_scenarios = filter(x -> x ≠ "base_case", scenarios)
     # Base case
     model[:branch_flow_max_base] = @constraint(
         model,
@@ -584,12 +582,12 @@ function _con_branch_flow_limits!(
     # Contingency Scenarios
     model[:branch_flow_max_cont] = @constraint(
         model,
-        [m in mon_branches_names, t in fnm.datetimes, c in cont_scenarios],
+        [m in mon_branches_names, t in fnm.datetimes, c in scenarios],
         fl[m, t, c] <= mon_branches_rates_b[m] + sl1_fl[m, t, c] + sl2_fl[m, t, c]
     )
     model[:branch_flow_min_cont] = @constraint(
         model,
-        [m in mon_branches_names, t in fnm.datetimes, c in cont_scenarios],
+        [m in mon_branches_names, t in fnm.datetimes, c in scenarios],
         fl[m, t, c] >= - mon_branches_rates_b[m] - sl1_fl[m, t, c] - sl2_fl[m, t, c]
     )
     return fnm
@@ -657,7 +655,6 @@ function _con_branch_flow_slacks!(
     model = fnm.model
     system = fnm.system
     datetimes = fnm.datetimes
-    cont_scenarios = filter(x -> x ≠ "base_case", scenarios)
     # Add slacks
     model[:sl1_fl] = sl1_fl = @variable(
         model, [m in mon_branches_names, t in datetimes, c in scenarios], lower_bound=0
@@ -695,7 +692,7 @@ function _con_branch_flow_slacks!(
     # Constraints Two Break Points Contingency Scenarios
     model[:branch_flow_sl1_two_cont] = @constraint(
         model,
-        [m in branches_two_break_points, t in datetimes, c in cont_scenarios],
+        [m in branches_two_break_points, t in datetimes, c in scenarios],
         sl1_fl[m, t, c] <= (mon_branches_break_points[m][2]-mon_branches_break_points[m][1])*(mon_branches_rates_b[m]/100)
     )
     # Add slacks penalties to the objective
@@ -748,8 +745,7 @@ function con_thermal_branch!(fnm::FullNetworkModel; threshold=_SF_THRESHOLD)
     mon_branches_break_points = get_branch_break_points(mon_branches_names, system)
     mon_branches_penalties = get_branch_penalties(mon_branches_names, system)
     ptdf = get_ptdf(system; threshold)
-    lodf_dict = get_lodf_dict(system; threshold)
-    lodfs = _add_base_case_to_lodfs(lodf_dict) # Add base case to the LODF dictionary
+    lodfs = get_lodf_dict(system; threshold)
     scenarios = collect(keys(lodfs)) # All scenarios (base case and contingency scenarios)
     branches_out_names = unique(vcat(axes.(values(lodfs), 2)...))
     # The flows need to be defined only for the branches that are monitored or going
