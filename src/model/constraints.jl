@@ -751,7 +751,7 @@ function con_thermal_branch!(fnm::FullNetworkModel; threshold=_SF_THRESHOLD)
     ptdf = get_ptdf(system; threshold)
     lodfs = get_lodf_dict(system; threshold)
     contingencies = collect(keys(lodfs))
-    branches_out_names = unique(vcat(axes.(values(lodfs), 2)...))
+    branches_out_names = Vector{String}(unique(vcat(axes.(values(lodfs), 2)...)))
     # The flows need to be defined only for the branches that are monitored or going
     # out under some contingency.
     branches_names_monitored_or_out = union(branches_out_names, mon_branches_names)
