@@ -738,11 +738,9 @@ is thresholded and stored in the `system` as an `LODFDict` device.
 function get_lodf_dict(system::System; threshold::Float64=_SF_THRESHOLD)
     lodf_device = only(get_components(LODFDict, system))
     lodf_dict = lodf_device.lodf_dict
-    # Create a new thresholded LODF dict with the same types as the original one
-    K, V = eltype.((keys(lodf_dict), values(lodf_dict)))
-    new_lodf_dict = Dict{K, V}()
-    for (k, v) in lodf_dict
-        new_lodf_dict[k] = _threshold(v, threshold)
+    new_lodf_dict = empty(lodf_dict)
+    for (contingency, lodf) in lodf_dict
+        new_lodf_dict[contingency] = _threshold(lodf, threshold)
     end
     return new_lodf_dict
 end
