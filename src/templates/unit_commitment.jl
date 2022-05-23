@@ -2,7 +2,7 @@
     unit_commitment(
         system::System, solver=nothing, datetimes=get_forecast_timestamps(system);
         relax_integrality=false, slack=nothing, threshold=$_SF_THRESHOLD,
-        branch_flow_limits::Bool=false, ramp_rates::Bool=true,
+        branch_flows::Bool=false, ramp_rates::Bool=true,
     ) -> FullNetworkModel{UC}
 
 Defines the unit commitment formulation.
@@ -45,7 +45,7 @@ And if ramp rates are included, via `ramp_rates=true`:
 $(latex(con_generation_ramp_rates!))
 $(latex(con_ancillary_ramp_rates!))
 
-And if thermal branch flow limits are included, via `branch_flow_limits=true`:
+And if thermal branch flow limits are included, via `branch_flows=true`:
 
 $(latex(con_thermal_branch!))
 
@@ -58,14 +58,14 @@ $(latex(con_thermal_branch!))
  - `relax_integrality=false`: If set to `true`, binary variables will be relaxed.
  - `slack=nothing`: The slack penalty for the soft constraints.
    For more info on specifying slacks, refer to the [docs on soft constraints](@ref soft_constraints).
- - `threshold=$_SF_THRESHOLD`: The threshold (cutoff value) to be applied to the shift factors. Only relevant when `branch_flow_limits=true`.
- - `branch_flow_limits::Bool=false`: Whether or not to inlcude thermal branch flow constraints.
+ - `threshold=$_SF_THRESHOLD`: The threshold (cutoff value) to be applied to the shift factors. Only relevant when `branch_flows=true`.
+ - `branch_flows::Bool=false`: Whether or not to inlcude thermal branch flow constraints.
  - `ramp_rates::Bool=true`: Whether or not to include ramp rate constraints.
 """
 function unit_commitment(
     system::System, solver=nothing, datetimes=get_forecast_timestamps(system);
     relax_integrality=false, slack=nothing, threshold=_SF_THRESHOLD,
-    branch_flow_limits::Bool=false, ramp_rates::Bool=true
+    branch_flows::Bool=false, ramp_rates::Bool=true
 )
     # Get the individual slack values to be used in each soft constraint
     @timeit_debug get_timer("FNTimer") "specify slacks" sl = _expand_slacks(slack)
@@ -92,7 +92,7 @@ function unit_commitment(
             con_generation_ramp_rates!(fnm; slack=sl[:ramp_rates])
             con_ancillary_ramp_rates!(fnm)
         end
-        branch_flow_limits && @timeit_debug get_timer("FNTimer") "thermal branch constraints" begin
+        branch_flows && @timeit_debug get_timer("FNTimer") "thermal branch constraints" begin
             con_thermal_branch!(fnm; threshold)
         end
     end

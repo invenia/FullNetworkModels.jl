@@ -23,7 +23,7 @@
     unit_commitment(
         system, solver, datetimes;
         relax_integrality=relax_integrality, slack=slack, threshold=threshold,
-        branch_flow_limits=true
+        branch_flows=true
     )
 )
 @deprecate(
@@ -34,7 +34,7 @@
     unit_commitment(
         system, solver, datetimes;
         relax_integrality=relax_integrality, slack=slack, threshold=threshold,
-        branch_flow_limits=true, ramp_rates=false
+        branch_flows=true, ramp_rates=false
     )
 )
 
@@ -49,7 +49,7 @@
     ),
     economic_dispatch(
         system::System, solver, datetimes;
-        slack=1e6, threshold=threshold, branch_flow_limits=true
+        slack=1e6, threshold=threshold, branch_flows=true
     )
 )
 

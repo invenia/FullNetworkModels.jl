@@ -65,8 +65,8 @@
             @test all(==(0.0), value.(fnm_no_ramps.model[:psd]))
         end
     end
-    @testset "unit_commitment(branch_flow_limits=true)" begin
-        fnm = unit_commitment(TEST_SYSTEM, HiGHS.Optimizer; branch_flow_limits=true)
+    @testset "unit_commitment(branch_flows=true)" begin
+        fnm = unit_commitment(TEST_SYSTEM, HiGHS.Optimizer; branch_flows=true)
         tests_branch_flow_limits(UC, fnm)
 
         optimize!(fnm)
@@ -94,7 +94,7 @@
         Transformer1.ext["penalties"] = [1000.0, 2000.0]
 
         # Solve, slack 1 should be active in base-case and conting2 but not in conting1
-        fnm = unit_commitment(system_sl1, HiGHS.Optimizer; branch_flow_limits=true)
+        fnm = unit_commitment(system_sl1, HiGHS.Optimizer; branch_flows=true)
         optimize!(fnm)
         @test termination_status(fnm.model) == TerminationStatusCode(1)
         obj_sl1 = objective_value(fnm.model)
@@ -118,7 +118,7 @@
         Transformer1.ext["penalties"] = [1000.0, 2000.0]
 
         # Solve, slack 2 should be active
-        fnm = unit_commitment(system_sl2, HiGHS.Optimizer; branch_flow_limits=true)
+        fnm = unit_commitment(system_sl2, HiGHS.Optimizer; branch_flows=true)
         optimize!(fnm)
         @test termination_status(fnm.model) == TerminationStatusCode(1)
         obj_sl2 = objective_value(fnm.model)
@@ -146,7 +146,7 @@
         Transformer1.ext["penalties"] = [1000.0, 2000.0]
 
         # Solve, slack 2 should be active in all cases
-        fnm = unit_commitment(system_sl2_all, HiGHS.Optimizer; branch_flow_limits=true)
+        fnm = unit_commitment(system_sl2_all, HiGHS.Optimizer; branch_flows=true)
         optimize!(fnm)
         @test termination_status(fnm.model) == TerminationStatusCode(1)
         obj_sl2_all = objective_value(fnm.model)
@@ -172,7 +172,7 @@
         system_no_contingencies = deepcopy(TEST_SYSTEM)
         lodf_device = only(get_components(LODFDict, system_no_contingencies))
         lodf_device.lodf_dict = Dict{String, DenseAxisArray}()
-        fnm = unit_commitment(TEST_SYSTEM, HiGHS.Optimizer; branch_flow_limits=true)
+        fnm = unit_commitment(TEST_SYSTEM, HiGHS.Optimizer; branch_flows=true)
         optimize!(fnm)
         @test termination_status(fnm.model) == TerminationStatusCode(1)
         obj_no_conting = objective_value(fnm.model)
@@ -229,8 +229,8 @@
         @test obj_low_slack > obj_orig
         @test obj_high_slack > obj_low_slack
     end
-    @testset "economic_dispatch(branch_flow_limits=true)" begin
-        fnm = economic_dispatch(TEST_SYSTEM_RT, HiGHS.Optimizer; branch_flow_limits=true)
+    @testset "economic_dispatch(branch_flows=true)" begin
+        fnm = economic_dispatch(TEST_SYSTEM_RT, HiGHS.Optimizer; branch_flows=true)
         tests_branch_flow_limits(ED, fnm)
         # Solve the original ED with thermal branch constraints
         optimize!(fnm)
@@ -257,7 +257,7 @@
         Transformer1.ext["penalties"] = [1000.0, 2000.0]
 
         # Solve, slack 1 should be active in base-case and conting2 but not in conting1
-        fnm = economic_dispatch(system_sl1, HiGHS.Optimizer; branch_flow_limits=true)
+        fnm = economic_dispatch(system_sl1, HiGHS.Optimizer; branch_flows=true)
         optimize!(fnm)
         @test termination_status(fnm.model) == TerminationStatusCode(1)
         obj_sl1 = objective_value(fnm.model)
@@ -281,7 +281,7 @@
         Transformer1.ext["penalties"] = [1000.0, 2000.0]
 
         # Solve, slack 2 should be active
-        fnm = economic_dispatch(system_sl2, HiGHS.Optimizer; branch_flow_limits=true)
+        fnm = economic_dispatch(system_sl2, HiGHS.Optimizer; branch_flows=true)
         optimize!(fnm)
         @test termination_status(fnm.model) == TerminationStatusCode(1)
         obj_sl2 = objective_value(fnm.model)
@@ -304,7 +304,7 @@
         Transformer1.ext["penalties"] = [1000.0, 2000.0]
 
         # Solve, slack 2 should be active in all cases
-        fnm = economic_dispatch(system_sl2_all, HiGHS.Optimizer; branch_flow_limits=true)
+        fnm = economic_dispatch(system_sl2_all, HiGHS.Optimizer; branch_flows=true)
         optimize!(fnm)
         @test termination_status(fnm.model) == TerminationStatusCode(1)
         obj_sl2_all = objective_value(fnm.model)
@@ -335,7 +335,7 @@
         Transformer1.ext["penalties"] = [1000.0]
 
         # Solve, slack 1 should be active
-        fnm = economic_dispatch(system_bkpt_one, HiGHS.Optimizer; branch_flow_limits=true)
+        fnm = economic_dispatch(system_bkpt_one, HiGHS.Optimizer; branch_flows=true)
         optimize!(fnm)
         @test termination_status(fnm.model) == TerminationStatusCode(1)
         obj_bkpt_one = objective_value(fnm.model)
@@ -356,7 +356,7 @@
         Transformer1.ext["penalties"] = []
 
         # Solve, should be feasible
-        fnm = economic_dispatch(system_bkpt_zero, HiGHS.Optimizer; branch_flow_limits=true)
+        fnm = economic_dispatch(system_bkpt_zero, HiGHS.Optimizer; branch_flows=true)
         optimize!(fnm)
         @test termination_status(fnm.model) == TerminationStatusCode(1)
         obj_bkpt_zero = objective_value(fnm.model)
@@ -379,7 +379,7 @@
         Transformer1.ext["penalties"] = []
 
         # Solve, should be infeasible
-        fnm = economic_dispatch(system_bkpt_inf, HiGHS.Optimizer; branch_flow_limits=true)
+        fnm = economic_dispatch(system_bkpt_inf, HiGHS.Optimizer; branch_flows=true)
         optimize!(fnm)
         @test termination_status(fnm.model) == TerminationStatusCode(2)
 
@@ -387,7 +387,7 @@
         system_no_contingencies = deepcopy(TEST_SYSTEM_RT)
         lodf_device = only(get_components(LODFDict, system_no_contingencies))
         lodf_device.lodf_dict = Dict{String, DenseAxisArray}()
-        fnm = economic_dispatch(system_no_contingencies, HiGHS.Optimizer; branch_flow_limits=true)
+        fnm = economic_dispatch(system_no_contingencies, HiGHS.Optimizer; branch_flows=true)
         optimize!(fnm)
         @test termination_status(fnm.model) == TerminationStatusCode(1)
         obj_no_conting = objective_value(fnm.model)
@@ -483,14 +483,14 @@ end
         set_active_power!(loads[1], 10.0) # increase load to induce congestion
 
         fnm = unit_commitment(
-            system, HiGHS.Optimizer; relax_integrality=true, branch_flow_limits=true
+            system, HiGHS.Optimizer; relax_integrality=true, branch_flows=true
         )
         set_silent(fnm.model) # to reduce test verbosity
         optimize!(fnm)
 
         # Apply a threshold of 1.0, meaning that all shift factors will be zero
         fnm_thresh = unit_commitment(
-            system, HiGHS.Optimizer; relax_integrality=true, branch_flow_limits=true, threshold=1.0
+            system, HiGHS.Optimizer; relax_integrality=true, branch_flows=true, threshold=1.0
         )
         set_silent(fnm_thresh.model) # to reduce test verbosity
         optimize!(fnm_thresh)
@@ -506,14 +506,14 @@ end
         set_active_power!(loads[1], 10.0) # increase load to induce congestion
 
         fnm = economic_dispatch(
-            system, HiGHS.Optimizer; branch_flow_limits=true
+            system, HiGHS.Optimizer; branch_flows=true
         )
         set_silent(fnm.model) # to reduce test verbosity
         optimize!(fnm)
 
         # Apply a threshold of 1.0, meaning that all shift factors will be zero
         fnm_thresh = economic_dispatch(
-            system, HiGHS.Optimizer; branch_flow_limits=true, threshold=1.0
+            system, HiGHS.Optimizer; branch_flows=true, threshold=1.0
         )
         set_silent(fnm_thresh.model) # to reduce test verbosity
         optimize!(fnm_thresh)

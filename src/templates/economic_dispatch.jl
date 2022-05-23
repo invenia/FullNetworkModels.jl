@@ -1,7 +1,7 @@
 """
     economic_dispatch(
         system::System, solver=nothing, datetimes=get_forecast_timestamps(system);
-        slack=1e6, branch_flow_limits=false
+        slack=1e6, branch_flows=false
     ) -> FullNetworkModel{ED}
 
 Defines the economic dispatch formulation.
@@ -27,7 +27,7 @@ $(_write_formulation(
     ]
 ))
 
-And if thermal branch flow limits are included, via `branch_flow_limits=true`:
+And if thermal branch flow limits are included, via `branch_flows=true`:
 
 $(latex(con_thermal_branch!))
 
@@ -45,12 +45,12 @@ Arguments:
 Keyword arguments:
  - `slack=1e6`: The slack penalty for the soft constraints.
    For more info on specifying slacks, refer to the [docs on soft constraints](@ref soft_constraints).
- - `branch_flow_limits::Bool=false`: Whether or not to consider thermal branch flow limits
+ - `branch_flows::Bool=false`: Whether or not to consider thermal branch flow limits
    in the formulation.
 """
 function economic_dispatch(
     system::System, solver=nothing, datetimes=get_forecast_timestamps(system);
-    slack=1e6, threshold=_SF_THRESHOLD, branch_flow_limits::Bool=false
+    slack=1e6, threshold=_SF_THRESHOLD, branch_flows::Bool=false
 )
     # Get the individual slack values to be used in each soft constraint
     @timeit_debug get_timer("FNTimer") "specify slacks" sl = _expand_slacks(slack)
@@ -68,7 +68,7 @@ function economic_dispatch(
         con_regulation_requirements!(fnm; slack=sl[:ancillary_requirements])
         con_operating_reserve_requirements!(fnm; slack=sl[:ancillary_requirements])
         con_energy_balance!(fnm; slack=sl[:energy_balance])
-        branch_flow_limits && @timeit_debug get_timer("FNTimer") "thermal branch constraints" begin
+        branch_flows && @timeit_debug get_timer("FNTimer") "thermal branch constraints" begin
             con_thermal_branch!(fnm; threshold)
         end
     end
