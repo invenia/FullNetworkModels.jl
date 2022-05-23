@@ -16,7 +16,7 @@
         tests_ramp_rates(fnm)
         tests_energy_balance(fnm)
     end
-    @testset "unit_commitment with soft ramps and unit_commitment_no_ramps" begin
+    @testset "unit_commitment with soft ramps and no ramps" begin
         # Modify system so that hard ramp constraints result in infeasibility
         system_infeasible = deepcopy(TEST_SYSTEM)
         gens = collect(get_components(ThermalGen, system_infeasible))
@@ -41,8 +41,8 @@
 
         # Now do the same for no ramp constraints - should be feasible and have a lower
         # objective value (since there's no penalty for violating soft constraints)
-        fnm_no_ramps = unit_commitment_no_ramps(
-            system_infeasible, HiGHS.Optimizer; relax_integrality=true
+        fnm_no_ramps = unit_commitment(
+            system_infeasible, HiGHS.Optimizer; relax_integrality=true, ramp_rates=false,
         )
         optimize!(fnm_no_ramps)
         @test termination_status(fnm_no_ramps.model) == TerminationStatusCode(1)
@@ -65,8 +65,8 @@
             @test all(==(0.0), value.(fnm_no_ramps.model[:psd]))
         end
     end
-    @testset "unit_commitment_branch_flow_limits" begin
-        fnm = unit_commitment_branch_flow_limits(TEST_SYSTEM, HiGHS.Optimizer)
+    @testset "unit_commitment(branch_flow_limits=true)" begin
+        fnm = unit_commitment(TEST_SYSTEM, HiGHS.Optimizer; branch_flow_limits=true)
         tests_branch_flow_limits(UC, fnm)
 
         optimize!(fnm)
@@ -94,7 +94,7 @@
         Transformer1.ext["penalties"] = [1000.0, 2000.0]
 
         # Solve, slack 1 should be active in base-case and conting2 but not in conting1
-        fnm = unit_commitment_branch_flow_limits(system_sl1, HiGHS.Optimizer)
+        fnm = unit_commitment(system_sl1, HiGHS.Optimizer; branch_flow_limits=true)
         optimize!(fnm)
         @test termination_status(fnm.model) == TerminationStatusCode(1)
         obj_sl1 = objective_value(fnm.model)
@@ -118,7 +118,7 @@
         Transformer1.ext["penalties"] = [1000.0, 2000.0]
 
         # Solve, slack 2 should be active
-        fnm = unit_commitment_branch_flow_limits(system_sl2, HiGHS.Optimizer)
+        fnm = unit_commitment(system_sl2, HiGHS.Optimizer; branch_flow_limits=true)
         optimize!(fnm)
         @test termination_status(fnm.model) == TerminationStatusCode(1)
         obj_sl2 = objective_value(fnm.model)
@@ -146,7 +146,7 @@
         Transformer1.ext["penalties"] = [1000.0, 2000.0]
 
         # Solve, slack 2 should be active in all cases
-        fnm = unit_commitment_branch_flow_limits(system_sl2_all, HiGHS.Optimizer)
+        fnm = unit_commitment(system_sl2_all, HiGHS.Optimizer; branch_flow_limits=true)
         optimize!(fnm)
         @test termination_status(fnm.model) == TerminationStatusCode(1)
         obj_sl2_all = objective_value(fnm.model)
@@ -172,7 +172,7 @@
         system_no_contingencies = deepcopy(TEST_SYSTEM)
         lodf_device = only(get_components(LODFDict, system_no_contingencies))
         lodf_device.lodf_dict = Dict{String, DenseAxisArray}()
-        fnm = unit_commitment_branch_flow_limits(TEST_SYSTEM, HiGHS.Optimizer)
+        fnm = unit_commitment(TEST_SYSTEM, HiGHS.Optimizer; branch_flow_limits=true)
         optimize!(fnm)
         @test termination_status(fnm.model) == TerminationStatusCode(1)
         obj_no_conting = objective_value(fnm.model)
@@ -229,8 +229,8 @@
         @test obj_low_slack > obj_orig
         @test obj_high_slack > obj_low_slack
     end
-    @testset "economic_dispatch_branch_flow_limits" begin
-        fnm = economic_dispatch_branch_flow_limits(TEST_SYSTEM_RT, HiGHS.Optimizer)
+    @testset "economic_dispatch(branch_flow_limits=true)" begin
+        fnm = economic_dispatch(TEST_SYSTEM_RT, HiGHS.Optimizer; branch_flow_limits=true)
         tests_branch_flow_limits(ED, fnm)
         # Solve the original ED with thermal branch constraints
         optimize!(fnm)
@@ -257,7 +257,7 @@
         Transformer1.ext["penalties"] = [1000.0, 2000.0]
 
         # Solve, slack 1 should be active in base-case and conting2 but not in conting1
-        fnm = economic_dispatch_branch_flow_limits(system_sl1, HiGHS.Optimizer)
+        fnm = economic_dispatch(system_sl1, HiGHS.Optimizer; branch_flow_limits=true)
         optimize!(fnm)
         @test termination_status(fnm.model) == TerminationStatusCode(1)
         obj_sl1 = objective_value(fnm.model)
@@ -281,7 +281,7 @@
         Transformer1.ext["penalties"] = [1000.0, 2000.0]
 
         # Solve, slack 2 should be active
-        fnm = economic_dispatch_branch_flow_limits(system_sl2, HiGHS.Optimizer)
+        fnm = economic_dispatch(system_sl2, HiGHS.Optimizer; branch_flow_limits=true)
         optimize!(fnm)
         @test termination_status(fnm.model) == TerminationStatusCode(1)
         obj_sl2 = objective_value(fnm.model)
@@ -304,7 +304,7 @@
         Transformer1.ext["penalties"] = [1000.0, 2000.0]
 
         # Solve, slack 2 should be active in all cases
-        fnm = economic_dispatch_branch_flow_limits(system_sl2_all, HiGHS.Optimizer)
+        fnm = economic_dispatch(system_sl2_all, HiGHS.Optimizer; branch_flow_limits=true)
         optimize!(fnm)
         @test termination_status(fnm.model) == TerminationStatusCode(1)
         obj_sl2_all = objective_value(fnm.model)
@@ -335,7 +335,7 @@
         Transformer1.ext["penalties"] = [1000.0]
 
         # Solve, slack 1 should be active
-        fnm = economic_dispatch_branch_flow_limits(system_bkpt_one, HiGHS.Optimizer)
+        fnm = economic_dispatch(system_bkpt_one, HiGHS.Optimizer; branch_flow_limits=true)
         optimize!(fnm)
         @test termination_status(fnm.model) == TerminationStatusCode(1)
         obj_bkpt_one = objective_value(fnm.model)
@@ -356,7 +356,7 @@
         Transformer1.ext["penalties"] = []
 
         # Solve, should be feasible
-        fnm = economic_dispatch_branch_flow_limits(system_bkpt_zero, HiGHS.Optimizer)
+        fnm = economic_dispatch(system_bkpt_zero, HiGHS.Optimizer; branch_flow_limits=true)
         optimize!(fnm)
         @test termination_status(fnm.model) == TerminationStatusCode(1)
         obj_bkpt_zero = objective_value(fnm.model)
@@ -379,7 +379,7 @@
         Transformer1.ext["penalties"] = []
 
         # Solve, should be infeasible
-        fnm = economic_dispatch_branch_flow_limits(system_bkpt_inf, HiGHS.Optimizer)
+        fnm = economic_dispatch(system_bkpt_inf, HiGHS.Optimizer; branch_flow_limits=true)
         optimize!(fnm)
         @test termination_status(fnm.model) == TerminationStatusCode(2)
 
@@ -387,7 +387,7 @@
         system_no_contingencies = deepcopy(TEST_SYSTEM_RT)
         lodf_device = only(get_components(LODFDict, system_no_contingencies))
         lodf_device.lodf_dict = Dict{String, DenseAxisArray}()
-        fnm = economic_dispatch_branch_flow_limits(system_no_contingencies, HiGHS.Optimizer)
+        fnm = economic_dispatch(system_no_contingencies, HiGHS.Optimizer; branch_flow_limits=true)
         optimize!(fnm)
         @test termination_status(fnm.model) == TerminationStatusCode(1)
         obj_no_conting = objective_value(fnm.model)
@@ -458,12 +458,8 @@ end
 
 # Test that templates don't error for a given `datetimes` argument
 function test_templates(datetimes)
-    for template in (unit_commitment, unit_commitment_no_ramps)
-        @test template(TEST_SYSTEM, HiGHS.Optimizer, datetimes) isa FullNetworkModel
-    end
-    for template in (economic_dispatch, )
-        @test template(TEST_SYSTEM_RT, HiGHS.Optimizer, datetimes) isa FullNetworkModel
-    end
+    @test unit_commitment(TEST_SYSTEM, HiGHS.Optimizer, datetimes) isa FullNetworkModel
+    @test economic_dispatch(TEST_SYSTEM_RT, HiGHS.Optimizer, datetimes) isa FullNetworkModel
     return nothing
 end
 
@@ -481,56 +477,67 @@ end
 end
 
 @testset "Shift factor thresholding" begin
-    @testset "Unit commitment templates" begin
+    @testset "Unit commitment" begin
         system = deepcopy(TEST_SYSTEM)
         loads = collect(get_components(PowerLoad, system))
         set_active_power!(loads[1], 10.0) # increase load to induce congestion
 
-        for template in (
-            unit_commitment_branch_flow_limits, unit_commitment_no_ramps_branch_flow_limits
+        fnm = unit_commitment(
+            system, HiGHS.Optimizer; relax_integrality=true, branch_flow_limits=true
         )
-            fnm = template(
-                system, HiGHS.Optimizer; relax_integrality=true
-            )
-            set_silent(fnm.model) # to reduce test verbosity
-            optimize!(fnm)
+        set_silent(fnm.model) # to reduce test verbosity
+        optimize!(fnm)
 
-            # Apply a threshold of 1.0, meaning that all shift factors will be zero
-            fnm_thresh = template(
-                system, HiGHS.Optimizer; threshold=1.0
-            )
-            set_silent(fnm_thresh.model) # to reduce test verbosity
-            optimize!(fnm_thresh)
+        # Apply a threshold of 1.0, meaning that all shift factors will be zero
+        fnm_thresh = unit_commitment(
+            system, HiGHS.Optimizer; relax_integrality=true, branch_flow_limits=true, threshold=1.0
+        )
+        set_silent(fnm_thresh.model) # to reduce test verbosity
+        optimize!(fnm_thresh)
 
-            # There is congestion due to high load
-            @test any(!=(0), dual.(fnm.model[:branch_flow_max_base]))
-            # No congestion since the shift factors were thresholded to zero
-            @test all(==(0), dual.(fnm_thresh.model[:branch_flow_max_base]))
-        end
+        # There is congestion due to high load
+        @test any(!=(0), dual.(fnm.model[:branch_flow_max_base]))
+        # No congestion since the shift factors were thresholded to zero
+        @test all(==(0), dual.(fnm_thresh.model[:branch_flow_max_base]))
     end
-    @testset "Economic dispatch templates" begin
+    @testset "Economic dispatch" begin
         system = deepcopy(TEST_SYSTEM_RT)
         loads = collect(get_components(PowerLoad, system))
         set_active_power!(loads[1], 10.0) # increase load to induce congestion
 
-        for template in (economic_dispatch_branch_flow_limits, )
-            fnm = template(
-                system, HiGHS.Optimizer
-            )
-            set_silent(fnm.model) # to reduce test verbosity
-            optimize!(fnm)
+        fnm = economic_dispatch(
+            system, HiGHS.Optimizer; branch_flow_limits=true
+        )
+        set_silent(fnm.model) # to reduce test verbosity
+        optimize!(fnm)
 
-            # Apply a threshold of 1.0, meaning that all shift factors will be zero
-            fnm_thresh = template(
-                system, HiGHS.Optimizer; threshold=1.0
-            )
-            set_silent(fnm_thresh.model) # to reduce test verbosity
-            optimize!(fnm_thresh)
+        # Apply a threshold of 1.0, meaning that all shift factors will be zero
+        fnm_thresh = economic_dispatch(
+            system, HiGHS.Optimizer; branch_flow_limits=true, threshold=1.0
+        )
+        set_silent(fnm_thresh.model) # to reduce test verbosity
+        optimize!(fnm_thresh)
 
-            # There is congestion due to high load
-            @test any(!=(0), dual.(fnm.model[:branch_flow_max_base]))
-            # No congestion since the shift factors were thresholded to zero
-            @test all(==(0), dual.(fnm_thresh.model[:branch_flow_max_base]))
-        end
+        # There is congestion due to high load
+        @test any(!=(0), dual.(fnm.model[:branch_flow_max_base]))
+        # No congestion since the shift factors were thresholded to zero
+        @test all(==(0), dual.(fnm_thresh.model[:branch_flow_max_base]))
     end
+end
+
+# We tested these still do the right thing as part of the PR which deprecated them.
+# Here we just test that they're still defined, so they don't accidentally get removed
+# until we're ready to make a breaking release.
+# https://gitlab.invenia.ca/invenia/research/FullNetworkModels.jl/-/issues/74
+@testset "deprecated" begin
+    solver = HiGHS.Optimizer
+    for uc in (
+        unit_commitment_no_ramps_branch_flow_limits,
+        unit_commitment_branch_flow_limits,
+        unit_commitment_no_ramps,
+    )
+        @test (@test_deprecated uc(TEST_SYSTEM, solver)) isa FullNetworkModel{UC}
+    end
+    ed = economic_dispatch_branch_flow_limits
+    @test (@test_deprecated ed(TEST_SYSTEM_RT, solver)) isa FullNetworkModel{ED}
 end
