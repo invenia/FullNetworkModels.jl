@@ -40,12 +40,12 @@ $(_write_formulation(
     ]
 ))
 
-And if ramp rates are include, via `ramp_rates=true`:
+And if ramp rates are included, via `ramp_rates=true`:
 
 $(latex(con_generation_ramp_rates!))
 $(latex(con_ancillary_ramp_rates!))
 
-And if thermal branch flow limits are include, via `branch_flow_limits=true`:
+And if thermal branch flow limits are included, via `branch_flow_limits=true`:
 
 $(latex(con_thermal_branch!))
 
