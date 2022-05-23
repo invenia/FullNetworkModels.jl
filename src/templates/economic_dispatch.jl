@@ -118,7 +118,8 @@ Keyword arguments:
  - `threshold=_SF_THRESHOLD`: The threshold (cutoff value) to be applied to the shift factors.
 """
 function economic_dispatch_branch_flow_limits(
-    system::System, solver=nothing, datetimes=get_forecast_timestamps(system); slack=1e6
+    system::System, solver=nothing, datetimes=get_forecast_timestamps(system);
+    slack=1e6, threshold=_SF_THRESHOLD
 )
     # Get the individual slack values to be used in each soft constraint
     @timeit_debug get_timer("FNTimer") "specify slacks" sl = _expand_slacks(slack)
@@ -136,7 +137,7 @@ function economic_dispatch_branch_flow_limits(
         con_regulation_requirements!(fnm; slack=sl[:ancillary_requirements])
         con_operating_reserve_requirements!(fnm; slack=sl[:ancillary_requirements])
         con_energy_balance!(fnm; slack=sl[:energy_balance])
-        @timeit_debug get_timer("FNTimer") "thermal branch constraints" con_thermal_branch!(fnm)
+        @timeit_debug get_timer("FNTimer") "thermal branch constraints" con_thermal_branch!(fnm; threshold)
     end
     # Objectives
     @timeit_debug get_timer("FNTimer") "add objectives to model" begin
