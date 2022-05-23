@@ -110,37 +110,3 @@ function unit_commitment(
     @timeit_debug get_timer("FNTimer") "set optimizer" set_optimizer(fnm, solver)
     return fnm
 end
-
-@deprecate(
-    unit_commitment_no_ramps(
-        system::System, solver=nothing, datetimes=get_forecast_timestamps(system);
-        relax_integrality=false, slack=nothing,
-    ),
-    unit_commitment(
-        system, solver, datetimes;
-        relax_integrality=relax_integrality, slack=slack,
-        ramp_rates=false
-    )
-)
-@deprecate(
-    unit_commitment_branch_flow_limits(
-        system::System, solver=nothing, datetimes=get_forecast_timestamps(system);
-        relax_integrality=false, slack=nothing, threshold=_SF_THRESHOLD
-    ),
-    unit_commitment(
-        system, solver, datetimes;
-        relax_integrality=relax_integrality, slack=slack, threshold=threshold,
-        branch_flow_limits=true
-    )
-)
-@deprecate(
-    unit_commitment_no_ramps_branch_flow_limits(
-        system::System, solver=nothing, datetimes=get_forecast_timestamps(system);
-        relax_integrality=false, slack=nothing, threshold=_SF_THRESHOLD
-    ),
-    unit_commitment(
-        system, solver, datetimes;
-        relax_integrality=relax_integrality, slack=slack, threshold=threshold,
-        branch_flow_limits=true, ramp_rates=false
-    )
-)

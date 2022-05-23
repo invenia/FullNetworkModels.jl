@@ -80,14 +80,3 @@ function economic_dispatch(
     @timeit_debug get_timer("FNTimer") "set optimizer" set_optimizer(fnm, solver)
     return fnm
 end
-
-@deprecate(
-    economic_dispatch_branch_flow_limits(
-        system::System, solver=nothing, datetimes=get_forecast_timestamps(system);
-        slack=1e6, threshold=_SF_THRESHOLD
-    ),
-    economic_dispatch(
-        system::System, solver, datetimes;
-        slack=1e6, threshold=threshold, branch_flow_limits=true
-    )
-)
