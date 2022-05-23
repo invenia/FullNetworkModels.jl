@@ -481,31 +481,56 @@ end
 end
 
 @testset "Shift factor thresholding" begin
-    system = deepcopy(TEST_SYSTEM)
-    loads = collect(get_components(PowerLoad, system))
-    set_active_power!(loads[1], 10.0) # increase load to induce congestion
+    @testset "Unit commitment templates" begin
+        system = deepcopy(TEST_SYSTEM)
+        loads = collect(get_components(PowerLoad, system))
+        set_active_power!(loads[1], 10.0) # increase load to induce congestion
 
-    for template in (
-        unit_commitment_branch_flow_limits,
-        unit_commitment_no_ramps_branch_flow_limits,
-        economic_dispatch_branch_flow_limits
-    )
-        fnm = template(
-            system, HiGHS.Optimizer
+        for template in (
+            unit_commitment_branch_flow_limits, unit_commitment_no_ramps_branch_flow_limits
         )
-        set_silent(fnm.model) # to reduce test verbosity
-        optimize!(fnm)
+            fnm = template(
+                system, HiGHS.Optimizer; relax_integrality=true
+            )
+            set_silent(fnm.model) # to reduce test verbosity
+            optimize!(fnm)
 
-        # Apply a threshold of 1.0, meaning that all shift factors will be zero
-        fnm_thresh = template(
-            system, HiGHS.Optimizer; threshold=1.0
-        )
-        set_silent(fnm_thresh.model) # to reduce test verbosity
-        optimize!(fnm_thresh)
+            # Apply a threshold of 1.0, meaning that all shift factors will be zero
+            fnm_thresh = template(
+                system, HiGHS.Optimizer; threshold=1.0
+            )
+            set_silent(fnm_thresh.model) # to reduce test verbosity
+            optimize!(fnm_thresh)
 
-        # There is congestion due to high load
-        @test any(!=(0), dual.(fnm.model[:branch_flow_max_base]))
-        # No congestion since the shift factors were thresholded to zero
-        @test all(==(0), dual.(fnm_thresh.model[:branch_flow_max_base]))
+            # There is congestion due to high load
+            @test any(!=(0), dual.(fnm.model[:branch_flow_max_base]))
+            # No congestion since the shift factors were thresholded to zero
+            @test all(==(0), dual.(fnm_thresh.model[:branch_flow_max_base]))
+        end
+    end
+    @testset "Economic dispatch templates" begin
+        system = deepcopy(TEST_SYSTEM_RT)
+        loads = collect(get_components(PowerLoad, system))
+        set_active_power!(loads[1], 10.0) # increase load to induce congestion
+
+        for template in (economic_dispatch_branch_flow_limits, )
+            fnm = template(
+                system, HiGHS.Optimizer
+            )
+            set_silent(fnm.model) # to reduce test verbosity
+            optimize!(fnm)
+
+            # Apply a threshold of 1.0, meaning that all shift factors will be zero
+            fnm_thresh = template(
+                system, HiGHS.Optimizer; threshold=1.0
+            )
+            set_silent(fnm_thresh.model) # to reduce test verbosity
+            optimize!(fnm_thresh)
+
+            # There is congestion due to high load
+            @test any(!=(0), dual.(fnm.model[:branch_flow_max_base]))
+            # No congestion since the shift factors were thresholded to zero
+            @test all(==(0), dual.(fnm_thresh.model[:branch_flow_max_base]))
+        end
     end
 end
