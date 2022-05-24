@@ -525,6 +525,37 @@ end
     end
 end
 
+# https://gitlab.invenia.ca/invenia/research/FullNetworkModels.jl/-/issues/75
+@testset "zero-arg templates returning callables" begin
+    solver = HiGHS.Optimizer
+
+    # test 2-arg method because it's the one called in FullNetworkSimulations._uc_day
+    uc = unit_commitment(ramp_rates=true)
+    fnm = uc(TEST_SYSTEM, solver)
+    @test haskey(fnm.model, :ramp_up)
+    uc = unit_commitment(ramp_rates=false)
+    fnm = uc(TEST_SYSTEM, solver)
+    @test !haskey(fnm.model, :ramp_up)
+
+    # Don't want to spend time building many models, but do want to test that we have all
+    # the same methods as `unit_commitment`, same we use `methods` as a quick/rough check.
+    # Should accept (system,) or (system, solver) or (system, solver, datetimes)
+    @test length(methods(uc)) == 3 == (length(methods(unit_commitment)) - 1)
+
+    # test 3-arg method because it's the one called in FullNetworkSimulations._ed_hour!
+    datetime = first(get_forecast_timestamps(TEST_SYSTEM_RT))
+    ed = economic_dispatch(branch_flows=true)
+    fnm = ed(TEST_SYSTEM_RT, solver, datetime)
+    @test haskey(fnm.model, :branch_flows_base)
+    ed = economic_dispatch(branch_flows=false)
+    fnm = ed(TEST_SYSTEM_RT, solver, datetime)
+    @test !haskey(fnm.model, :branch_flows_base)
+    # test `datetimes` argument correctly passed through
+    @test fnm.datetimes == [datetime]
+
+    @test length(methods(ed)) == 3 == (length(methods(economic_dispatch)) - 1)
+end
+
 # We tested these still do the right thing as part of the PR which deprecated them.
 # Here we just test that they're still defined, so they don't accidentally get removed
 # until we're ready to make a breaking release.
