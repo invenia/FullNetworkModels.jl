@@ -712,6 +712,16 @@ function _con_branch_flow_slacks!(
     return fnm
 end
 
+function latex(::typeof(con_thermal_branch!))
+    join([
+        latex(_con_nodal_net_injection_ed!)
+        latex(_con_branch_flows!)
+        latex(_con_branch_flow_limits!)
+        latex(_con_branch_flow_slacks!)
+    ], '\n')
+end
+
+
 """
     con_thermal_branch!(fnm::FullNetworkModel)
 
