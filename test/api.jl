@@ -237,6 +237,7 @@
         @test get_optimizer_attribute(fnm, "primal_feasibility_tolerance") == 1e-3
         @test get_optimizer_attribute(fnm, "simplex_iteration_limit") == 10_000
 
+        set_silent(fnm.model)
         optimize!(fnm)
         @test solve_time(fnm.model) > 0
     end
