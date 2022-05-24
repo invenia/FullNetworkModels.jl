@@ -376,6 +376,7 @@ end
 
         # Check that the more expensive generator is not committed
         fnm = _simple_template(system, UC, HiGHS.Optimizer)
+        set_silent(fnm.model)
         optimize!(fnm)
         u = value.(fnm.model[:u])
         @test u[7, :].data == zeros(24)
@@ -388,6 +389,7 @@ end
 
         # Check that generator 7 is now committed throughout the day
         fnm = _simple_template(system, UC, HiGHS.Optimizer)
+        set_silent(fnm.model)
         optimize!(fnm)
         u = value.(fnm.model[:u])
         @test u[7, :].data == ones(24)
@@ -404,6 +406,7 @@ end
 
         # Check that gen3 was not committed during the last hour
         fnm = _simple_template(system, UC, HiGHS.Optimizer)
+        set_silent(fnm.model)
         optimize!(fnm)
         u = value.(fnm.model[:u])
         p = value.(fnm.model[:p])
