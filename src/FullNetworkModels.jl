@@ -14,9 +14,6 @@ const LOGGER = getlogger(@__MODULE__)
 # We use -9999 as the code for the market-wide reserve zone in accordance with FNDataPrep
 const MARKET_WIDE_ZONE = -9999
 
-# Identifiers for the constraints we allow defining slack penalties for.
-const SOFT_CONSTRAINTS = [:energy_balance, :ramp_rates, :ancillary_requirements]
-
 # Default threshold (cutoff) value for shift factors
 const _SF_THRESHOLD = 1e-4
 

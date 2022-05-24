@@ -212,30 +212,81 @@ function _get_branches_out_per_scenario_names(lodfs)
     return branches_out_per_scenario_names
 end
 
-"""
-    _expand_slacks(slacks) -> Dict{Symbol,<:Union{Float64,Nothing}}
+###
+### Slacks
+###
 
-Returns a dict with the slack penalties for each soft constraint.
-If `slacks` is a single value (including `nothing`), sets that value to all slack penalties.
-If `slacks` is a vector of Pairs, then sets the values according to the specifications in
-the pairs. Any missing value will be set as `nothing` (i.e. hard constraint).
 """
-function _expand_slacks(slacks::Vector{<:Pair{Symbol}})
-    unrecognised = setdiff(first.(slacks), SOFT_CONSTRAINTS)
-    isempty(unrecognised) || _unknown_slacks(unrecognised)
-    no_slacks = Dict(con => nothing for con in SOFT_CONSTRAINTS)
-    return merge(no_slacks, Dict(slacks))
-end
-function _expand_slacks(slacks::Pair{Symbol})
-    return _expand_slacks([slacks])
-end
-function _expand_slacks(slacks::Union{Number,Nothing})
-    return Dict(con => slacks for con in SOFT_CONSTRAINTS)
+    Slacks(values)
+
+Represents the slack penalties for each soft constraint.
+
+The value `nothing` means "no slack" i.e. a hard constraint.
+
+# Examples
+- All values are `nothing` by default:
+  ```julia
+  julia> Slacks()
+  Slacks:
+    energy_balance = nothing
+    ramp_rates = nothing
+    ancillary_requirements = nothing
+  ```
+
+- If `values` is a single value (including `nothing`), set all slack penalties to that value:
+  ```julia
+  julia> Slacks(1e-3)
+  Slacks:
+    energy_balance = 0.001
+    ramp_rates = 0.001
+    ancillary_requirements = 0.001
+  ```
+
+- If `values` is a `Pair` or collection of `Pair`s, then the values are set according to the
+  specifications in the pairs:
+  ```julia
+  julia> Slacks(:ramp_rates => 1e-3)
+  Slacks:
+    energy_balance = nothing
+    ramp_rates = 0.001
+    ancillary_requirements = nothing
+
+  julia> Slacks([:ramp_rates => 1e-3, :ancillary_requirements => 1e-4])
+  Slacks:
+    energy_balance = nothing
+    ramp_rates = 0.001
+    ancillary_requirements = 0.0001
+  ```
+"""
+Base.@kwdef struct Slacks
+    energy_balance::Union{Float64, Nothing}=nothing
+    ramp_rates::Union{Float64, Nothing}=nothing
+    ancillary_requirements::Union{Float64, Nothing}=nothing
 end
 
-function _unknown_slacks(names)
-    msg = """
-        Possible soft contraint are: $(join(SOFT_CONSTRAINTS, ", "))
-        Ignoring slack values for unrecognised soft constraints: $(join(names, ", "))"""
-    warn(LOGGER, msg)
+function Slacks(slacks::Union{Number,Nothing})
+    names = fieldnames(Slacks)
+    N = fieldcount(Slacks)
+    return Slacks(NamedTuple{names}(ntuple(_ -> slacks, N)))
+end
+Slacks(slack::Pair{Symbol}) = Slacks(tuple(slack))
+Slacks(itr...) = Slacks(NamedTuple(itr...))
+Slacks(nt::NamedTuple) = Slacks(; nt...)
+Slacks(sl::Slacks) = sl
+
+function Base.show(io::IO, sl::Slacks)
+    print(io, "Slacks(")
+    vals = map(fieldnames(Slacks)) do x
+        string(x, "=", getfield(sl, x))
+    end
+    join(io, vals, ", ")
+    print(io, ")")
+end
+
+function Base.show(io::IO, mime::MIME"text/plain", sl::Slacks)
+    print(io, "Slacks:")
+    foreach(fieldnames(Slacks)) do x
+        print(io, "\n")
+        print(io, "  ", x, " = ", getfield(sl, x))
+    end
 end
