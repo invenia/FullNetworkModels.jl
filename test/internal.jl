@@ -35,19 +35,31 @@
             400 * p_aux[7, t1, 1] + 600 * p_aux[7, t1, 2] + 625 * p_aux[7, t1, 3] +
             400 * p_aux[7, t2, 1] + 600 * p_aux[7, t2, 2] + 625 * p_aux[7, t2, 3]
     end
-    @testset "_expand_slacks" begin
-        soft_constraints = [:energy_balance, :ramp_rates, :ancillary_requirements]
-        @test _expand_slacks(nothing) == Dict(soft_constraints .=> nothing)
-        @test _expand_slacks(1e3) == Dict(soft_constraints .=> 1e3)
-        @test _expand_slacks([:energy_balance => 1e3]) == Dict(
-            :energy_balance => 1e3, :ramp_rates => nothing, :ancillary_requirements => nothing
+    @testset "Slacks" begin
+        # The `slack` keyword for templates expects one of:
+        # - `nothing`
+        # - a Number
+        # - a `:name => value` Pair
+        # - a collection of `:name => value` Pairs
+        # where the `:name` must be the canonical name of that soft constraint (i.e. a name
+        # the `Slacks` type expects), and the `value` must be `nothing` or a Number.
+        # That's why these are the cases we test.
+        @test Slacks(nothing) == Slacks() == Slacks(
+            energy_balance=nothing, ramp_rates=nothing, ancillary_requirements=nothing
         )
-        @test _expand_slacks(:energy_balance => 1e3) == Dict(
-            :energy_balance => 1e3, :ramp_rates => nothing, :ancillary_requirements => nothing
+        soft_constraints = fieldnames(Slacks)
+        @test Slacks(1e3) == Slacks(soft_constraints .=> 1e3) == Slacks(
+            # this line needs adding to if/when we add new soft soft constraints
+            energy_balance=1e3, ramp_rates=1e3, ancillary_requirements=1e3
         )
-        @test _expand_slacks([:energy_balance => nothing, :ramp_rates => 1e3]) == Dict(
-            :energy_balance => nothing, :ramp_rates => 1e3, :ancillary_requirements => nothing
+        @test Slacks(:energy_balance => 1e3) == Slacks(
+            energy_balance=1e3, ramp_rates=nothing, ancillary_requirements=nothing
         )
-        @test_log(FNM.LOGGER, "warn", "unrecognised soft constraints: xyz", _expand_slacks(:xyz => 1e3))
+        @test Slacks([:energy_balance => 1e3]) == Slacks(
+            energy_balance=1e3, ramp_rates=nothing, ancillary_requirements=nothing
+        )
+        @test Slacks([:energy_balance => nothing, :ramp_rates => 1e3]) == Slacks(
+            energy_balance=nothing, ramp_rates=1e3, ancillary_requirements=nothing
+        )
     end
 end

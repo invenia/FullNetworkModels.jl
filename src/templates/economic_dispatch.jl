@@ -1,3 +1,5 @@
+const _DEFAULT_ED_SLACK = 1e6
+
 """
     economic_dispatch(
         system::System, solver=nothing, datetimes=get_forecast_timestamps(system);
@@ -50,10 +52,10 @@ $(latex(con_thermal_branch!))
 """
 function economic_dispatch(
     system::System, solver=nothing, datetimes=get_forecast_timestamps(system);
-    slack=1e6, threshold=_SF_THRESHOLD, branch_flows::Bool=false
+    slack=_DEFAULT_ED_SLACK, threshold=_SF_THRESHOLD, branch_flows::Bool=false
 )
     # Get the individual slack values to be used in each soft constraint
-    @timeit_debug get_timer("FNTimer") "specify slacks" sl = _expand_slacks(slack)
+    @timeit_debug get_timer("FNTimer") "specify slacks" sl = Slacks(slack)
     # Initialize FNM
     @timeit_debug get_timer("FNTimer") "initialise FNM" fnm = FullNetworkModel{ED}(system, datetimes)
     # Variables
@@ -65,9 +67,9 @@ function economic_dispatch(
     @timeit_debug get_timer("FNTimer") "add constraints to model" begin
         con_generation_limits!(fnm)
         con_ancillary_limits!(fnm)
-        con_regulation_requirements!(fnm; slack=sl[:ancillary_requirements])
-        con_operating_reserve_requirements!(fnm; slack=sl[:ancillary_requirements])
-        con_energy_balance!(fnm; slack=sl[:energy_balance])
+        con_regulation_requirements!(fnm; slack=sl.ancillary_requirements)
+        con_operating_reserve_requirements!(fnm; slack=sl.ancillary_requirements)
+        con_energy_balance!(fnm; slack=sl.energy_balance)
         branch_flows && @timeit_debug get_timer("FNTimer") "thermal branch constraints" begin
             con_thermal_branch!(fnm; threshold)
         end
@@ -94,10 +96,11 @@ ed = economic_dispatch(branch_flows=true)
 fnm = ed(system, solver)
 ```
 """
-function economic_dispatch(; keywords...)
+function economic_dispatch(; slack=_DEFAULT_ED_SLACK, keywords...)
+    slack = Slacks(slack)  # if we've an invalid `slack` argument, force error ASAP.
     return function _economic_dispatch(
         system::System, solver=nothing, datetimes=get_forecast_timestamps(system)
     )
-        return economic_dispatch(system, solver, datetimes; keywords...)
+        return economic_dispatch(system, solver, datetimes; slack=slack, keywords...)
     end
 end

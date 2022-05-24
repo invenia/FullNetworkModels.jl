@@ -3,7 +3,7 @@ using ElectricityMarkets
 using FullNetworkDataPrep.TestUtils: fake_3bus_system
 using FullNetworkDataPrep: DA, RT
 using FullNetworkModels
-using FullNetworkModels: _expand_slacks
+using FullNetworkModels: Slacks
 using HiGHS
 using JuMP.Containers: DenseAxisArray
 using JuMP

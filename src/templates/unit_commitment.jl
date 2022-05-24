@@ -1,3 +1,5 @@
+const _DEFAULT_UC_SLACK = nothing
+
 """
     unit_commitment(
         system::System, solver=nothing, datetimes=get_forecast_timestamps(system);
@@ -64,11 +66,11 @@ $(latex(con_thermal_branch!))
 """
 function unit_commitment(
     system::System, solver=nothing, datetimes=get_forecast_timestamps(system);
-    relax_integrality=false, slack=nothing, threshold=_SF_THRESHOLD,
+    relax_integrality=false, slack=_DEFAULT_UC_SLACK, threshold=_SF_THRESHOLD,
     branch_flows::Bool=false, ramp_rates::Bool=true
 )
     # Get the individual slack values to be used in each soft constraint
-    @timeit_debug get_timer("FNTimer") "specify slacks" sl = _expand_slacks(slack)
+    @timeit_debug get_timer("FNTimer") "specify slacks" sl = Slacks(slack)
     # Initialize FNM
     @timeit_debug get_timer("FNTimer") "initialise FNM" fnm = FullNetworkModel{UC}(system, datetimes)
     # Variables
@@ -83,13 +85,13 @@ function unit_commitment(
     @timeit_debug get_timer("FNTimer") "add constraints to model" begin
         con_generation_limits!(fnm)
         con_ancillary_limits!(fnm)
-        con_regulation_requirements!(fnm; slack=sl[:ancillary_requirements])
-        con_operating_reserve_requirements!(fnm; slack=sl[:ancillary_requirements])
-        con_energy_balance!(fnm; slack=sl[:energy_balance])
+        con_regulation_requirements!(fnm; slack=sl.ancillary_requirements)
+        con_operating_reserve_requirements!(fnm; slack=sl.ancillary_requirements)
+        con_energy_balance!(fnm; slack=sl.energy_balance)
         con_must_run!(fnm)
         con_availability!(fnm)
         if ramp_rates
-            con_generation_ramp_rates!(fnm; slack=sl[:ramp_rates])
+            con_generation_ramp_rates!(fnm; slack=sl.ramp_rates)
             con_ancillary_ramp_rates!(fnm)
         end
         branch_flows && @timeit_debug get_timer("FNTimer") "thermal branch constraints" begin
@@ -124,10 +126,11 @@ uc = unit_commitment(branch_flows=true, ramp_rates=true, slack=:ramp_rates => 1e
 fnm = uc(system, solver)
 ```
 """
-function unit_commitment(; keywords...)
+function unit_commitment(; slack=_DEFAULT_UC_SLACK, keywords...)
+    slack = Slacks(slack)  # if we've an invalid `slack` argument, force error ASAP.
     return function _unit_commitment(
         system::System, solver=nothing, datetimes=get_forecast_timestamps(system)
     )
-        return unit_commitment(system, solver, datetimes; keywords...)
+        return unit_commitment(system, solver, datetimes; slack=slack, keywords...)
     end
 end

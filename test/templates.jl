@@ -530,30 +530,38 @@ end
     solver = HiGHS.Optimizer
 
     # test 2-arg method because it's the one called in FullNetworkSimulations._uc_day
-    uc = unit_commitment(ramp_rates=true)
+    uc = unit_commitment(ramp_rates=true, slack=:energy_balance => nothing)
     fnm = uc(TEST_SYSTEM, solver)
     @test haskey(fnm.model, :ramp_up)
-    uc = unit_commitment(ramp_rates=false)
+    @test !haskey(fnm.model, :sl_eb_gen)
+    uc = unit_commitment(ramp_rates=false, slack=:energy_balance => 1e3)
     fnm = uc(TEST_SYSTEM, solver)
     @test !haskey(fnm.model, :ramp_up)
+    @test haskey(fnm.model, :sl_eb_gen)
 
     # Don't want to spend time building many models, but do want to test that we have all
     # the same methods as `unit_commitment`, same we use `methods` as a quick/rough check.
     # Should accept (system,) or (system, solver) or (system, solver, datetimes)
     @test length(methods(uc)) == 3 == (length(methods(unit_commitment)) - 1)
+    @test_throws Exception unit_commitment(slack=:wrong => 1)
+    @test_throws Exception unit_commitment(slack=[:wrong => 1])
 
     # test 3-arg method because it's the one called in FullNetworkSimulations._ed_hour!
     datetime = first(get_forecast_timestamps(TEST_SYSTEM_RT))
-    ed = economic_dispatch(branch_flows=true)
+    ed = economic_dispatch(branch_flows=true, slack=:energy_balance => nothing)
     fnm = ed(TEST_SYSTEM_RT, solver, datetime)
     @test haskey(fnm.model, :branch_flows_base)
-    ed = economic_dispatch(branch_flows=false)
+    @test !haskey(fnm.model, :sl_eb_gen)
+    ed = economic_dispatch(branch_flows=false, slack=:energy_balance => 1e3)
     fnm = ed(TEST_SYSTEM_RT, solver, datetime)
     @test !haskey(fnm.model, :branch_flows_base)
+    @test haskey(fnm.model, :sl_eb_gen)
     # test `datetimes` argument correctly passed through
     @test fnm.datetimes == [datetime]
 
     @test length(methods(ed)) == 3 == (length(methods(economic_dispatch)) - 1)
+    @test_throws Exception economic_dispatch(slack=:wrong => 1)
+    @test_throws Exception economic_dispatch(slack=[:wrong => 1])
 end
 
 # We tested these still do the right thing as part of the PR which deprecated them.
