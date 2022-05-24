@@ -37,12 +37,12 @@ $(latex(con_thermal_branch!))
     since the economic dispatch model built here is solved hourly, and its highly
     likely that these constraints are not binding within an hourly time period.
 
-Arguments:
+# Arguments
  - `system::System`: The PowerSystems system that provides the input data.
  - `solver`: The solver of choice, e.g. `HiGHS.Optimizer`.
  - `datetimes=get_forecast_timestamps(system)`: The time periods considered in the model.
 
-Keyword arguments:
+# Keywords
  - `slack=1e6`: The slack penalty for the soft constraints.
    For more info on specifying slacks, refer to the [docs on soft constraints](@ref soft_constraints).
  - `branch_flows::Bool=false`: Whether or not to consider thermal branch flow limits
@@ -79,4 +79,25 @@ function economic_dispatch(
     end
     @timeit_debug get_timer("FNTimer") "set optimizer" set_optimizer(fnm, solver)
     return fnm
+end
+
+"""
+    economic_dispatch(; keywords...)
+
+Return a callable that receives a `System` and returns a `FullNetworkModel` with the
+formulation determined by the given keywords.
+
+# Example
+
+```julia
+ed = economic_dispatch(branch_flows=true)
+fnm = ed(system, solver)
+```
+"""
+function economic_dispatch(; keywords...)
+    return function _economic_dispatch(
+        system::System, solver=nothing, datetimes=get_forecast_timestamps(system)
+    )
+        return economic_dispatch(system, solver, datetimes; keywords...)
+    end
 end

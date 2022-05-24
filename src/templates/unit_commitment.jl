@@ -110,3 +110,24 @@ function unit_commitment(
     @timeit_debug get_timer("FNTimer") "set optimizer" set_optimizer(fnm, solver)
     return fnm
 end
+
+"""
+    unit_commitment(; keywords...)
+
+Return a callable that receives a `System` and returns a `FullNetworkModel` with the
+formulation determined by the given keywords.
+
+# Example
+
+```julia
+uc = unit_commitment(branch_flows=true, ramp_rates=true, slack=:ramp_rates => 1e3])
+fnm = uc(system, solver)
+```
+"""
+function unit_commitment(; keywords...)
+    return function _unit_commitment(
+        system::System, solver=nothing, datetimes=get_forecast_timestamps(system)
+    )
+        return unit_commitment(system, solver, datetimes; keywords...)
+    end
+end
