@@ -52,39 +52,10 @@ Tests generally employ the three-bus fake system provided by the [`FullNetworkDa
 Tests for model functions can either verify if the optimization results in an expected result, or just check if the expressions were correctly added to the model (e.g. using `sprint` and `constraint_by_name`).
 For examples see the existing tests in `test/constraints.jl`.
 
-## Performance considerations
+!!! note "Our models build anonymous variables and constraints by default"
+    Our models have `set_string_names_on_creation(model) == false` to [reduce model build times](https://jump.dev/JuMP.jl/stable/tutorials/getting_started/performance_tips/#Disable-string-names).
+    This means that individual variables and constraints don't get `String` names when added to the model.
+    Since we want to use `variable_by_name` and `constraint_by_name` as part of testing, our tests retroactively add names to variables and constraints.
 
-We use the `@variable` and `@constraint` macros to add terms to the model.
-However, we always use these to create _anonymous_ variables and constraints.
-That is, we don't name the individual variables and constraints.
-See the JuMP documentation on the different meanings of "names" [for variables](https://jump.dev/JuMP.jl/stable/manual/variables/#String-names,-symbolic-names,-and-bindings) and [for constraints](https://jump.dev/JuMP.jl/stable/manual/constraints/#String-names,-symbolic-names,-and-bindings).
-
-For example, we would write
-```julia
-model[:foo] = @variable(model, [z in zones, t in times], lower_bound=0)
-```
-rather than
-```julia
-@variable(model, foo[z in zones, t in times] >= 0)
-```
-
-And we'd write
-```julia
-model[:flow] = flow = @variable(model, [m in monitored, t in datetimes, c in scenarios])
-model[:flows_base] = @constraint(
-	model,
-	[m in monitored, t in datetimes],
-	flow[m, t, "base_case"] == X[m, t]
-)
-```
-rather than
-```julia
-@variable(model, flow[m in monitored, t in datetimes, c in scenarios])
-@constraint(
-	model,
-	flows_base[m in monitored, t in datetimes],
-	flow[m, t, "base_case"] == X[m, t]
-)
-```
-
-This [reduces model build time significantly](https://gitlab.invenia.ca/invenia/research/FullNetworkModels.jl/-/merge_requests/142) (see [JuMP#2973](https://github.com/jump-dev/JuMP.jl/issues/2973)).
+    See the JuMP documentation on the different meanings of "names" [for variables](https://jump.dev/JuMP.jl/stable/manual/variables/#variable_names_and_bindings) 
+    and [for constraints](https://jump.dev/JuMP.jl/stable/manual/constraints/#String-names,-symbolic-names,-and-bindings).

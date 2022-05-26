@@ -51,8 +51,8 @@ only after the model has been built.
 
 # Arguments
 - `system::System`: The `PowerSystems.System` containg data on the system to be modelled.
-- `model::Model=Model()` (optional): The `JuMP.Model` describing the optimization problem.
-  Defaults to an empty model.
+- `model::Model` (optional): The `JuMP.Model` describing the optimization problem.
+    Defaults to an empty model, with `set_string_names_on_creation(model) == false` .
 - `solver` (optional): A solver constructor to attach to an empty `JuMP.Model`.
 - `datetimes::Vector{DateTime}=get_forecast_timestamps(system)` (optional): The time periods
   which should be modelled. Must be a subset of the times for which the system has data.
@@ -78,17 +78,23 @@ end
 function FullNetworkModel{T}(
     system::System, datetimes::AbstractVector{<:DateTime}=get_forecast_timestamps(system)
 ) where T<:UCED
-    return FullNetworkModel{T}(system, Model(), datetimes)
+    model = Model()
+    set_string_names_on_creation(model, false)
+    return FullNetworkModel{T}(system, model, datetimes)
 end
 
 function FullNetworkModel{T}(system::System, datetime::DateTime) where T<:UCED
-    return FullNetworkModel{T}(system, Model(), [datetime])
+    model = Model()
+    set_string_names_on_creation(model, false)
+    return FullNetworkModel{T}(system, model, [datetime])
 end
 
 function FullNetworkModel{T}(
     system::System, solver, datetimes=get_forecast_timestamps(system)
 ) where T<:UCED
-    return FullNetworkModel{T}(system, Model(solver), datetimes)
+    model = Model(solver)
+    set_string_names_on_creation(model, false)
+    return FullNetworkModel{T}(system, model, datetimes)
 end
 
 # This is necessary to avoid printing a lot of stuff due to PowerSystems printing
