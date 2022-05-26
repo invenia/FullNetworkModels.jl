@@ -50,14 +50,14 @@ function con_generation_limits!(fnm::FullNetworkModel{<:UC})
     Pmin = get_pmin(system, datetimes)
     Pmax = get_pmax(system, datetimes)
 
-    model[:generation_min] = @constraint(
+    @constraint(
         model,
-        [g in unit_codes, t in datetimes],
+        generation_min[g in unit_codes, t in datetimes],
         Pmin[g, t] * u[g, t] <= p[g, t]
     )
-    model[:generation_max] = @constraint(
+    @constraint(
         model,
-        [g in unit_codes, t in datetimes],
+        generation_max[g in unit_codes, t in datetimes],
         p[g, t] <= Pmax[g, t] * u[g, t]
     )
     return fnm
@@ -83,14 +83,14 @@ function con_generation_limits!(fnm::FullNetworkModel{<:ED})
     Pmin = get_pmin(system, datetimes)
     Pmax = get_pmax(system, datetimes)
 
-    model[:generation_min] = @constraint(
+    @constraint(
         model,
-        [g in unit_codes, t in datetimes],
+        generation_min[g in unit_codes, t in datetimes],
         Pmin[g, t] * U[g, t] <= p[g, t]
     )
-    model[:generation_max] = @constraint(
+    @constraint(
         model,
-        [g in unit_codes, t in datetimes],
+        generation_max[g in unit_codes, t in datetimes],
         p[g, t] <= Pmax[g, t] * U[g, t]
     )
     return fnm
@@ -209,16 +209,14 @@ function con_regulation_requirements!(fnm::FullNetworkModel, slack)
     zone_gens = _generators_by_reserve_zone(system)
     reg_requirements = get_regulation_requirements(system)
     r_reg = model[:r_reg]
-    model[:regulation_requirements] = regulation_requirements = @constraint(
+    @constraint(
         model,
-        [z in reserve_zones, t in datetimes],
+        regulation_requirements[z in reserve_zones, t in datetimes],
         sum(r_reg[g, t] for g in zone_gens[z]) >= reg_requirements[z]
     )
     if slack !== nothing
         # Soft constraints, add slacks
-        model[:sl_reg_req] = sl_reg_req = @variable(
-            model, [z in reserve_zones, t in datetimes], lower_bound=0
-        )
+        @variable(model, sl_reg_req[z in reserve_zones, t in datetimes] >= 0)
         for z in reserve_zones, t in datetimes
             set_normalized_coefficient(regulation_requirements[z, t], sl_reg_req[z, t], 1.0)
             # Add slack penalty to the objective
@@ -260,9 +258,9 @@ function con_operating_reserve_requirements!(fnm::FullNetworkModel, slack)
     r_spin = model[:r_spin]
     r_on_sup = model[:r_on_sup]
     r_off_sup = model[:r_off_sup]
-    model[:operating_reserve_requirements] = operating_reserve_requirements = @constraint(
+    @constraint(
         model,
-        [z in reserve_zones, t in datetimes],
+        operating_reserve_requirements[z in reserve_zones, t in datetimes],
         sum(
             r_reg[g, t] + r_spin[g, t] + r_on_sup[g, t] + r_off_sup[g, t]
                 for g in zone_gens[z]
@@ -270,9 +268,7 @@ function con_operating_reserve_requirements!(fnm::FullNetworkModel, slack)
     )
     if slack !== nothing
         # Soft constraints, add slacks
-        model[:sl_or_req] = sl_or_req = @variable(
-            model, [z in reserve_zones, t in datetimes], lower_bound=0
-        )
+        @variable(model, sl_or_req[z in reserve_zones, t in datetimes] >= 0)
         for z in reserve_zones, t in datetimes
             set_normalized_coefficient(operating_reserve_requirements[z, t], sl_or_req[z, t], 1.0)
             # Add slack penalty to the objective
@@ -329,16 +325,16 @@ function con_energy_balance!(fnm::FullNetworkModel{<:ED}; slack=nothing)
     load_names = get_load_names(PowerLoad, system)
     D = get_fixed_loads(system)
     p = model[:p]
-    model[:energy_balance] = energy_balance = @constraint(
+    @constraint(
         model,
-        [t in datetimes],
+        energy_balance[t in datetimes],
         sum(p[g, t] for g in unit_codes) == sum(D[f, t] for f in load_names)
     )
     # If the constraints are supposed to be soft constraints, add slacks
     # We need one slack for excess load and one for excess generation
     if slack !== nothing
-        model[:sl_eb_gen] = sl_eb_gen = @variable(model, [t in datetimes], lower_bound=0)
-        model[:sl_eb_load] = sl_eb_load = @variable(model, [t in datetimes], lower_bound=0)
+        @variable(model, sl_eb_gen[t in datetimes] >= 0)
+        @variable(model, sl_eb_load[t in datetimes] >= 0)
         for t in datetimes
             set_normalized_coefficient(energy_balance[t], sl_eb_gen[t], 1.0)
             set_normalized_coefficient(energy_balance[t], sl_eb_load[t], -1.0)
@@ -373,9 +369,9 @@ function con_energy_balance!(fnm::FullNetworkModel{<:UC}; slack=nothing)
     inc = model[:inc]
     dec = model[:dec]
     psd = model[:psd]
-    model[:energy_balance] = energy_balance = @constraint(
+    @constraint(
         model,
-        [t in datetimes],
+        energy_balance[t in datetimes],
         sum(p[g, t] for g in unit_codes) + sum(inc[i, t] for i in inc_names) ==
             sum(D[f, t] for f in load_names) + sum(dec[d, t] for d in dec_names) +
             sum(psd[s, t] for s in psd_names)
@@ -383,8 +379,8 @@ function con_energy_balance!(fnm::FullNetworkModel{<:UC}; slack=nothing)
     # If the constraints are supposed to be soft constraints, add slacks
     # We need one slack for excess load and one for excess generation
     if slack !== nothing
-        model[:sl_eb_gen] = sl_eb_gen = @variable(model, [t in datetimes], lower_bound=0)
-        model[:sl_eb_load] = sl_eb_load = @variable(model, [t in datetimes], lower_bound=0)
+        @variable(model, sl_eb_gen[t in datetimes] >= 0)
+        @variable(model, sl_eb_load[t in datetimes] >= 0)
         for t in datetimes
             set_normalized_coefficient(energy_balance[t], sl_eb_gen[t], 1.0)
             set_normalized_coefficient(energy_balance[t], sl_eb_load[t], -1.0)
@@ -422,11 +418,11 @@ The constraint is named `nodal_net_injection`.
 """
 function _con_nodal_net_injection!(fnm::FullNetworkModel{<:ED}, bus_names, D, unit_codes_perbus, load_names_perbus)
     model = fnm.model
-    model[:p_net] = p_net = @variable(model, [n in bus_names, t in fnm.datetimes])
+    @variable(model, p_net[n in bus_names, t in fnm.datetimes])
     p = model[:p]
-    model[:nodal_net_injection] = @constraint(
+    @constraint(
         model,
-        [n in bus_names, t in fnm.datetimes],
+        nodal_net_injection[n in bus_names, t in fnm.datetimes],
         p_net[n, t] ==
             sum(p[g, t] for g in unit_codes_perbus[n]) -
             sum(D[f, t] for f in load_names_perbus[n])
@@ -452,14 +448,14 @@ function _con_nodal_net_injection!(fnm::FullNetworkModel{<:UC}, bus_names, D, un
     inc_names_perbus = get_bid_names_perbus(Increment, system)
     dec_names_perbus = get_bid_names_perbus(Decrement, system)
     psd_names_perbus = get_bid_names_perbus(PriceSensitiveDemand, system)
-    model[:p_net] = p_net = @variable(model, [n in bus_names, t in fnm.datetimes])
+    @variable(model, p_net[n in bus_names, t in fnm.datetimes])
     p = model[:p]
     inc = model[:inc]
     dec = model[:dec]
     psd = model[:psd]
-    model[:nodal_net_injection] = @constraint(
+    @constraint(
         model,
-        [n in bus_names, t in fnm.datetimes],
+        nodal_net_injection[n in bus_names, t in fnm.datetimes],
         p_net[n, t] ==
         sum(p[g, t] for g in unit_codes_perbus[n]) +
             sum(inc[i, t] for i in inc_names_perbus[n]) -
@@ -512,22 +508,22 @@ function _con_branch_flows!(
     @assert axes(ptdf, 2) == axes(p_net, 1) # we need this for vector multiplication
     contingencies = collect(keys(lodfs))
     all_scenarios = vcat("base_case", contingencies)
-    model[:fl] = fl = @variable(
-        model, [m in branches_names_monitored_or_out, t in datetimes, c in all_scenarios]
+    @variable(
+        model, fl[m in branches_names_monitored_or_out, t in datetimes, c in all_scenarios]
     )
     branches_out_per_scenario_names = _get_branches_out_per_scenario_names(lodfs)
     # Compute this multiplication all at once for performance
     ptdf_times_pnet = ptdf[branches_names_monitored_or_out, :].data * p_net.data
     name_mapping = Dict(branches_names_monitored_or_out .=> 1:length(branches_names_monitored_or_out))
     time_mapping = Dict(datetimes .=> 1:length(datetimes))
-    model[:branch_flows_base] = @constraint(
+    @constraint(
         model,
-        [m in branches_names_monitored_or_out, t in datetimes],
+        branch_flows_base[m in branches_names_monitored_or_out, t in datetimes],
         fl[m, t, "base_case"] == ptdf_times_pnet[name_mapping[m], time_mapping[t]]
     )
-    model[:branch_flows_conting] = @constraint(
+    @constraint(
         model,
-        [m in mon_branches_names, t in datetimes, c in contingencies],
+        branch_flows_conting[m in mon_branches_names, t in datetimes, c in contingencies],
         fl[m, t, c] == fl[m, t, "base_case"] + sum(
             lodfs[c][m, l] * fl[l, t, "base_case"] for l in branches_out_per_scenario_names[c]
         )
@@ -571,26 +567,26 @@ function _con_branch_flow_limits!(
     fl = model[:fl]
     sl1_fl = model[:sl1_fl]
     sl2_fl = model[:sl2_fl]
-    # Base case constraints
-    model[:branch_flow_max_base] = @constraint(
+    # Base case
+    @constraint(
         model,
-        [m in mon_branches_names, t in fnm.datetimes, c in ["base_case"]],
+        branch_flow_max_base[m in mon_branches_names, t in fnm.datetimes, c in ["base_case"]],
         fl[m, t, c] <= mon_branches_rates_a[m] + sl1_fl[m, t, c] + sl2_fl[m, t, c]
     )
-    model[:branch_flow_min_base] = @constraint(
+    @constraint(
         model,
-        [m in mon_branches_names, t in fnm.datetimes, c in ["base_case"]],
+        branch_flow_min_base[m in mon_branches_names, t in fnm.datetimes, c in ["base_case"]],
         fl[m, t, c] >= - mon_branches_rates_a[m] - sl1_fl[m, t, c] - sl2_fl[m, t, c]
     )
-    # Contingency constraints
-    model[:branch_flow_max_cont] = @constraint(
+    # Contingency Scenarios
+    @constraint(
         model,
-        [m in mon_branches_names, t in fnm.datetimes, c in contingencies],
+        branch_flow_max_cont[m in mon_branches_names, t in fnm.datetimes, c in contingencies],
         fl[m, t, c] <= mon_branches_rates_b[m] + sl1_fl[m, t, c] + sl2_fl[m, t, c]
     )
-    model[:branch_flow_min_cont] = @constraint(
+    @constraint(
         model,
-        [m in mon_branches_names, t in fnm.datetimes, c in contingencies],
+        branch_flow_min_cont[m in mon_branches_names, t in fnm.datetimes, c in contingencies],
         fl[m, t, c] >= - mon_branches_rates_b[m] - sl1_fl[m, t, c] - sl2_fl[m, t, c]
     )
     return fnm
@@ -660,43 +656,40 @@ function _con_branch_flow_slacks!(
     datetimes = fnm.datetimes
     all_scenarios = vcat("base_case", contingencies)
     # Add slacks
-    model[:sl1_fl] = sl1_fl = @variable(
-        model, [m in mon_branches_names, t in datetimes, c in all_scenarios], lower_bound=0
-    )
-    model[:sl2_fl] = sl2_fl = @variable(
-        model, [m in mon_branches_names, t in datetimes, c in all_scenarios], lower_bound=0
-    )
+    @variable(model, sl1_fl[m in mon_branches_names, t in datetimes, c in all_scenarios] >= 0)
+    @variable(model, sl2_fl[m in mon_branches_names, t in datetimes, c in all_scenarios] >= 0)
+
     (branches_zero_break_points,
     branches_one_break_points,
     branches_two_break_points) = _get_branch_num_break_points_names(Branch, system)
 
     # Constraints Zero Break points
-    model[:branch_flow_sl1_zero] = @constraint(
+    @constraint(
         model,
-        [m in branches_zero_break_points, t in datetimes, c in all_scenarios],
+        branch_flow_sl1_zero[m in branches_zero_break_points, t in datetimes, c in all_scenarios],
         sl1_fl[m, t, c] == 0
     )
-    model[:branch_flow_sl2_zero] = @constraint(
+    @constraint(
         model,
-        [m in branches_zero_break_points, t in datetimes, c in all_scenarios],
+        branch_flow_sl2_zero[m in branches_zero_break_points, t in datetimes, c in all_scenarios],
         sl2_fl[m, t, c] == 0
     )
     # Constraints One Break Point
-    model[:branch_flow_sl2_one] = @constraint(
+    @constraint(
         model,
-        [m in branches_one_break_points, t in datetimes, c in all_scenarios],
+        branch_flow_sl2_one[m in branches_one_break_points, t in datetimes, c in all_scenarios],
         sl2_fl[m, t, c] == 0
     )
     # Constraints Two Break Points Base Case
-    model[:branch_flow_sl1_two_base] = @constraint(
+    @constraint(
         model,
-        [m in branches_two_break_points, t in datetimes, c in ["base_case"]],
+        branch_flow_sl1_two_base[m in branches_two_break_points, t in datetimes, c in ["base_case"]],
         sl1_fl[m, t, c] <= (mon_branches_break_points[m][2]-mon_branches_break_points[m][1])*(mon_branches_rates_a[m]/100)
     )
-    # Constraints Two Break Points Contingencies
-    model[:branch_flow_sl1_two_cont] = @constraint(
+    # Constraints Two Break Points Contingency Scenarios
+    @constraint(
         model,
-        [m in branches_two_break_points, t in datetimes, c in contingencies],
+        branch_flow_sl1_two_cont[m in branches_two_break_points, t in datetimes, c in contingencies],
         sl1_fl[m, t, c] <= (mon_branches_break_points[m][2]-mon_branches_break_points[m][1])*(mon_branches_rates_b[m]/100)
     )
     # Add slacks penalties to the objective
@@ -801,9 +794,9 @@ function _con_ancillary_max!(model::Model, unit_codes, datetimes, Pmax, Pregmax,
     r_spin = model[:r_spin]
     r_on_sup = model[:r_on_sup]
     # `u` here may be a variable or it may be the parameter "`U`". Likewise `u_reg`/`U_reg`.
-    model[:ancillary_max] = @constraint(
+    @constraint(
         model,
-        [g in unit_codes, t in datetimes],
+        ancillary_max[g in unit_codes, t in datetimes],
         p[g, t] + r_reg[g, t] + r_spin[g, t] + r_on_sup[g, t] <=
             Pmax[g, t] * (u[g, t] - u_reg[g, t]) + Pregmax[g, t] * u_reg[g, t]
     )
@@ -815,9 +808,9 @@ function _con_ancillary_min!(model::Model, unit_codes, datetimes, Pmin, Pregmin,
     p = model[:p]
     r_reg = model[:r_reg]
     # `u`/`u_reg` may be variables or parameters (which we'd usually write as `U`/`U_reg`).
-    model[:ancillary_min] = @constraint(
+    @constraint(
         model,
-        [g in unit_codes, t in datetimes],
+        ancillary_min[g in unit_codes, t in datetimes],
         p[g, t] - r_reg[g, t] >=
             Pmin[g, t] * (u[g, t] - u_reg[g, t]) + Pregmin[g, t] * u_reg[g, t]
     )
@@ -828,9 +821,9 @@ end
 "Upper bound on regulation"
 function _con_regulation_max!(model::Model, unit_codes, datetimes, Pregmin, Pregmax, u_reg)
     r_reg = model[:r_reg]
-    model[:regulation_max] = @constraint(
+    @constraint(
         model,
-        [g in unit_codes, t in datetimes],
+        regulation_max[g in unit_codes, t in datetimes],
         r_reg[g, t] <= 0.5 * (Pregmax[g, t] - Pregmin[g, t]) * u_reg[g, t]
     )
     return model
@@ -841,9 +834,9 @@ function _con_spin_and_sup_max!(model::Model, unit_codes, datetimes, Pmin, Pmax,
     r_spin = model[:r_spin]
     r_on_sup = model[:r_on_sup]
     # `u` may be a variable or a parameter (which we'd usually write as `U`).
-    model[:spin_and_sup_max] = @constraint(
+    @constraint(
         model,
-        [g in unit_codes, t in datetimes],
+        spin_and_sup_max[g in unit_codes, t in datetimes],
         r_spin[g, t] + r_on_sup[g, t] <= (Pmax[g, t] - Pmin[g, t]) * u[g, t]
     )
     return model
@@ -853,9 +846,9 @@ end
 function _con_off_sup_max!(model::Model, unit_codes, datetimes, Pmin, Pmax, u)
     r_off_sup = model[:r_off_sup]
     # `u` may be a variable or a parameter (which we'd usually write as `U`).
-    model[:off_sup_max] = @constraint(
+    @constraint(
         model,
-        [g in unit_codes, t in datetimes],
+        off_sup_max[g in unit_codes, t in datetimes],
         r_off_sup[g, t] <= (Pmax[g, t] - Pmin[g, t]) * (1 - u[g, t])
     )
     return model
@@ -872,24 +865,24 @@ function _con_zero_non_providers!(model::Model, system::System, unit_codes, date
     r_spin = model[:r_spin]
     r_on_sup = model[:r_on_sup]
     r_off_sup = model[:r_off_sup]
-    model[:zero_reg] = @constraint(
+    @constraint(
         model,
-        [g in setdiff(unit_codes, reg_providers), t in datetimes],
+        zero_reg[g in setdiff(unit_codes, reg_providers), t in datetimes],
         r_reg[g, t] == 0
     )
-    model[:zero_spin] = @constraint(
+    @constraint(
         model,
-        [g in setdiff(unit_codes, spin_providers), t in datetimes],
+        zero_spin[g in setdiff(unit_codes, spin_providers), t in datetimes],
         r_spin[g, t] == 0
     )
-    model[:zero_on_sup] = @constraint(
+    @constraint(
         model,
-        [g in setdiff(unit_codes, on_sup_providers), t in datetimes],
+        zero_on_sup[g in setdiff(unit_codes, on_sup_providers), t in datetimes],
         r_on_sup[g, t] == 0
     )
-    model[:zero_off_sup] = @constraint(
+    @constraint(
         model,
-        [g in setdiff(unit_codes, off_sup_providers), t in datetimes],
+        zero_off_sup[g in setdiff(unit_codes, off_sup_providers), t in datetimes],
         r_off_sup[g, t] == 0
     )
     return model
@@ -898,9 +891,9 @@ end
 # For UC, add additional `zero_u_reg` constraint. `u_reg` here should be a variable.
 function _con_zero_non_providers!(model::Model, system::System, unit_codes, datetimes, u_reg)
     reg_providers = get_regulation_providers(system)
-    model[:zero_u_reg] = @constraint(
+    @constraint(
         model,
-        [g in setdiff(unit_codes, reg_providers), t in datetimes],
+        zero_u_reg[g in setdiff(unit_codes, reg_providers), t in datetimes],
         u_reg[g, t] == 0
     )
     return _con_zero_non_providers!(model, system, unit_codes, datetimes)
@@ -927,15 +920,15 @@ function con_ancillary_ramp_rates!(fnm::FullNetworkModel)
     r_on_sup = model[:r_on_sup]
     r_off_sup = model[:r_off_sup]
     # Allocated regulation can't be over 5 minutes of ramping
-    model[:ramp_regulation] = @constraint(
+    @constraint(
         model,
-        [g in unit_codes, t in datetimes],
+        ramp_regulation[g in unit_codes, t in datetimes],
         r_reg[g, t] <= 5 * RR[g]
     )
     # Allocated reserves can't be over 10 minutes of ramping
-    model[:ramp_spin_sup] = @constraint(
+    @constraint(
         model,
-        [g in unit_codes, t in datetimes],
+        ramp_spin_sup[g in unit_codes, t in datetimes],
         r_spin[g, t] + r_on_sup[g, t] + r_off_sup[g, t] <= 10 * RR[g]
     )
     return fnm
@@ -975,14 +968,14 @@ function con_generation_ramp_rates!(fnm::FullNetworkModel; slack=nothing)
     v = model[:v]
     w = model[:w]
     # Ramp up - generation can't go up more than the ramp capacity (defined in pu/min)
-    model[:ramp_up] = ramp_up = @constraint(
+    @constraint(
         model,
-        [g in unit_codes, t in datetimes[2:end]],
+        ramp_up[g in unit_codes, t in datetimes[2:end]],
         p[g, t] - p[g, t - Δh] <= Δt * RR[g] * u[g, t - Δh] + SU[g, t] * v[g, t]
     )
-    model[:ramp_up_initial] = ramp_up_initial = @constraint(
+    @constraint(
         model,
-        [g in units_available_in_first_hour],
+        ramp_up_initial[g in units_available_in_first_hour],
         p[g, h1] - P0[g] <= Δt * RR[g] * U0[g] + SU[g, h1] * v[g, h1]
     )
     # Ramp down - generation can't go down more than ramp capacity (defined in pu/min).
@@ -994,23 +987,21 @@ function con_generation_ramp_rates!(fnm::FullNetworkModel; slack=nothing)
     # and is unavailable in hour 3. This means it is impossible for the unit to ramp down
     # that amount in 3 hours, leading to infeasibility. Therefore, whenever A_{g,t} is 0,
     # the constraint is relaxed by allowing the unit to ramp as much as it wants.
-    model[:ramp_down] = ramp_down = @constraint(
+    @constraint(
         model,
-        [g in unit_codes, t in datetimes[2:end]],
+        ramp_down[g in unit_codes, t in datetimes[2:end]],
         p[g, t - Δh] - p[g, t] <=
             Δt * RR[g] * u[g, t] + SU[g, t] * w[g, t] + (1 - A[g, t]) * Pmax[g, t - Δh]
     )
-    model[:ramp_down_initial] = ramp_down_initial = @constraint(
+    @constraint(
         model,
-        [g in units_available_in_first_hour],
+        ramp_down_initial[g in units_available_in_first_hour],
         P0[g] - p[g, h1] <= Δt * RR[g] * u[g, h1] + SU[g, h1] * w[g, h1]
     )
 
     # If the constraints are supposed to be soft constraints, add slacks
     if slack !== nothing
-        model[:sl_ramp] = sl_ramp = @variable(
-            model, [g in unit_codes, t in datetimes], lower_bound=0
-        )
+        @variable(model, sl_ramp[g in unit_codes, t in datetimes] >= 0)
         for g in unit_codes
             for t in datetimes[2:end]
                 set_normalized_coefficient(ramp_up[g, t], sl_ramp[g, t], -1.0)
@@ -1058,8 +1049,8 @@ function con_must_run!(fnm::FullNetworkModel)
     u = model[:u]
     # We constrain the commitment variable to be >= the must run flag, this way if the flag
     # is zero it has no impact, and if it is 1 it forces the commitment to be 1.
-    model[:must_run] = @constraint(
-        model, [g in unit_codes, t in fnm.datetimes], u[g, t] >= MR[g, t]
+    @constraint(
+        model, must_run[g in unit_codes, t in fnm.datetimes], u[g, t] >= MR[g, t],
     )
     return fnm
 end
@@ -1086,8 +1077,8 @@ function con_availability!(fnm::FullNetworkModel)
     u = model[:u]
     # We constrain the commitment variable to be <= the availability flag, this way if the
     # unit is unavailable it cannot be committed, and if it is available there is no impact.
-    model[:availability] = @constraint(
-        model, [g in unit_codes, t in fnm.datetimes], u[g, t] <= A[g, t]
+    @constraint(
+        model, availability[g in unit_codes, t in fnm.datetimes], u[g, t] <= A[g, t],
     )
     return fnm
 end

@@ -1,7 +1,7 @@
 name = "FullNetworkModels"
 uuid = "73927447-18cb-4351-9246-c402eb8d0c47"
 authors = ["Invenia Technical Computing Corporation"]
-version = "6.4.0"
+version = "6.5.0"
 
 [deps]
 Dates = "ade2ca70-3891-5945-98fb-dc099432e06a"
@@ -15,7 +15,7 @@ TimerOutputs = "a759f4b9-e2f1-59dc-863e-4aeb61b1ea8f"
 ElectricityMarkets = "1.14"
 FullNetworkDataPrep = "0.24"
 HiGHS = "1"
-JuMP = "1"
+JuMP = "1.1"
 Memento = "1.1"
 PowerSystems = "1.5"
 PowerSystemsExtras = "0.1.5"

@@ -28,18 +28,20 @@ const TEST_CONTINGENCIES = collect(keys(TEST_LODF_DICT))
 # about the overhead.
 # `force=true` allows us to add new names if we know new variabldes/constraints added.
 function set_names!(fnm::FullNetworkModel; force=false)
-    if force || !_has_names(fnm)
+    if force || !has_names(fnm)
         for (name, array) in object_dictionary(fnm.model)
             _set_names!(array, name)
         end
     end
 end
 
-# if any variable/constraint in model has names, assume they all do
-function _has_names(fnm::FullNetworkModel)
-    first_container = first(values(object_dictionary(fnm.model)))
-    first_item = first(first_container)
-    return !isempty(JuMP.name(first_item))
+function has_names(fnm::FullNetworkModel)
+    for container in values(object_dictionary(fnm.model))
+        for item in container
+            !isempty(JuMP.name(item)) && return true
+        end
+    end
+    return false
 end
 
 function _set_names!(arr::AbstractArray, key::Symbol)

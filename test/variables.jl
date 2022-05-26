@@ -60,6 +60,7 @@ end
     end
     @testset "var_startup_shutdown!" begin
         var_startup_shutdown!(fnm)
+        set_names!(fnm; force=true)  # added new variables which need names
         tests_startup_shutdown(fnm)
     end
     @testset "var_ancillary_services!" begin

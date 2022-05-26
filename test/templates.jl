@@ -1,7 +1,17 @@
+# Test that templates build JuMP models with anonymous variables and constraints.
+# This is important to performance, see:
+# - https://gitlab.invenia.ca/invenia/research/FullNetworkModels.jl/-/merge_requests/142
+# - https://github.com/jump-dev/JuMP.jl/issues/2973
+function test_no_names(fnm::FullNetworkModel)
+    @test !JuMP.set_string_names_on_creation(fnm.model)
+    @test !has_names(fnm)
+end
+
 @testset "Templates" begin
     highs_opt = optimizer_with_attributes(HiGHS.Optimizer, MOI.Silent() => true)
     @testset "unit_commitment" begin
         fnm = unit_commitment(TEST_SYSTEM)
+        test_no_names(fnm)
         datetimes = fnm.datetimes
         tests_thermal_variable(fnm, "p")
         tests_commitment(fnm)
@@ -45,6 +55,7 @@
         fnm_no_ramps = unit_commitment(
             system_infeasible, highs_opt; relax_integrality=true, ramp_rates=false,
         )
+        test_no_names(fnm_no_ramps)
         optimize!(fnm_no_ramps)
         @test termination_status(fnm_no_ramps.model) == TerminationStatusCode(1)
         obj_no_ramps = objective_value(fnm_no_ramps.model)
@@ -68,6 +79,7 @@
     end
     @testset "unit_commitment(branch_flows=true)" begin
         fnm = unit_commitment(TEST_SYSTEM, highs_opt; branch_flows=true)
+        test_no_names(fnm)
         tests_branch_flow_limits(UC, fnm)
 
         optimize!(fnm)
@@ -184,6 +196,7 @@
 
     @testset "economic_dispatch" begin
         fnm = economic_dispatch(TEST_SYSTEM_RT)
+        test_no_names(fnm)
         tests_thermal_variable(fnm, "p")
         tests_generation_limits(fnm)
         tests_thermal_variable_cost(fnm)
@@ -232,6 +245,7 @@
     end
     @testset "economic_dispatch(branch_flows=true)" begin
         fnm = economic_dispatch(TEST_SYSTEM_RT, highs_opt; branch_flows=true)
+        test_no_names(fnm)
         tests_branch_flow_limits(ED, fnm)
         # Solve the original ED with thermal branch constraints
         optimize!(fnm)
