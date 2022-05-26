@@ -92,7 +92,7 @@ end
 function FullNetworkModel{T}(
     system::System, solver, datetimes=get_forecast_timestamps(system)
 ) where T<:UCED
-    model = Model(solver)
+    model = Model(solver; add_bridges=false)
     set_string_names_on_creation(model, false)
     return FullNetworkModel{T}(system, model, datetimes)
 end
