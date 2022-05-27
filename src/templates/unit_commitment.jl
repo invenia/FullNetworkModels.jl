@@ -109,7 +109,7 @@ function unit_commitment(
     if relax_integrality
         @timeit_debug get_timer("FNTimer") "relax integrality" JuMP.relax_integrality(fnm.model)
     end
-    @timeit_debug get_timer("FNTimer") "set optimizer" set_optimizer(fnm, solver)
+    @timeit_debug get_timer("FNTimer") "set optimizer" set_optimizer(fnm, solver; add_bridges=false)
     return fnm
 end
 

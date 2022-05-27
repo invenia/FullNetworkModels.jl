@@ -79,7 +79,7 @@ function economic_dispatch(
         obj_thermal_variable_cost!(fnm)
         obj_ancillary_costs!(fnm)
     end
-    @timeit_debug get_timer("FNTimer") "set optimizer" set_optimizer(fnm, solver)
+    @timeit_debug get_timer("FNTimer") "set optimizer" set_optimizer(fnm, solver; add_bridges=false)
     return fnm
 end
 
