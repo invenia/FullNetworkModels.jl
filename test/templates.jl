@@ -18,8 +18,8 @@ end
         tests_startup_shutdown(fnm)
         tests_generation_limits(fnm)
         tests_thermal_variable_cost(fnm)
-        tests_thermal_noload_cost(fnm)
-        tests_thermal_startup_cost(fnm)
+        tests_static_noload_cost(fnm)
+        tests_static_startup_cost(fnm)
         tests_ancillary_costs(fnm)
         tests_ancillary_limits(fnm)
         tests_regulation_requirements(fnm)
@@ -30,9 +30,9 @@ end
     @testset "unit_commitment with soft ramps and no ramps" begin
         # Modify system so that hard ramp constraints result in infeasibility
         system_infeasible = deepcopy(TEST_SYSTEM)
-        gens = collect(get_components(ThermalGen, system_infeasible))
-        gens[1].active_power = 50.0
-        @test get_initial_generation(system_infeasible)[7] == 50.0
+        init_gen = get_initial_generation(system_infeasible)
+        # Modify initial generation of unit 7
+        init_gen[2] = 50.0
 
         fnm = unit_commitment(system_infeasible, highs_opt; relax_integrality=true)
         optimize!(fnm)
@@ -88,11 +88,13 @@ end
         obj = objective_value(fnm.model)
 
         # Verify that the branch flows are within bounds
-        monitored_branches_names = get_monitored_branch_names(Branch, TEST_SYSTEM)
+        mon_branches = filter(br -> br.is_monitored, get_branches(TEST_SYSTEM))
+        mon_branches_names = string.(collect(keys(mon_branches)))
+
         @testset "branch bounds" for c in TEST_CONTINGENCIES
-            for m in monitored_branches_names
-                t_branch = get_component(Branch, TEST_SYSTEM, m)
-                rate = c == "base_case" ? t_branch.rate : t_branch.ext["rate_b"]
+            for m in mon_branches_names
+                t_branch = get_branches(TEST_SYSTEM)[m]
+                rate = c == "base_case" ? t_branch.rate_a : t_branch.rate_b
                 @test value.(fnm.model[:fl][m, fnm.datetimes[1], c]) <= rate
                 @test value.(fnm.model[:fl][m, fnm.datetimes[1], c]) >= -rate
             end
@@ -101,10 +103,12 @@ end
         # Modify the branch limits of the system slightly to activate the slack 1 for the
         # base case and contingency 2 (penalties are modified to make it cheaper than redispatching)
         system_sl1 = deepcopy(TEST_SYSTEM)
-        Transformer1 = get_component(Branch, system_sl1, "Transformer1")
-        set_rate!(Transformer1, 0.135) #Original flow 0.15
-        Transformer1.ext["rate_b"] = 0.955 #Original flow conting1: 0.3, conting2: 1.0
-        Transformer1.ext["penalties"] = [1000.0, 2000.0]
+        branches = get_branches(system_sl1)
+        delete!(branches, "Transformer1")
+        transformer1_new = Branch(
+            "Transformer1", "Bus2", "Bus3", 0.135, 0.955, true, (100.0, 110.0), (1000.0, 2000.0)
+        )
+        insert!(branches, "Transformer1", transformer1_new)
 
         # Solve, slack 1 should be active in base-case and conting2 but not in conting1
         fnm = unit_commitment(system_sl1, highs_opt; branch_flows=true)
@@ -115,8 +119,8 @@ end
         # Verify that the branch flows are higher than the branch rate, and SL1 is active
         @testset "branch bounds sl1 in base case and conting2" for c in ["base_case", "conting2"]
             m = "Transformer1"
-            t_branch = get_component(Branch, system_sl1, m)
-            rate = c == "base_case" ? t_branch.rate : t_branch.ext["rate_b"]
+            t_branch = get_branches(system_sl1)[m]
+            rate = c == "base_case" ? t_branch.rate_a : t_branch.rate_b
             @test value.(fnm.model[:fl][m, fnm.datetimes[1], c]) > rate
             @test value.(fnm.model[:sl1_fl][m, fnm.datetimes[1], c]) > 0.0
             @test value.(fnm.model[:sl2_fl][m, fnm.datetimes[1], c]) == 0.0
@@ -125,10 +129,12 @@ end
         # Modify the branch limits of the system slightly more to activate the slack 2 on
         # base-case and contingency 2. Also, activate slack 1 (but not slack 2) on contingency 1
         system_sl2 = deepcopy(TEST_SYSTEM)
-        Transformer1 = get_component(Branch, system_sl2, "Transformer1")
-        set_rate!(Transformer1, 0.12) #Original flow 0.15
-        Transformer1.ext["rate_b"] = 0.27 #Original flow conting1: 0.3, conting2: 1.0
-        Transformer1.ext["penalties"] = [1000.0, 2000.0]
+        branches = get_branches(system_sl2)
+        delete!(branches, "Transformer1")
+        transformer1_new = Branch(
+            "Transformer1", "Bus2", "Bus3", 0.12, 0.27, true, (100.0, 110.0), (1000.0, 2000.0)
+        )
+        insert!(branches, "Transformer1", transformer1_new)
 
         # Solve, slack 2 should be active
         fnm = unit_commitment(system_sl2, highs_opt; branch_flows=true)
@@ -139,24 +145,26 @@ end
         # Verify that the branch flows are higher than the line rate, SL1 and SL2 are active
         @testset "branch bounds sl2 in base case and conting2" for c in ["base_case", "conting2"]
             m = "Transformer1"
-            t_branch = get_component(Branch, system_sl2, m)
-            rate = c == "base_case" ? t_branch.rate : t_branch.ext["rate_b"]
+            t_branch = get_branches(system_sl2)[m]
+            rate = c == "base_case" ? t_branch.rate_a : t_branch.rate_b
             @test value.(fnm.model[:fl][m, fnm.datetimes[1], c]) > rate
             @test value.(fnm.model[:sl1_fl][m, fnm.datetimes[1], c]) > 0
             @test value.(fnm.model[:sl2_fl][m, fnm.datetimes[1], c]) > 0
         end
         @testset "branch bounds sl1 in conting1" begin
-            @test value.(fnm.model[:fl]["Transformer1",fnm.datetimes[1], "conting1"]) > Transformer1.ext["rate_b"]
+            @test value.(fnm.model[:fl]["Transformer1",fnm.datetimes[1], "conting1"]) > transformer1_new.rate_b
             @test value.(fnm.model[:sl1_fl]["Transformer1",fnm.datetimes[1], "conting1"]) > 0.0
             @test value.(fnm.model[:sl2_fl]["Transformer1",fnm.datetimes[1], "conting1"]) == 0.0
         end
 
         # Modify the branch limits of the system to activate the all slack 2 for all scenarios
         system_sl2_all = deepcopy(TEST_SYSTEM)
-        Transformer1 = get_component(Branch, system_sl2_all, "Transformer1")
-        set_rate!(Transformer1, 0.01) #Original flow 0.15
-        Transformer1.ext["rate_b"] = 0.05 #Original flow conting1: 0.3, conting2: 1.0
-        Transformer1.ext["penalties"] = [1000.0, 2000.0]
+        branches = get_branches(system_sl2_all)
+        delete!(branches, "Transformer1")
+        transformer1_new = Branch(
+            "Transformer1", "Bus2", "Bus3", 0.01, 0.05, true, (100.0, 110.0), (1000.0, 2000.0)
+        )
+        insert!(branches, "Transformer1", transformer1_new)
 
         # Solve, slack 2 should be active in all cases
         fnm = unit_commitment(system_sl2_all, highs_opt; branch_flows=true)
@@ -168,9 +176,9 @@ end
         # in all cases SL1 should be at their maximum value
         @testset "branch bounds sl2 all cases" for c in TEST_CONTINGENCIES
             m = "Transformer1"
-            t_branch = get_component(Branch, system_sl2_all, m)
-            rate = c == "base_case" ? t_branch.rate : t_branch.ext["rate_b"]
-            tr1_sl1_max = (Transformer1.ext["break_points"][2]-Transformer1.ext["break_points"][1])*(rate/100)
+            t_branch = get_branches(system_sl2_all)[m]
+            rate = c == "base_case" ? t_branch.rate_a : t_branch.rate_b
+            tr1_sl1_max = (transformer1_new.break_points[2]-transformer1_new.break_points[1])*(rate/100)
             @test value.(fnm.model[:fl][m, fnm.datetimes[1], c]) > rate
             @test isapprox(value.(fnm.model[:sl1_fl][m, fnm.datetimes[1], c]), tr1_sl1_max)
             @test value.(fnm.model[:sl2_fl][m, fnm.datetimes[1], c]) > 0
@@ -183,8 +191,10 @@ end
 
         # Test for branch flow limits without contingencies
         system_no_contingencies = deepcopy(TEST_SYSTEM)
-        lodf_device = only(get_components(LODFDict, system_no_contingencies))
-        lodf_device.lodf_dict = Dict{String, DenseAxisArray}()
+        lodf = get_lodf(system_no_contingencies)
+        delete!(lodf, "conting1")
+        delete!(lodf, "conting2")
+
         fnm = unit_commitment(TEST_SYSTEM, highs_opt; branch_flows=true)
         optimize!(fnm)
         @test termination_status(fnm.model) == TerminationStatusCode(1)
@@ -221,9 +231,10 @@ end
 
         # Modify system to increase Regulation requirements (infeasible system)
         system_infeasible = deepcopy(TEST_SYSTEM_RT)
-        reg_1 = get_component(Service, system_infeasible, "regulation_1")
-        set_requirement!(reg_1, 1e3)
-        @test reg_1.requirement == 1e3
+        zones = get_zones(system_infeasible)
+        delete!(zones, 1)
+        zone1_new = Zone(1, 1e3, 0.3, 0.3)
+        insert!(zones, 1, zone1_new)
 
         # Solve with no slack – should be infeasible
         fnm = economic_dispatch(system_infeasible, highs_opt; slack=nothing)
@@ -254,11 +265,12 @@ end
         obj = objective_value(fnm.model)
 
         # Verify that the branch flows are within bounds
-        monitored_branches_names = get_monitored_branch_names(Branch, TEST_SYSTEM_RT)
+        mon_branches = filter(br -> br.is_monitored, get_branches(TEST_SYSTEM))
+        mon_branches_names = string.(collect(keys(mon_branches)))
         @testset "branch bounds" for c in TEST_CONTINGENCIES
-            for m in monitored_branches_names
-                t_branch = get_component(Branch, TEST_SYSTEM_RT, m)
-                rate = c == "base_case" ? t_branch.rate : t_branch.ext["rate_b"]
+            for m in mon_branches_names
+                t_branch = get_branches(TEST_SYSTEM_RT)[m]
+                rate = c == "base_case" ? t_branch.rate_a : t_branch.rate_b
                 @test value.(fnm.model[:fl][m, fnm.datetimes[1], c]) <= rate
                 @test value.(fnm.model[:fl][m, fnm.datetimes[1], c]) >= -rate
             end
@@ -267,9 +279,12 @@ end
         # Modify the branch limits of the system slightly to activate the slack 1 for the
         # base case and contingency 2 (penalties are modified to make it cheaper than redispatching)
         system_sl1 = deepcopy(TEST_SYSTEM_RT)
-        Transformer1 = get_component(Branch, system_sl1, "Transformer1")
-        set_rate!(Transformer1, 0.149) #Original flow 0.15
-        Transformer1.ext["penalties"] = [1000.0, 2000.0]
+        branches = get_branches(system_sl1)
+        delete!(branches, "Transformer1")
+        transformer1_new = Branch(
+            "Transformer1", "Bus2", "Bus3", 0.06, 0.955, true, (100.0, 110.0), (1000.0, 2000.0)
+        ) # 0.149, 6.0
+        insert!(branches, "Transformer1", transformer1_new)
 
         # Solve, slack 1 should be active in base-case and conting2 but not in conting1
         fnm = economic_dispatch(system_sl1, highs_opt; branch_flows=true)
@@ -280,8 +295,8 @@ end
         # Verify that the branch flows are higher than the branch rate, and SL1 is active
         @testset "branch bounds sl1 in base case" begin
             m = "Transformer1"
-            t_branch = get_component(Branch, system_sl1, m)
-            rate = t_branch.rate
+            t_branch = get_branches(system_sl1)[m]
+            rate = t_branch.rate_a
             @test value.(fnm.model[:fl][m, fnm.datetimes[end], "base_case"]) > rate
             @test value.(fnm.model[:sl1_fl][m, fnm.datetimes[end], "base_case"]) > 0
             @test value.(fnm.model[:sl2_fl][m, fnm.datetimes[end], "base_case"]) == 0
@@ -290,10 +305,12 @@ end
         # Modify the branch limits of the system slightly more to activate the slack 2 on
         # base-case and contingency 2. Also, activate slack 1 (but not slack 2) on contingency 1
         system_sl2 = deepcopy(TEST_SYSTEM_RT)
-        Transformer1 = get_component(Branch, system_sl2, "Transformer1")
-        set_rate!(Transformer1, 0.11) #Original flow 0.15
-        Transformer1.ext["rate_b"] = 0.24 #Original flow conting1: 0.3, conting2: 1.0
-        Transformer1.ext["penalties"] = [1000.0, 2000.0]
+        branches = get_branches(system_sl2)
+        delete!(branches, "Transformer1")
+        transformer1_new = Branch(
+            "Transformer1", "Bus2", "Bus3", 0.1, 0.2, true, (100.0, 110.0), (1000.0, 2000.0)
+        ) # 0.11, 0.24
+        insert!(branches, "Transformer1", transformer1_new)
 
         # Solve, slack 2 should be active
         fnm = economic_dispatch(system_sl2, highs_opt; branch_flows=true)
@@ -304,8 +321,8 @@ end
         # Verify that the branch flows are higher than the line rate, SL1 and SL2 are active
         @testset "branch bounds sl2 in base case and conting2" for c in TEST_CONTINGENCIES
             m = "Transformer1"
-            t_branch = get_component(Branch, system_sl2, m)
-            rate = c == "base_case" ? t_branch.rate : t_branch.ext["rate_b"]
+            t_branch = get_branches(system_sl2)[m]
+            rate = c == "base_case" ? t_branch.rate_a : t_branch.rate_b
             @test value.(fnm.model[:fl][m, fnm.datetimes[1], c]) > rate
             @test value.(fnm.model[:sl1_fl][m, fnm.datetimes[1], c]) > 0
             @test value.(fnm.model[:sl2_fl][m, fnm.datetimes[1], c]) > 0
@@ -313,10 +330,12 @@ end
 
         # Modify the branch limits of the system to activate the all slack 2 for all scenarios
         system_sl2_all = deepcopy(TEST_SYSTEM_RT)
-        Transformer1 = get_component(Branch, system_sl2_all, "Transformer1")
-        set_rate!(Transformer1, 0.01) #Original flow 0.15
-        Transformer1.ext["rate_b"] = 0.01 #Original flow conting1: 0.3, conting2: 1.0
-        Transformer1.ext["penalties"] = [1000.0, 2000.0]
+        branches = get_branches(system_sl2_all)
+        delete!(branches, "Transformer1")
+        transformer1_new = Branch(
+            "Transformer1", "Bus2", "Bus3", 0.01, 0.05, true, (100.0, 110.0), (1000.0, 2000.0)
+        ) #0.01, 0.01
+        insert!(branches, "Transformer1", transformer1_new)
 
         # Solve, slack 2 should be active in all cases
         fnm = economic_dispatch(system_sl2_all, highs_opt; branch_flows=true)
@@ -328,9 +347,9 @@ end
         # in all cases SL1 should be at their maximum value
         @testset "branch bounds sl2 all cases" for c in TEST_CONTINGENCIES
             m = "Transformer1"
-            t_branch = get_component(Branch, system_sl2_all, m)
-            rate = c == "base_case" ? t_branch.rate : t_branch.ext["rate_b"]
-            tr1_sl1_max = (Transformer1.ext["break_points"][2]-Transformer1.ext["break_points"][1])*(rate/100)
+            t_branch = get_branches(system_sl2_all)[m]
+            rate = c == "base_case" ? t_branch.rate_a : t_branch.rate_b
+            tr1_sl1_max = (transformer1_new.break_points[2]-transformer1_new.break_points[1])*(rate/100)
             @test value.(fnm.model[:fl][m, fnm.datetimes[1], c]) > rate
             @test isapprox(value.(fnm.model[:sl1_fl][m, fnm.datetimes[1], c]), tr1_sl1_max)
             @test value.(fnm.model[:sl2_fl][m, fnm.datetimes[1], c]) > 0
@@ -343,11 +362,12 @@ end
 
         # Modify the branch break-points to one breakpoint only and activate slack 1
         system_bkpt_one = deepcopy(TEST_SYSTEM_RT)
-        Transformer1 = get_component(Branch, system_bkpt_one, "Transformer1")
-        set_rate!(Transformer1, 0.045) #Original flow 0.15
-        Transformer1.ext["rate_b"] = 0.1 #Original flow conting1: 0.3, conting2: 1.0
-        Transformer1.ext["break_points"] = [100.0]
-        Transformer1.ext["penalties"] = [1000.0]
+        branches = get_branches(system_bkpt_one)
+        delete!(branches, "Transformer1")
+        transformer1_new = Branch(
+            "Transformer1", "Bus2", "Bus3", 0.045, 0.1, true, (100.0, 0.0), (1000.0, 0.0)
+        )
+        insert!(branches, "Transformer1", transformer1_new)
 
         # Solve, slack 1 should be active
         fnm = economic_dispatch(system_bkpt_one, highs_opt; branch_flows=true)
@@ -357,8 +377,8 @@ end
 
         @testset "branch bounds sl1 one breakpoint" for c in TEST_CONTINGENCIES
             m = "Transformer1"
-            t_branch = get_component(Branch, system_bkpt_one, m)
-            rate = c == "base_case" ? t_branch.rate : t_branch.ext["rate_b"]
+            t_branch = get_branches(system_bkpt_one)[m]
+            rate = c == "base_case" ? t_branch.rate_a : t_branch.rate_b
             @test value.(fnm.model[:fl][m, fnm.datetimes[1], c]) > rate
             @test value.(fnm.model[:sl1_fl][m, fnm.datetimes[1], c]) > 0.0
             @test value.(fnm.model[:sl2_fl][m, fnm.datetimes[1], c]) == 0
@@ -366,9 +386,12 @@ end
 
         # Modify the branch break-points to zero break-points
         system_bkpt_zero = deepcopy(TEST_SYSTEM_RT)
-        Transformer1 = get_component(Branch, system_bkpt_zero, "Transformer1")
-        Transformer1.ext["break_points"] = []
-        Transformer1.ext["penalties"] = []
+        branches = get_branches(system_bkpt_zero)
+        delete!(branches, "Transformer1")
+        transformer1_new = Branch(
+            "Transformer1", "Bus2", "Bus3", 5.0, 6.0, true, (0.0, 0.0), (0.0, 0.0)
+        )
+        insert!(branches, "Transformer1", transformer1_new)
 
         # Solve, should be feasible
         fnm = economic_dispatch(system_bkpt_zero, highs_opt; branch_flows=true)
@@ -378,8 +401,8 @@ end
 
         @testset "branch bounds sl1 one breakpoint" for c in TEST_CONTINGENCIES
             m = "Transformer1"
-            t_branch = get_component(Branch, system_bkpt_zero, m)
-            rate = c == "base_case" ? t_branch.rate : t_branch.ext["rate_b"]
+            t_branch = get_branches(system_bkpt_zero)[m]
+            rate = c == "base_case" ? t_branch.rate_a : t_branch.rate_b
             @test value.(fnm.model[:fl][m, fnm.datetimes[1], c]) < rate
             @test value.(fnm.model[:sl1_fl][m, fnm.datetimes[1], c]) == 0.0
             @test value.(fnm.model[:sl2_fl][m, fnm.datetimes[1], c]) == 0
@@ -387,11 +410,12 @@ end
 
         # Modify the branch rate and zero break points to make it infeasible
         system_bkpt_inf = deepcopy(TEST_SYSTEM_RT)
-        Transformer1 = get_component(Branch, system_bkpt_inf, "Transformer1")
-        set_rate!(Transformer1, 0.045) #Original flow 0.15
-        Transformer1.ext["rate_b"] = 0.1 #Original flow conting1: 0.3, conting2: 1.0
-        Transformer1.ext["break_points"] = []
-        Transformer1.ext["penalties"] = []
+        branches = get_branches(system_bkpt_inf)
+        delete!(branches, "Transformer1")
+        transformer1_new = Branch(
+            "Transformer1", "Bus2", "Bus3", 0.045, 0.1, true, (0.0, 0.0), (0.0, 0.0)
+        )
+        insert!(branches, "Transformer1", transformer1_new)
 
         # Solve, should be infeasible
         fnm = economic_dispatch(system_bkpt_inf, highs_opt; branch_flows=true)
@@ -400,8 +424,10 @@ end
 
         # Test for branch flow limits without contingencies
         system_no_contingencies = deepcopy(TEST_SYSTEM_RT)
-        lodf_device = only(get_components(LODFDict, system_no_contingencies))
-        lodf_device.lodf_dict = Dict{String, DenseAxisArray}()
+        lodf = get_lodf(system_no_contingencies)
+        delete!(lodf, "conting1")
+        delete!(lodf, "conting2")
+
         fnm = economic_dispatch(system_no_contingencies, highs_opt; branch_flows=true)
         optimize!(fnm)
         @test termination_status(fnm.model) == TerminationStatusCode(1)
@@ -414,7 +440,7 @@ end
         (UC, TEST_SYSTEM, highs_opt),
         (ED, TEST_SYSTEM_RT, highs_opt)
     )
-        datetimes=get_forecast_timestamps(t_system)
+        datetimes=get_datetimes(t_system)
         # Run the original test system and get the optimised objective
         fnm = _simple_template(t_system, T, solver; slack=nothing)
         optimize!(fnm)
@@ -424,9 +450,8 @@ end
 
         # Modify system such that we get infeasibility by excess load
         system_infe_load = deepcopy(t_system)
-        loads = collect(get_components(PowerLoad, system_infe_load))
-        set_active_power!(loads[1], 10.0)
-        set_active_power!(loads[2], 10.0)
+        loads = get_load(system_infe_load)
+        loads .= 10.0
 
         fnm_inf = _simple_template(system_infe_load, T, solver; slack=nothing)
         optimize!(fnm_inf)
@@ -449,9 +474,8 @@ end
         # commitment status are fixed, so it forces the optimisation to use the sl_eb_load.
         if T == ED
             system_infe_gen = deepcopy(t_system)
-            loads = collect(get_components(PowerLoad, system_infe_gen))
-            set_active_power!(loads[1], 0.1)
-            set_active_power!(loads[2], 0.1)
+            loads = get_load(system_infe_gen)
+            loads .= 0.1
 
             fnm_inf = _simple_template(system_infe_gen, T, solver; slack=nothing)
             optimize!(fnm_inf)
@@ -480,7 +504,7 @@ function test_templates(datetimes)
 end
 
 @testset "Templates defined for specific datetimes" begin
-    datetimes = get_forecast_timestamps(TEST_SYSTEM)
+    datetimes = get_datetimes(TEST_SYSTEM)
     @testset "Array of datetimes" begin
         test_templates(datetimes[5:8])
     end
@@ -488,7 +512,8 @@ end
         test_templates(first(datetimes):Hour(1):last(datetimes))
     end
     @testset "Single datetime" begin
-        test_templates(first(datetimes))
+        # only need economic dispatch for a single datetime
+        @test economic_dispatch(TEST_SYSTEM_RT, HiGHS.Optimizer, first(datetimes)) isa FullNetworkModel
     end
 end
 

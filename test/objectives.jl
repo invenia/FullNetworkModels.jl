@@ -7,7 +7,7 @@ function tests_thermal_variable_cost(fnm)
     @testset "Variables and constraints were created with correct names and indices" begin
         @test has_variable(fnm.model, "p_aux")
         @test has_constraint(fnm.model, "gen_block_limits")
-        unit_codes = get_unit_codes(ThermalGen, fnm.system)
+        unit_codes = keys(get_generators(fnm.system))
         @test issetequal(fnm.model[:generation_definition].axes[1], unit_codes)
         @test issetequal(fnm.model[:generation_definition].axes[2], fnm.datetimes)
         @testset for g in unit_codes, t in fnm.datetimes, b in 1:3
@@ -19,7 +19,7 @@ end
 
 function tests_thermal_linear_cost(fnm, var, f)
     set_names!(fnm)
-    unit_codes = get_unit_codes(ThermalGen, fnm.system)
+    unit_codes = keys(get_generators(fnm.system))
     cost = f(fnm.system)
     str = string(objective_function(fnm.model))
     @testset "Cost was correctly added to objective" begin
@@ -30,23 +30,38 @@ function tests_thermal_linear_cost(fnm, var, f)
     end
 end
 
-tests_thermal_noload_cost(fnm) = tests_thermal_linear_cost(fnm, :u, get_noload_cost)
-tests_thermal_startup_cost(fnm) = tests_thermal_linear_cost(fnm, :v, get_startup_cost)
+function tests_static_cost(fnm, var, field)
+    unit_codes = keys(get_generators(fnm.system))
+    cost = map(get_generators(fnm.system)) do gen
+        getproperty(gen, field)
+    end
+    str = string(objective_function(fnm.model))
+    @testset "Cost was correctly added to objective" begin
+        @testset for g in unit_codes, t in fnm.datetimes
+            C = mod(cost[g], 1) == 0 ? convert(Int, cost[g]) : cost[g]
+            @test occursin("+ $C $var[$g,$t]", str)
+        end
+    end
+end
+
+tests_static_noload_cost(fnm) = tests_static_cost(fnm, :u, :no_load_cost)
+tests_static_startup_cost(fnm) = tests_static_cost(fnm, :v, :startup_cost)
 
 function tests_ancillary_costs(fnm)
-    set_names!(fnm)
-    unit_codes = get_unit_codes(ThermalGen, fnm.system)
-    cost_reg = get_regulation_cost(fnm.system)
-    cost_spin = get_spinning_cost(fnm.system)
-    cost_on_sup = get_on_sup_cost(fnm.system)
-    cost_off_sup = get_off_sup_cost(fnm.system)
+    unit_codes = keys(get_generators(fnm.system))
+    cost_reg = get_regulation(fnm.system)
+    cost_spin = get_spinning(fnm.system)
+    cost_on_sup = get_supplemental_on(fnm.system)
+    cost_off_sup = get_supplemental_off(fnm.system)
     str = string(objective_function(fnm.model))
     @testset "All ancillary terms correctly added to objective" begin
-        for g in unit_codes, t in fnm.datetimes
-            C_reg = _convert_jump_number(cost_reg[g, t])
-            C_spin = _convert_jump_number(cost_spin[g, t])
-            C_on_sup = _convert_jump_number(cost_on_sup[g, t])
-            C_off_sup = _convert_jump_number(cost_off_sup[g, t])
+        # Units in the test system provide all ancillary services except for first and last datetimes
+        datetimes_providing = fnm.datetimes[2:end-1]
+        for g in unit_codes, t in datetimes_providing
+            C_reg = _convert_jump_number(cost_reg(g, t))
+            C_spin = _convert_jump_number(cost_spin(g, t))
+            C_on_sup = _convert_jump_number(cost_on_sup(g, t))
+            C_off_sup = _convert_jump_number(cost_off_sup(g, t))
             @test occursin("$C_reg r_reg[$g,$t]", str)
             @test occursin("$C_spin r_spin[$g,$t]", str)
             @test occursin("$C_on_sup r_on_sup[$g,$t]", str)
@@ -58,7 +73,7 @@ end
 
 @testset "Objectives" begin
     @testset "obj_thermal_variable_cost!" begin
-        t = first(get_forecast_timestamps(TEST_SYSTEM))
+        t = first(get_datetimes(TEST_SYSTEM))
         @testset "Adding cost before generation variables throws error" begin
             fnm = FullNetworkModel{UC}(TEST_SYSTEM)
             @test objective_function(fnm.model) == AffExpr()
@@ -99,7 +114,7 @@ end
         var_commitment!(fnm)
         obj_thermal_variable_cost!(fnm)
         obj_thermal_noload_cost!(fnm)
-        tests_thermal_noload_cost(fnm)
+        tests_static_noload_cost(fnm)
     end
     @testset "obj_thermal_startup_cost!" begin
         fnm = FullNetworkModel{UC}(TEST_SYSTEM)
@@ -107,7 +122,7 @@ end
         var_startup_shutdown!(fnm)
         obj_thermal_noload_cost!(fnm)
         obj_thermal_startup_cost!(fnm)
-        tests_thermal_startup_cost(fnm)
+        tests_static_startup_cost(fnm)
     end
     @testset "obj_bids!" begin
         system = fake_3bus_system(MISO, DA; n_periods=2)

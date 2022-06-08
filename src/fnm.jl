@@ -108,7 +108,11 @@ function Base.show(io::IO, fnm::T) where {T <: FullNetworkModel}
     end
     min == max ? print(io, "\nTime period: ", min) : print(io, "\nTime periods: ", min, " to ", max)
     # System
-    num_components = sum(length(c) for c in get_static_components(fnm.system))
+    num_components = sum(
+        length(c) for c in [
+            get_buses(fnm.system), get_generators(fnm.system), get_branches(fnm.system)
+        ]
+    )
     print(io, "\nSystem: $(num_components) components")
     # Model
     n_vars = num_variables(fnm.model)

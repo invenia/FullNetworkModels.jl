@@ -3,6 +3,7 @@ module FullNetworkModels
 using AxisKeys
 using AxisKeys: sortkeys
 using Dates
+using Dictionaries
 using FullNetworkSystems
 using JuMP
 using JuMP.Containers: DenseAxisArray

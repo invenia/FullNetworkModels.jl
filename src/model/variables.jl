@@ -149,7 +149,7 @@ $(latex(_con_reg_commitment!))
 """
 function var_ancillary_services!(fnm::FullNetworkModel{<:UC})
     unit_codes = keys(get_generators(fnm.system))
-    _var_ancillary_services!(fnm.model, unit_codes, fnm.datetimes)
+    _var_ancillary_services!(fnm, unit_codes, fnm.datetimes)
     _var_reg_commitment!(fnm.model, unit_codes, fnm.datetimes)
     _con_reg_commitment!(fnm.model, unit_codes, fnm.datetimes)
     return fnm
@@ -157,16 +157,30 @@ end
 
 function var_ancillary_services!(fnm::FullNetworkModel{<:ED})
     unit_codes = keys(get_generators(fnm.system))
-    _var_ancillary_services!(fnm.model, unit_codes, fnm.datetimes)
+    _var_ancillary_services!(fnm, unit_codes, fnm.datetimes)
     return fnm
 end
 
-function _var_ancillary_services!(model::Model, unit_codes, datetimes)
-    @variable(model, r_reg[g in unit_codes, t in datetimes] >= 0)
-    @variable(model, r_spin[g in unit_codes, t in datetimes] >= 0)
-    @variable(model, r_on_sup[g in unit_codes, t in datetimes] >= 0)
-    @variable(model, r_off_sup[g in unit_codes, t in datetimes] >= 0)
+function _var_ancillary_services!(fnm::FullNetworkModel, unit_codes, datetimes)
+    system = fnm.system
+    model = fnm.model
+    reg_pairs = _provider_indices(get_regulation(system))
+    spin_pairs = _provider_indices(get_spinning(system))
+    sup_on_pairs = _provider_indices(get_supplemental_on(system))
+    sup_off_pairs = _provider_indices(get_supplemental_off(system))
+
+    @variable(model, r_reg[g in unit_codes, t in datetimes; (g, t) in reg_pairs] >= 0)
+    @variable(model, r_spin[g in unit_codes, t in datetimes; (g, t) in spin_pairs] >= 0)
+    @variable(model, r_on_sup[g in unit_codes, t in datetimes; (g, t) in sup_on_pairs] >= 0)
+    @variable(model, r_off_sup[g in unit_codes, t in datetimes; (g, t) in sup_off_pairs] >= 0)
     return model
+end
+
+function _provider_indices(ts)
+    coords = findall(.!(ismissing.(ts)))
+    return map(coords) do i
+        getindex.(axiskeys(ts), Tuple(i))
+    end
 end
 
 function _var_reg_commitment!(model::Model, unit_codes, datetimes)

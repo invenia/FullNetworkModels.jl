@@ -79,7 +79,7 @@ function con_generation_limits!(fnm::FullNetworkModel{<:ED})
 
     p = model[:p]
     unit_codes = keys(get_generators(fnm.system))
-    U = _keyed_to_dense(get_commitment_status(system))
+    U = _keyed_to_dense(get_commitment(system))
     Pmin = _keyed_to_dense(get_pmin(system))
     Pmax = _keyed_to_dense(get_pmax(system))
 
@@ -142,7 +142,7 @@ function con_ancillary_limits!(fnm::FullNetworkModel{<:UC})
     _con_regulation_max!(model, unit_codes, datetimes, Pregmin, Pregmax, u_reg)
     _con_spin_and_sup_max!(model, unit_codes, datetimes, Pmin, Pmax, u)
     _con_off_sup_max!(model, unit_codes, datetimes, Pmin, Pmax, u)
-    _con_zero_non_providers!(model, system, unit_codes, datetimes, u_reg)
+    #_con_zero_non_providers!(model, system, unit_codes, datetimes, u_reg)
     return fnm
 end
 
@@ -164,15 +164,15 @@ function con_ancillary_limits!(fnm::FullNetworkModel{<:ED})
     Pregmax = _keyed_to_dense(get_regmax(system))
     Pmin = _keyed_to_dense(get_pmin(system))
     Pregmin = _keyed_to_dense(get_regmin(system))
-    U = _keyed_to_dense(get_commitment_status(system))
-    U_reg = _keyed_to_dense(get_commitment_reg_status(system))
+    U = _keyed_to_dense(get_commitment(system))
+    U_reg = _keyed_to_dense(get_regulation_commitment(system))
 
     model = fnm.model
     _con_ancillary_max!(model, unit_codes, datetimes, Pmax, Pregmax, U, U_reg)
     _con_ancillary_min!(model, unit_codes, datetimes, Pmin, Pregmin, U, U_reg)
     _con_spin_and_sup_max!(model, unit_codes, datetimes, Pmin, Pmax, U)
     _con_off_sup_max!(model, unit_codes, datetimes, Pmin, Pmax, U)
-    _con_zero_non_providers!(model, system, unit_codes, datetimes)
+    #_con_zero_non_providers!(model, system, unit_codes, datetimes)
     return fnm
 end
 
@@ -209,10 +209,17 @@ function con_regulation_requirements!(fnm::FullNetworkModel, slack)
     zone_gens = gens_per_zone(system)
     reg_requirements = get_regulation_requirements(system)
     r_reg = model[:r_reg]
+    included_inds = Dictionary{Tuple{Int, DateTime}, Vector{Tuple{Int, DateTime}}}()
+    for (z, gens) in zone_gens
+        for t in datetimes
+            i = [in(unit, gens) && time == t for (unit, time) in eachindex(r_reg)]
+            insert!(included_inds, (z, t), collect(eachindex(r_reg))[i])
+        end
+    end
     @constraint(
         model,
         regulation_requirements[z in reserve_zones, t in datetimes],
-        sum(r_reg[g, t] for g in zone_gens[z]) >= reg_requirements[z]
+        sum(r_reg[g, t] for (g, t) in included_inds[(z, t)]) >= reg_requirements[z]
     )
     if slack !== nothing
         # Soft constraints, add slacks
@@ -258,13 +265,34 @@ function con_operating_reserve_requirements!(fnm::FullNetworkModel, slack)
     r_spin = model[:r_spin]
     r_on_sup = model[:r_on_sup]
     r_off_sup = model[:r_off_sup]
+    indices_union = union(
+        eachindex(r_reg), eachindex(r_spin), eachindex(r_on_sup), eachindex(r_off_sup)
+    )
+    # Dictionary indexed by zone and datetime contains indices of unit_code and datetime
+    included_inds = Dictionary{Tuple{Int, DateTime}, Vector{Tuple{Int, DateTime}}}()
+    for (z, gens) in zone_gens
+        for t in datetimes
+            i = [in(unit, gens) && time == t for (unit, time) in indices_union]
+            insert!(included_inds, (z, t), collect(indices_union)[i])
+        end
+    end
+    # Dictionary indexed by zone and datetime contains expressions
+    expressions = Dictionary{Tuple{Int, DateTime}, AffExpr}()
+    for (z, t) in keys(included_inds)
+        expr = AffExpr()
+        for (g, t) in included_inds[(z, t)]
+            for asm_var in [r_reg, r_spin, r_on_sup, r_off_sup]
+                if (g, t) in eachindex(asm_var)
+                    add_to_expression!(expr, asm_var[g, t])
+                end
+            end
+        end
+        insert!(expressions, (z, t), expr)
+    end
     @constraint(
         model,
         operating_reserve_requirements[z in reserve_zones, t in datetimes],
-        sum(
-            r_reg[g, t] + r_spin[g, t] + r_on_sup[g, t] + r_off_sup[g, t]
-                for g in zone_gens[z]
-        ) >= or_requirements[z]
+        expressions[(z, t)] >= or_requirements[z]
     )
     if slack !== nothing
         # Soft constraints, add slacks
@@ -751,11 +779,13 @@ function con_thermal_branch!(fnm::FullNetworkModel; threshold=_SF_THRESHOLD)
     ptdf = sortkeys(get_ptdf(system), dims=2)
     _threshold!(ptdf)
     lodfs = get_lodf(system)
-    insert!(
-        lodfs,
-        "base_case",
-        KeyedArray(Matrix{Float64}(undef, 0, 0), (String[], String[]))
-    )
+    if !haskey(lodfs, "base_case")
+        insert!(
+            lodfs,
+            "base_case",
+            KeyedArray(Matrix{Float64}(undef, 0, 0), (String[], String[]))
+        )
+    end
     lodfs_converted = map(lodfs) do lodf
         _keyed_to_dense(lodf)
     end
@@ -796,12 +826,25 @@ function _con_ancillary_max!(model::Model, unit_codes, datetimes, Pmax, Pregmax,
     r_reg = model[:r_reg]
     r_spin = model[:r_spin]
     r_on_sup = model[:r_on_sup]
+    indices_union = union(eachindex(r_reg), eachindex(r_spin), eachindex(r_on_sup))
+    expressions = Dictionary{Tuple{Int, DateTime}, AffExpr}()
+    for g in unit_codes, t in datetimes
+        expr = AffExpr()
+        for asm_var in [r_reg, r_spin, r_on_sup]
+            if (g, t) in eachindex(asm_var)
+                add_to_expression!(expr, asm_var[g, t])
+            end
+        end
+        add_to_expression!(
+            expr, p[g, t] - Pmax[g, t] * (u[g, t] - u_reg[g, t]) - Pregmax[g, t] * u_reg[g, t]
+        )
+        insert!(expressions, (g, t), expr)
+    end
     # `u` here may be a variable or it may be the parameter "`U`". Likewise `u_reg`/`U_reg`.
     @constraint(
         model,
-        ancillary_max[g in unit_codes, t in datetimes],
-        p[g, t] + r_reg[g, t] + r_spin[g, t] + r_on_sup[g, t] <=
-            Pmax[g, t] * (u[g, t] - u_reg[g, t]) + Pregmax[g, t] * u_reg[g, t]
+        ancillary_max[g in unit_codes, t in datetimes; (g, t) in indices_union],
+        expressions[(g, t)] <= 0.0
     )
     return model
 end
@@ -813,7 +856,7 @@ function _con_ancillary_min!(model::Model, unit_codes, datetimes, Pmin, Pregmin,
     # `u`/`u_reg` may be variables or parameters (which we'd usually write as `U`/`U_reg`).
     @constraint(
         model,
-        ancillary_min[g in unit_codes, t in datetimes],
+        ancillary_min[g in unit_codes, t in datetimes; (g, t) in eachindex(r_reg)],
         p[g, t] - r_reg[g, t] >=
             Pmin[g, t] * (u[g, t] - u_reg[g, t]) + Pregmin[g, t] * u_reg[g, t]
     )
@@ -826,7 +869,7 @@ function _con_regulation_max!(model::Model, unit_codes, datetimes, Pregmin, Preg
     r_reg = model[:r_reg]
     @constraint(
         model,
-        regulation_max[g in unit_codes, t in datetimes],
+        regulation_max[g in unit_codes, t in datetimes; (g, t) in eachindex(r_reg)],
         r_reg[g, t] <= 0.5 * (Pregmax[g, t] - Pregmin[g, t]) * u_reg[g, t]
     )
     return model
@@ -836,11 +879,23 @@ end
 function _con_spin_and_sup_max!(model::Model, unit_codes, datetimes, Pmin, Pmax, u)
     r_spin = model[:r_spin]
     r_on_sup = model[:r_on_sup]
+    indices_union = union(eachindex(r_spin), eachindex(r_on_sup))
+    expressions = Dictionary{Tuple{Int, DateTime}, AffExpr}()
+    for g in unit_codes, t in datetimes
+        expr = AffExpr()
+        for asm_var in [r_spin, r_on_sup]
+            if (g, t) in eachindex(asm_var)
+                add_to_expression!(expr, asm_var[g, t])
+            end
+        end
+        add_to_expression!(expr, -1 * (Pmax[g, t] - Pmin[g, t]) * u[g, t])
+        insert!(expressions, (g, t), expr)
+    end
     # `u` may be a variable or a parameter (which we'd usually write as `U`).
     @constraint(
         model,
-        spin_and_sup_max[g in unit_codes, t in datetimes],
-        r_spin[g, t] + r_on_sup[g, t] <= (Pmax[g, t] - Pmin[g, t]) * u[g, t]
+        spin_and_sup_max[g in unit_codes, t in datetimes; (g, t) in indices_union],
+        expressions[(g, t)] <= 0.0
     )
     return model
 end
@@ -851,13 +906,13 @@ function _con_off_sup_max!(model::Model, unit_codes, datetimes, Pmin, Pmax, u)
     # `u` may be a variable or a parameter (which we'd usually write as `U`).
     @constraint(
         model,
-        off_sup_max[g in unit_codes, t in datetimes],
+        off_sup_max[g in unit_codes, t in datetimes; (g, t) in eachindex(r_off_sup)],
         r_off_sup[g, t] <= (Pmax[g, t] - Pmin[g, t]) * (1 - u[g, t])
     )
     return model
 end
 
-"Ensure that units that don't provide services have services set to zero."
+#=="Ensure that units that don't provide services have services set to zero."
 function _con_zero_non_providers!(model::Model, system::System, unit_codes, datetimes)
     # Units that provide each service
     reg_providers = get_regulation_providers(system)
@@ -901,7 +956,7 @@ function _con_zero_non_providers!(model::Model, system::System, unit_codes, date
         u_reg[g, t] == 0
     )
     return _con_zero_non_providers!(model, system, unit_codes, datetimes)
-end
+end==#
 
 """
     con_ancillary_ramp_rates!(fnm::FullNetworkModel)
@@ -926,14 +981,26 @@ function con_ancillary_ramp_rates!(fnm::FullNetworkModel)
     # Allocated regulation can't be over 5 minutes of ramping
     @constraint(
         model,
-        ramp_regulation[g in unit_codes, t in datetimes],
+        ramp_regulation[g in unit_codes, t in datetimes; (g, t) in eachindex(r_reg)],
         r_reg[g, t] <= 5 * generators[g].ramp_up
     )
     # Allocated reserves can't be over 10 minutes of ramping
+    indices_union = union(eachindex(r_spin), eachindex(r_on_sup), eachindex(r_off_sup))
+    expressions = Dictionary{Tuple{Int, DateTime}, AffExpr}()
+    for g in unit_codes, t in datetimes
+        expr = AffExpr()
+        for asm_var in [r_spin, r_on_sup, r_off_sup]
+            if (g, t) in eachindex(asm_var)
+                add_to_expression!(expr, asm_var[g, t])
+            end
+        end
+        add_to_expression!(expr, -10 * generators[g].ramp_up)
+        insert!(expressions, (g, t), expr)
+    end
     @constraint(
         model,
-        ramp_spin_sup[g in unit_codes, t in datetimes],
-        r_spin[g, t] + r_on_sup[g, t] + r_off_sup[g, t] <= 10 * generators[g].ramp_up
+        ramp_spin_sup[g in unit_codes, t in datetimes; (g, t) in indices_union],
+        expressions[(g, t)] <= 0.0
     )
     return fnm
 end
@@ -960,6 +1027,13 @@ function con_generation_ramp_rates!(fnm::FullNetworkModel; slack=nothing)
     Δt = Dates.value(Minute(first(diff(datetimes))))
     Δh = Hour(Δt / 60) # assume hourly resolution
     h1 = first(datetimes)
+
+    regmin = get_regmin(system)
+    RR = getproperty.(get_generators(system), :ramp_up)
+    SU = DenseAxisArray(zeros(size(regmin)), axiskeys(regmin)...)
+    for g in axes(SU, 1), t in axes(SU, 2)
+        SU[g, t] = max(regmin(g, t), 2 * Δt * RR[g])
+    end
     # We only consider the initial ramp for the units available in the first hour.
     # This is done to avoid situations where a unit has initial generation coming from the
     # previous day, but is marked as unavailable in hour 1, which leads to infeasibility
@@ -975,12 +1049,12 @@ function con_generation_ramp_rates!(fnm::FullNetworkModel; slack=nothing)
     @constraint(
         model,
         ramp_up[g in unit_codes, t in datetimes[2:end]],
-        p[g, t] - p[g, t - Δh] <= Δt * generators[g].ramp_up * u[g, t - Δh] + generators[g].startup_cost * v[g, t]
+        p[g, t] - p[g, t - Δh] <= Δt * generators[g].ramp_up * u[g, t - Δh] + SU[g, t] * v[g, t]
     )
     @constraint(
         model,
         ramp_up_initial[g in units_available_in_first_hour],
-        p[g, h1] - P0[g] <= Δt * generators[g].ramp_up * U0[g] + generators[g].startup_cost * v[g, h1]
+        p[g, h1] - P0[g] <= Δt * generators[g].ramp_up * U0[g] + SU[g, h1] * v[g, h1]
     )
     # Ramp down - generation can't go down more than ramp capacity (defined in pu/min).
     # We consider SU = SD.
@@ -995,12 +1069,12 @@ function con_generation_ramp_rates!(fnm::FullNetworkModel; slack=nothing)
         model,
         ramp_down[g in unit_codes, t in datetimes[2:end]],
         p[g, t - Δh] - p[g, t] <=
-            Δt * generators[g].ramp_up * u[g, t] + generators[g].startup_cost * w[g, t] + (1 - A[g, t]) * Pmax[g, t - Δh]
+            Δt * generators[g].ramp_up * u[g, t] + SU[g, t] * w[g, t] + (1 - A[g, t]) * Pmax[g, t - Δh]
     )
     @constraint(
         model,
         ramp_down_initial[g in units_available_in_first_hour],
-        P0[g] - p[g, h1] <= Δt * generators[g].ramp_up * u[g, h1] + generators[g].startup_cost * w[g, h1]
+        P0[g] - p[g, h1] <= Δt * generators[g].ramp_up * u[g, h1] + SU[g, h1] * w[g, h1]
     )
 
     # If the constraints are supposed to be soft constraints, add slacks

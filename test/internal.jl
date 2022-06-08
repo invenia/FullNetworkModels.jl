@@ -1,11 +1,10 @@
 @testset "Internal utility functions" begin
     @testset "_generators_by_reserve_zone" begin
-        zone_gens = FNM._generators_by_reserve_zone(TEST_SYSTEM)
+        zone_gens = gens_per_zone(TEST_SYSTEM)
         @test zone_gens isa Dict
         @test zone_gens[1] == [3]
         @test zone_gens[2] == [7]
         @test issetequal(zone_gens[FNM.MARKET_WIDE_ZONE], [3, 7])
-        @test FNM._get_resolution_in_minutes(TEST_SYSTEM) == 60
     end
     @testset "_add_to_objective!" begin
         model = Model()
@@ -18,8 +17,8 @@
     @testset "_variable_cost" begin
         system = fake_3bus_system(MISO, DA; n_periods=2)
         fnm = unit_commitment(system)
-        unit_codes = get_unit_codes(ThermalGen, fnm.system)
-        offer_curves = get_offer_curves(fnm.system)
+        unit_codes = keys(get_generators(fnm.system))
+        offer_curves = FNM._keyed_to_dense(get_offer_curve(fnm.system))
         Λ, block_lims, n_blocks = FNM._curve_properties(offer_curves)
         thermal_cost = FNM._variable_cost(
             fnm.model, unit_codes, fnm.datetimes, n_blocks, Λ, :p, 1

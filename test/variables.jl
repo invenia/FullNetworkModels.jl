@@ -4,9 +4,21 @@ function tests_thermal_variable(fnm, label)
         @test has_variable(fnm.model, label)
         @test issetequal(
             fnm.model[Symbol(label)].axes[1],
-            get_unit_codes(ThermalGen, fnm.system)
+            keys(get_generators(fnm.system))
         )
         @test issetequal(fnm.model[Symbol(label)].axes[2], fnm.datetimes)
+    end
+    return nothing
+end
+
+function tests_ancillary_variable(fnm, label)
+    @testset "Variables named `$label` were created with the correct indices" begin
+        @test has_variable(fnm.model, label)
+        @test issubset(
+            first.(eachindex(fnm.model[Symbol(label)])),
+            keys(get_generators(fnm.system))
+        )
+        @test issubset(last.(eachindex(fnm.model[Symbol(label)])), fnm.datetimes)
     end
     return nothing
 end
@@ -40,7 +52,7 @@ function tests_bid_variables(fnm, label, bidtype)
     @testset "Variables named `$label` were created with the correct indices" begin
         @test has_variable(fnm.model, label)
         @test issetequal(
-            fnm.model[Symbol(label)].axes[1], get_bid_names(bidtype, fnm.system)
+            fnm.model[Symbol(label)].axes[1], axiskeys(get_bids(fnm.system, bidtype), 1)
         )
         @test issetequal(fnm.model[Symbol(label)].axes[2], fnm.datetimes)
     end
@@ -65,14 +77,15 @@ end
     end
     @testset "var_ancillary_services!" begin
         var_ancillary_services!(fnm)
-        @testset for service in ("r_reg", "u_reg", "r_spin", "r_on_sup", "r_off_sup")
-            tests_thermal_variable(fnm, service)
+        tests_thermal_variable(fnm, "u_reg")
+        @testset for service in ("r_reg", "r_spin", "r_on_sup", "r_off_sup")
+            tests_ancillary_variable(fnm, service)
         end
     end
     @testset "var_bids!" begin
         var_bids!(fnm)
-        tests_bid_variables(fnm, "inc", Increment)
-        tests_bid_variables(fnm, "dec", Decrement)
-        tests_bid_variables(fnm, "psd", PriceSensitiveDemand)
+        tests_bid_variables(fnm, "inc", :increment)
+        tests_bid_variables(fnm, "dec", :decrement)
+        tests_bid_variables(fnm, "psd", :price_sensitive_demand)
     end
 end

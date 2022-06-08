@@ -42,15 +42,12 @@ end
 Adds a linear cost (cost * variable) to the objective, where the cost is fetched by function
 `f` and the variable is named `var` within `fnm.model`.
 """
-function _obj_thermal_linear_cost!(
-    fnm::FullNetworkModel, var::Symbol, f;
-    unit_codes=keys(get_generators(fnm.system))
-)
+function _obj_thermal_linear_cost!(fnm::FullNetworkModel, var::Symbol, f)
     model = fnm.model
     cost = _keyed_to_dense(f(fnm.system))
     x = model[var]
     obj_cost = AffExpr()
-    for g in unit_codes, t in fnm.datetimes
+    for (g, t) in eachindex(x)
         add_to_expression!(obj_cost, cost[g, t], x[g, t])
     end
     _add_to_objective!(model, obj_cost)

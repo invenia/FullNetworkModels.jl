@@ -59,7 +59,7 @@ function obj_thermal_variable_cost!(fnm::FullNetworkModel{T}) where T
     if T === UC
         u = model[:u]
     else
-        u = _keyed_to_dense(get_commitment_status(system))
+        u = _keyed_to_dense(get_commitment(system))
     end
     _var_thermal_gen_blocks!(model, unit_codes, block_lims, datetimes, n_blocks, u)
     # Add thermal variable cost to objective
@@ -118,18 +118,10 @@ Adds to the objective function:
 $(latex(obj_ancillary_costs!))
 """
 function obj_ancillary_costs!(fnm::FullNetworkModel)
-    _obj_thermal_linear_cost!(
-        fnm, :r_reg, get_regulation; unit_codes=get_regulation_providers(fnm.system)
-    )
-    _obj_thermal_linear_cost!(
-        fnm, :r_spin, get_spinning; unit_codes=get_spinning_providers(fnm.system)
-    )
-    _obj_thermal_linear_cost!(
-        fnm, :r_on_sup, get_supplemental_on; unit_codes=get_sup_on_providers(fnm.system)
-    )
-    _obj_thermal_linear_cost!(
-        fnm, :r_off_sup, get_supplemental_off; unit_codes=get_sup_off_providers(fnm.system)
-    )
+    _obj_thermal_linear_cost!(fnm, :r_reg, get_regulation)
+    _obj_thermal_linear_cost!(fnm, :r_spin, get_spinning)
+    _obj_thermal_linear_cost!(fnm, :r_on_sup, get_supplemental_on)
+    _obj_thermal_linear_cost!(fnm, :r_off_sup, get_supplemental_off)
     return fnm
 end
 

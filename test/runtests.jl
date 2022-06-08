@@ -1,25 +1,25 @@
+using AxisKeys
 using Dates
 using ElectricityMarkets
 using FullNetworkDataPrep.TestUtils: fake_3bus_system
 using FullNetworkDataPrep: DA, RT
 using FullNetworkModels
 using FullNetworkModels: Slacks
+using FullNetworkSystems
+using FullNetworkSystems: System, get_must_run, get_load, Branch
 using HiGHS
 using JuMP.Containers: DenseAxisArray
 using JuMP
 using MathOptInterface: TerminationStatusCode
 using Memento.TestUtils: @test_log
-using PowerSystems
-using PowerSystemsExtras
-using PowerSystemsExtras: PTDF
 using Test
 using TimeSeries
 
 const FNM = FullNetworkModels
 const TEST_SYSTEM = fake_3bus_system(MISO, DA)
-const TEST_SYSTEM_RT = fake_3bus_system(MISO, DA; commitment_forecasts=true)
-const TEST_LODF_DICT = get_lodf_dict(TEST_SYSTEM)
-const TEST_CONTINGENCIES = collect(keys(TEST_LODF_DICT))
+const TEST_SYSTEM_RT = fake_3bus_system(MISO, RT)
+const TEST_LODF_DICT = get_lodf(TEST_SYSTEM)
+const TEST_CONTINGENCIES = keys(TEST_LODF_DICT)
 
 # Name individual variables and constraints to allow us testing our expressions using `sprint`
 #
