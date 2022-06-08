@@ -904,52 +904,6 @@ function _con_off_sup_max!(model::Model, unit_codes, datetimes, Pmin, Pmax, u)
     return model
 end
 
-#=="Ensure that units that don't provide services have services set to zero."
-function _con_zero_non_providers!(model::Model, system::System, unit_codes, datetimes)
-    # Units that provide each service
-    reg_providers = get_regulation_providers(system)
-    spin_providers = get_spinning_providers(system)
-    on_sup_providers = get_sup_on_providers(system)
-    off_sup_providers = get_sup_off_providers(system)
-    r_reg = model[:r_reg]
-    r_spin = model[:r_spin]
-    r_on_sup = model[:r_on_sup]
-    r_off_sup = model[:r_off_sup]
-    @constraint(
-        model,
-        zero_reg[g in setdiff(Set(unit_codes), reg_providers), t in datetimes],
-        r_reg[g, t] == 0
-    )
-    @constraint(
-        model,
-        zero_spin[g in setdiff(Set(unit_codes), spin_providers), t in datetimes],
-        r_spin[g, t] == 0
-    )
-    @constraint(
-        model,
-        zero_on_sup[g in setdiff(Set(unit_codes), on_sup_providers), t in datetimes],
-        r_on_sup[g, t] == 0
-    )
-    @constraint(
-        model,
-        zero_off_sup[g in setdiff(Set(unit_codes), off_sup_providers), t in datetimes],
-        r_off_sup[g, t] == 0
-    )
-    return model
-end
-
-# For UC, add additional `zero_u_reg` constraint. `u_reg` here should be a variable.
-function _con_zero_non_providers!(model::Model, system::System, unit_codes, datetimes, u_reg)
-    reg_providers = get_regulation_providers(system)
-    non_providers = setdiff(Set(unit_codes), reg_providers)
-    @constraint(
-        model,
-        zero_u_reg[g in non_providers, t in datetimes],
-        u_reg[g, t] == 0
-    )
-    return _con_zero_non_providers!(model, system, unit_codes, datetimes)
-end==#
-
 """
     con_ancillary_ramp_rates!(fnm::FullNetworkModel)
 
