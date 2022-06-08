@@ -33,6 +33,7 @@ practice to threshold the shift factor values.
 See measurements on safe PTDF thresholding in
 https://gitlab.invenia.ca/invenia/research/FullNetworkModels.jl/-/merge_requests/128
 """
-@inline function _threshold!(ptdf::KeyedArray, threshold::Float64=_PTDF_THRESHOLD)
-    replace!(x -> abs(x) < threshold ? 0.0 : x, ptdf)
+function _threshold(shift_factor::KeyedArray, threshold::Float64=_PTDF_THRESHOLD)
+    shift_factor_thresholded = replace!(x -> abs(x) < threshold ? 0.0 : x, shift_factor)
+    return shift_factor_thresholded
 end

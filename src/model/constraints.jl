@@ -776,22 +776,14 @@ function con_thermal_branch!(fnm::FullNetworkModel; threshold=_SF_THRESHOLD)
     mon_branches = filter(br -> br.is_monitored, get_branches(system))
     mon_branches_names = string.(collect(keys(mon_branches)))
 
-    ptdf = sortkeys(get_ptdf(system), dims=2)
-    _threshold!(ptdf)
-    lodfs = get_lodf(system)
-    if !haskey(lodfs, "base_case")
-        insert!(
-            lodfs,
-            "base_case",
-            KeyedArray(Matrix{Float64}(undef, 0, 0), (String[], String[]))
-        )
+    ptdf_original = sortkeys(get_ptdf(system), dims=2)
+    ptdf = _threshold(ptdf_original, threshold)
+    lodfs_original = get_lodf(system)
+    lodfs_converted = map(lodfs_original) do lodf
+       _keyed_to_dense(_threshold(lodf, threshold))
     end
-    lodfs_converted = map(lodfs) do lodf
-        _keyed_to_dense(lodf)
-    end
-    #lodfs = _add_base_case_to_lodfs(lodf_dict) # Add base case to the LODF Dictionary
-    scenarios = collect(keys(lodfs)) # All scenarios (base case and contingency scenarios)
-    branches_out_names = unique(vcat(axiskeys.(lodfs, 2)...))
+    scenarios = collect(keys(lodfs_original)) # All scenarios (base case and contingency scenarios)
+    branches_out_names = unique(vcat(axiskeys.(lodfs_original, 2)...))
     # The flows need to be defined only for the branches that are monitored or going
     # out under some contingency.
     branches_names_monitored_or_out = union(branches_out_names, mon_branches_names)

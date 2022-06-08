@@ -223,9 +223,9 @@ function tests_branch_flow_limits(T, fnm::FullNetworkModel)
             @test sprint(show, constraint_by_name(model, "branch_flows_base[$m,$t]")) ==
             "branch_flows_base[$m,$t] : -$ptdf2 p_net[Bus2,$t] + $ptdf3 p_net[Bus3,$t] + fl[$m,$t,base_case] = 0.0"
             @test sprint(show, constraint_by_name(model, "branch_flows_conting[$m,$t,$c1]")) ==
-            "branch_flows_conting[$m,$t,$c1] : fl[$m,$t,$c1] - 0.5 fl[Line2,$t,base_case] - fl[$m,$t,base_case] = 0.0"
+            "branch_flows_conting[$m,$t,$c1] : -0.5 fl[Line2,$t,base_case] - fl[$m,$t,base_case] + fl[$m,$t,$c1] = 0.0"
             @test sprint(show, constraint_by_name(model, "branch_flows_conting[$m,$t,$c2]")) ==
-            "branch_flows_conting[$m,$t,$c2] : fl[$m,$t,$c2] - fl[Line3,$t,base_case] - fl[Line2,$t,base_case] - fl[$m,$t,base_case] = 0.0"
+            "branch_flows_conting[$m,$t,$c2] : -fl[Line3,$t,base_case] - fl[Line2,$t,base_case] - fl[$m,$t,base_case] + fl[$m,$t,$c2] = 0.0"
         end
     end
 
@@ -233,7 +233,7 @@ function tests_branch_flow_limits(T, fnm::FullNetworkModel)
     #mon_branches_names = string.(collect(keys(mon_branches)))
     @testset "Thermal Branch Limits" begin
         for t in fnm.datetimes
-            for c in TEST_SCENARIOS
+            for c in TEST_CONTINGENCIES
                 for m in keys(mon_branches)
                     rate = c =="base_case" ? mon_branches[m].rate_a : mon_branches[m].rate_b
                     if c == "base_case"

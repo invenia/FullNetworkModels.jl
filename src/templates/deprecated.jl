@@ -6,7 +6,7 @@
 
 @deprecate(
     unit_commitment_no_ramps(
-        system::System, solver=nothing, datetimes=get_forecast_timestamps(system);
+        system::SystemDA, solver=nothing, datetimes=get_datetimes(system);
         relax_integrality=false, slack=nothing,
     ),
     unit_commitment(
@@ -17,7 +17,7 @@
 )
 @deprecate(
     unit_commitment_branch_flow_limits(
-        system::System, solver=nothing, datetimes=get_forecast_timestamps(system);
+        system::SystemDA, solver=nothing, datetimes=get_datetimes(system);
         relax_integrality=false, slack=nothing, threshold=_SF_THRESHOLD
     ),
     unit_commitment(
@@ -28,7 +28,7 @@
 )
 @deprecate(
     unit_commitment_no_ramps_branch_flow_limits(
-        system::System, solver=nothing, datetimes=get_forecast_timestamps(system);
+        system::SystemDA, solver=nothing, datetimes=get_datetimes(system);
         relax_integrality=false, slack=nothing, threshold=_SF_THRESHOLD
     ),
     unit_commitment(
@@ -44,11 +44,11 @@
 
 @deprecate(
     economic_dispatch_branch_flow_limits(
-        system::System, solver=nothing, datetimes=get_forecast_timestamps(system);
+        system::SystemRT, solver=nothing, datetimes=get_datetimes(system);
         slack=1e6, threshold=_SF_THRESHOLD
     ),
     economic_dispatch(
-        system::System, solver, datetimes;
+        system::SystemRT, solver, datetimes;
         slack=1e6, threshold=threshold, branch_flows=true
     )
 )

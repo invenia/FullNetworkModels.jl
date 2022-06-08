@@ -521,8 +521,8 @@ end
     solver = optimizer_with_attributes(HiGHS.Optimizer, MOI.Silent() => true)
     @testset "Unit commitment" begin
         system = deepcopy(TEST_SYSTEM)
-        loads = collect(get_components(PowerLoad, system))
-        set_active_power!(loads[1], 10.0) # increase load to induce congestion
+        loads = get_load(system)
+        loads("Load2_Bus3") .= loads("Load2_Bus3") .* 10.0 # increase load to induce congestion
 
         fnm = unit_commitment(system, solver; relax_integrality=true, branch_flows=true)
         set_silent(fnm.model) # to reduce test verbosity
@@ -534,6 +534,7 @@ end
         )
         set_silent(fnm_thresh.model) # to reduce test verbosity
         optimize!(fnm_thresh)
+        println(termination_status(fnm.model))
 
         # There is congestion due to high load
         @test any(!=(0), dual.(fnm.model[:branch_flow_max_base]))
@@ -542,8 +543,9 @@ end
     end
     @testset "Economic dispatch" begin
         system = deepcopy(TEST_SYSTEM_RT)
-        loads = collect(get_components(PowerLoad, system))
-        set_active_power!(loads[1], 10.0) # increase load to induce congestion
+        loads = get_load(system)
+        loads .= loads .* 10.0
+        #loads("Load2_Bus3") .= loads("Load2_Bus3") .* 10.0 # increase load to induce congestion
 
         fnm = economic_dispatch(system, solver; branch_flows=true)
         set_silent(fnm.model) # to reduce test verbosity
@@ -553,6 +555,7 @@ end
         fnm_thresh = economic_dispatch(system, solver; branch_flows=true, threshold=1.0)
         set_silent(fnm_thresh.model) # to reduce test verbosity
         optimize!(fnm_thresh)
+        println(termination_status(fnm.model))
 
         # There is congestion due to high load
         @test any(!=(0), dual.(fnm.model[:branch_flow_max_base]))
@@ -583,7 +586,7 @@ end
     @test_throws Exception unit_commitment(slack=[:wrong => 1])
 
     # test 3-arg method because it's the one called in FullNetworkSimulations._ed_hour!
-    datetime = first(get_forecast_timestamps(TEST_SYSTEM_RT))
+    datetime = first(get_datetimes(TEST_SYSTEM_RT))
     ed = economic_dispatch(branch_flows=true, slack=:energy_balance => nothing)
     fnm = ed(TEST_SYSTEM_RT, solver, datetime)
     @test haskey(fnm.model, :branch_flows_base)

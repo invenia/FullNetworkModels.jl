@@ -31,6 +31,7 @@ function tests_thermal_linear_cost(fnm, var, f)
 end
 
 function tests_static_cost(fnm, var, field)
+    set_names!(fnm)
     unit_codes = keys(get_generators(fnm.system))
     cost = map(get_generators(fnm.system)) do gen
         getproperty(gen, field)
@@ -48,6 +49,7 @@ tests_static_noload_cost(fnm) = tests_static_cost(fnm, :u, :no_load_cost)
 tests_static_startup_cost(fnm) = tests_static_cost(fnm, :v, :startup_cost)
 
 function tests_ancillary_costs(fnm)
+    set_names!(fnm)
     unit_codes = keys(get_generators(fnm.system))
     cost_reg = get_regulation(fnm.system)
     cost_spin = get_spinning(fnm.system)
