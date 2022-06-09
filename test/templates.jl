@@ -544,8 +544,7 @@ end
     @testset "Economic dispatch" begin
         system = deepcopy(TEST_SYSTEM_RT)
         loads = get_load(system)
-        loads .= loads .* 10.0
-        #loads("Load2_Bus3") .= loads("Load2_Bus3") .* 10.0 # increase load to induce congestion
+        loads .= loads .* 10.0 # increase load to induce congestion
 
         fnm = economic_dispatch(system, solver; branch_flows=true)
         set_silent(fnm.model) # to reduce test verbosity
@@ -555,7 +554,6 @@ end
         fnm_thresh = economic_dispatch(system, solver; branch_flows=true, threshold=1.0)
         set_silent(fnm_thresh.model) # to reduce test verbosity
         optimize!(fnm_thresh)
-        println(termination_status(fnm.model))
 
         # There is congestion due to high load
         @test any(!=(0), dual.(fnm.model[:branch_flow_max_base]))
