@@ -172,7 +172,6 @@ function con_ancillary_limits!(fnm::FullNetworkModel{<:ED})
     _con_ancillary_min!(model, unit_codes, datetimes, Pmin, Pregmin, U, U_reg)
     _con_spin_and_sup_max!(model, unit_codes, datetimes, Pmin, Pmax, U)
     _con_off_sup_max!(model, unit_codes, datetimes, Pmin, Pmax, U)
-    #_con_zero_non_providers!(model, system, unit_codes, datetimes)
     return fnm
 end
 
