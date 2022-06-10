@@ -52,7 +52,7 @@ And if thermal branch flow limits are included, via `branch_flows=true`:
 $(latex(con_thermal_branch!))
 
 # Arguments
- - `system::SystemDA`: The PowerSystemDAs system that provides the input data.
+ - `system::SystemDA`: The FullNetworkSystems system that provides the input data.
  - `solver`: The solver of choice, e.g. `HiGHS.Optimizer`.
  - `datetimes=get_datetimes(system)`: The time periods considered in the model.
 
