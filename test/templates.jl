@@ -534,7 +534,6 @@ end
         )
         set_silent(fnm_thresh.model) # to reduce test verbosity
         optimize!(fnm_thresh)
-        println(termination_status(fnm.model))
 
         # There is congestion due to high load
         @test any(!=(0), dual.(fnm.model[:branch_flow_max_base]))
