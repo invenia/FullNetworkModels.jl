@@ -56,7 +56,7 @@ only after the model has been built.
 - `solver` (optional): A solver constructor to attach to an empty `JuMP.Model`.
 - `datetimes::Vector{DateTime}=get_datetimes(system)` (optional): The time periods
   which should be modelled. Must be a subset of the times for which the system has data.
-  Defaults to all datetimes in the system (see [`get_datetimes`](@ref)).
+  Defaults to all datetimes in the system.
 """
 struct FullNetworkModel{T<:UCED}
     system::System

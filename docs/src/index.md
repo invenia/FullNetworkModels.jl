@@ -1,6 +1,6 @@
 # FullNetworkModels
 
-[FullNetworkModels.jl](https://gitlab.invenia.ca/invenia/research/FullNetworkModels.jl/) creates full network models using [JuMP.jl](https://github.com/jump-dev/JuMP.jl) from the [PowerSystems.jl](https://nrel-siip.github.io/PowerSystems.jl) `System` built in [FullNetworkDataPrep.jl](https://gitlab.invenia.ca/invenia/research/FullNetworkDataPrep.jl).
+[FullNetworkModels.jl](https://gitlab.invenia.ca/invenia/research/FullNetworkModels.jl/) creates full network models using [JuMP.jl](https://github.com/jump-dev/JuMP.jl) from the [FullNetworkSystems.jl](https://github.com/invenia/FullNetworkSystems.jl) `System` built in [FullNetworkDataPrep.jl](https://gitlab.invenia.ca/invenia/research/FullNetworkDataPrep.jl).
 
 To run simulations with these models, see [FullNetworkSimulations.jl](https://invenia.pages.invenia.ca/research/FullNetworkSimulations.jl/).
 
