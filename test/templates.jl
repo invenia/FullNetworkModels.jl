@@ -599,20 +599,3 @@ end
     @test_throws Exception economic_dispatch(slack=:wrong => 1)
     @test_throws Exception economic_dispatch(slack=[:wrong => 1])
 end
-
-# We tested these still do the right thing as part of the PR which deprecated them.
-# Here we just test that they're still defined, so they don't accidentally get removed
-# until we're ready to make a breaking release.
-# https://gitlab.invenia.ca/invenia/research/FullNetworkModels.jl/-/issues/74
-@testset "deprecated" begin
-    solver = HiGHS.Optimizer
-    for uc in (
-        unit_commitment_no_ramps_branch_flow_limits,
-        unit_commitment_branch_flow_limits,
-        unit_commitment_no_ramps,
-    )
-        @test (@test_deprecated uc(TEST_SYSTEM, solver)) isa FullNetworkModel{UC}
-    end
-    ed = economic_dispatch_branch_flow_limits
-    @test (@test_deprecated ed(TEST_SYSTEM_RT, solver)) isa FullNetworkModel{ED}
-end

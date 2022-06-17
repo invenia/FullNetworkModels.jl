@@ -36,7 +36,6 @@ include("model/variables.jl")
 # Templates
 include("templates/unit_commitment.jl")
 include("templates/economic_dispatch.jl")
-include("templates/deprecated.jl")
 
 # Types
 export FullNetworkModel
