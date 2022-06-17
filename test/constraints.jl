@@ -230,7 +230,6 @@ function tests_branch_flow_limits(T, fnm::FullNetworkModel)
     end
 
     mon_branches = filter(br -> br.is_monitored, get_branches(system))
-    #mon_branches_names = string.(collect(keys(mon_branches)))
     @testset "Thermal Branch Limits" begin
         for t in fnm.datetimes
             for c in TEST_CONTINGENCIES
