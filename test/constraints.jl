@@ -14,6 +14,19 @@ end
 function tests_ancillary_limits(fnm::FullNetworkModel{<:UC})
     set_names!(fnm)
     t = first(fnm.datetimes)
+    # the first datetime in the fake system contains some missings in ancillary offers
+    @test sprint(show, constraint_by_name(fnm.model, "ancillary_max[7,$t]")) ==
+        "ancillary_max[7,$t] : p[7,$t] - 8 u[7,$t] + r_reg[7,$t] + r_spin[7,$t] + 0.5 u_reg[7,$t] ≤ 0.0"
+    @test sprint(show, constraint_by_name(fnm.model, "ancillary_min[7,$t]")) ==
+        "ancillary_min[7,$t] : p[7,$t] - 0.5 u[7,$t] - r_reg[7,$t] ≥ 0.0"
+    @test sprint(show, constraint_by_name(fnm.model, "regulation_max[7,$t]")) ==
+        "regulation_max[7,$t] : r_reg[7,$t] - 3.5 u_reg[7,$t] ≤ 0.0"
+    @test sprint(show, constraint_by_name(fnm.model, "spin_and_sup_max[7,$t]")) ==
+        "spin_and_sup_max[7,$t] : -7.5 u[7,$t] + r_spin[7,$t] ≤ 0.0"
+    @test constraint_by_name(fnm.model, "off_sup_max[7,$t]") === nothing
+    # Unit 7 in test system does provide regulation, spinning, and on/off supplemental
+    # in other hours of the day
+    t = fnm.datetimes[2]
     @test sprint(show, constraint_by_name(fnm.model, "ancillary_max[7,$t]")) ==
         "ancillary_max[7,$t] : p[7,$t] - 8 u[7,$t] + r_reg[7,$t] + r_spin[7,$t] + r_on_sup[7,$t] + 0.5 u_reg[7,$t] ≤ 0.0"
     @test sprint(show, constraint_by_name(fnm.model, "ancillary_min[7,$t]")) ==
@@ -24,11 +37,6 @@ function tests_ancillary_limits(fnm::FullNetworkModel{<:UC})
         "spin_and_sup_max[7,$t] : -7.5 u[7,$t] + r_spin[7,$t] + r_on_sup[7,$t] ≤ 0.0"
     @test sprint(show, constraint_by_name(fnm.model, "off_sup_max[7,$t]")) ==
         "off_sup_max[7,$t] : 7.5 u[7,$t] + r_off_sup[7,$t] ≤ 7.5"
-    # Units in test system provide regulation, spinning, and on/off supplemental
-    unit_codes = get_unit_codes(ThermalGen, fnm.system)
-    for str in ("reg", "u_reg", "spin", "on_sup", "off_sup"), g in unit_codes, t in fnm.datetimes
-        @test constraint_by_name(fnm.model, "zero_$str[$g,$t]") === nothing
-    end
     return nothing
 end
 
@@ -38,6 +46,16 @@ function tests_ancillary_limits(fnm::FullNetworkModel{<:ED})
     set_names!(fnm)
     t = first(fnm.datetimes)
     @test sprint(show, constraint_by_name(fnm.model, "ancillary_max[7,$t]")) ==
+        "ancillary_max[7,$t] : p[7,$t] + r_reg[7,$t] + r_spin[7,$t] ≤ 7.5"
+    @test sprint(show, constraint_by_name(fnm.model, "ancillary_min[7,$t]")) ==
+        "ancillary_min[7,$t] : p[7,$t] - r_reg[7,$t] ≥ 0.5"
+    @test sprint(show, constraint_by_name(fnm.model, "spin_and_sup_max[7,$t]")) ==
+        "spin_and_sup_max[7,$t] : r_spin[7,$t] ≤ 7.5"
+    @test constraint_by_name(fnm.model, "off_sup_max[7,$t]") === nothing
+    # Unit 7 in test system does provide regulation, spinning, and on/off supplemental
+    # in other hours of the day
+    t = fnm.datetimes[2]
+    @test sprint(show, constraint_by_name(fnm.model, "ancillary_max[7,$t]")) ==
         "ancillary_max[7,$t] : p[7,$t] + r_reg[7,$t] + r_spin[7,$t] + r_on_sup[7,$t] ≤ 7.5"
     @test sprint(show, constraint_by_name(fnm.model, "ancillary_min[7,$t]")) ==
         "ancillary_min[7,$t] : p[7,$t] - r_reg[7,$t] ≥ 0.5"
@@ -45,11 +63,6 @@ function tests_ancillary_limits(fnm::FullNetworkModel{<:ED})
         "spin_and_sup_max[7,$t] : r_spin[7,$t] + r_on_sup[7,$t] ≤ 7.5"
     @test sprint(show, constraint_by_name(fnm.model, "off_sup_max[7,$t]")) ==
         "off_sup_max[7,$t] : r_off_sup[7,$t] ≤ 0.0"
-    # Units in test system provide regulation, spinning, and on/off supplemental
-    unit_codes = get_unit_codes(ThermalGen, fnm.system)
-    for str in ("reg", "spin", "on_sup", "off_sup"), g in unit_codes, t in fnm.datetimes
-        @test constraint_by_name(fnm.model, "zero_$str[$g,$t]") === nothing
-    end
     return nothing
 end
 
@@ -59,10 +72,15 @@ function tests_regulation_requirements(fnm::FullNetworkModel{<:UC})
     @test sprint(show, constraint_by_name(fnm.model, "regulation_requirements[1,$t]")) ==
         "regulation_requirements[1,$t] : r_reg[3,$t] ≥ 0.3"
     @test sprint(show, constraint_by_name(fnm.model, "regulation_requirements[2,$t]")) ==
-        "regulation_requirements[2,$t] : r_reg[7,$t] ≥ 0.4"
+        "regulation_requirements[2,$t] : r_reg[7,$t] ≥ 0.0"
     @test sprint(show, constraint_by_name(
         fnm.model, "regulation_requirements[$(FNM.MARKET_WIDE_ZONE),$t]"
-    )) == "regulation_requirements[$(FNM.MARKET_WIDE_ZONE),$t] : r_reg[7,$t] + r_reg[3,$t] ≥ 0.8"
+    )) == "regulation_requirements[$(FNM.MARKET_WIDE_ZONE),$t] : r_reg[3,$t] + r_reg[7,$t] ≥ 0.8"
+    # Test that constraints show both units provide regulation in the second hour
+    t = fnm.datetimes[2]
+    @test sprint(show, constraint_by_name(
+        fnm.model, "regulation_requirements[$(FNM.MARKET_WIDE_ZONE),$t]"
+    )) == "regulation_requirements[$(FNM.MARKET_WIDE_ZONE),$t] : r_reg[3,$t] + r_reg[7,$t] ≥ 0.8"
     return nothing
 end
 
@@ -72,10 +90,15 @@ function tests_regulation_requirements(fnm::FullNetworkModel{<:ED})
     @test sprint(show, constraint_by_name(fnm.model, "regulation_requirements[1,$t]")) ==
         "regulation_requirements[1,$t] : r_reg[3,$t] + sl_reg_req[1,$t] ≥ 0.3"
     @test sprint(show, constraint_by_name(fnm.model, "regulation_requirements[2,$t]")) ==
-        "regulation_requirements[2,$t] : r_reg[7,$t] + sl_reg_req[2,$t] ≥ 0.4"
+        "regulation_requirements[2,$t] : r_reg[7,$t] + sl_reg_req[2,$t] ≥ 0.0"
     @test sprint(show, constraint_by_name(
         fnm.model, "regulation_requirements[$(FNM.MARKET_WIDE_ZONE),$t]"
-    )) == "regulation_requirements[$(FNM.MARKET_WIDE_ZONE),$t] : r_reg[7,$t] + r_reg[3,$t] + sl_reg_req[$(FNM.MARKET_WIDE_ZONE),$t] ≥ 0.8"
+    )) == "regulation_requirements[$(FNM.MARKET_WIDE_ZONE),$t] : r_reg[3,$t] + r_reg[7,$t] + sl_reg_req[$(FNM.MARKET_WIDE_ZONE),$t] ≥ 0.8"
+    # Test that constraints show both units provide regulation in the second hour
+    t = fnm.datetimes[2]
+    @test sprint(show, constraint_by_name(
+        fnm.model, "regulation_requirements[$(FNM.MARKET_WIDE_ZONE),$t]"
+    )) == "regulation_requirements[$(FNM.MARKET_WIDE_ZONE),$t] : r_reg[3,$t] + r_reg[7,$t] + sl_reg_req[$(FNM.MARKET_WIDE_ZONE),$t] ≥ 0.8"
     return nothing
 end
 
@@ -87,10 +110,10 @@ function tests_operating_reserve_requirements(fnm::FullNetworkModel{<:UC})
     )) == "operating_reserve_requirements[1,$t] : r_reg[3,$t] + r_spin[3,$t] + r_on_sup[3,$t] + r_off_sup[3,$t] ≥ 0.4"
     @test sprint(show, constraint_by_name(
         fnm.model, "operating_reserve_requirements[2,$t]"
-    )) == "operating_reserve_requirements[2,$t] : r_reg[7,$t] + r_spin[7,$t] + r_on_sup[7,$t] + r_off_sup[7,$t] ≥ 0.5"
+    )) == "operating_reserve_requirements[2,$t] : r_reg[7,$t] + r_spin[7,$t] ≥ 0.0"
     @test sprint(show, constraint_by_name(
         fnm.model, "operating_reserve_requirements[$(FNM.MARKET_WIDE_ZONE),$t]"
-    )) == "operating_reserve_requirements[$(FNM.MARKET_WIDE_ZONE),$t] : r_reg[7,$t] + r_reg[3,$t] + r_spin[7,$t] + r_spin[3,$t] + r_on_sup[7,$t] + r_on_sup[3,$t] + r_off_sup[7,$t] + r_off_sup[3,$t] ≥ 1.2"
+    )) == "operating_reserve_requirements[$(FNM.MARKET_WIDE_ZONE),$t] : r_reg[3,$t] + r_reg[7,$t] + r_spin[3,$t] + r_spin[7,$t] + r_on_sup[3,$t] + r_off_sup[3,$t] ≥ 1.2"
     return nothing
 end
 
@@ -102,19 +125,18 @@ function tests_operating_reserve_requirements(fnm::FullNetworkModel{<:ED})
     )) == "operating_reserve_requirements[1,$t] : r_reg[3,$t] + r_spin[3,$t] + r_on_sup[3,$t] + r_off_sup[3,$t] + sl_or_req[1,$t] ≥ 0.4"
     @test sprint(show, constraint_by_name(
         fnm.model, "operating_reserve_requirements[2,$t]"
-    )) == "operating_reserve_requirements[2,$t] : r_reg[7,$t] + r_spin[7,$t] + r_on_sup[7,$t] + r_off_sup[7,$t] + sl_or_req[2,$t] ≥ 0.5"
+    )) == "operating_reserve_requirements[2,$t] : r_reg[7,$t] + r_spin[7,$t] + sl_or_req[2,$t] ≥ 0.0"
     @test sprint(show, constraint_by_name(
         fnm.model, "operating_reserve_requirements[$(FNM.MARKET_WIDE_ZONE),$t]"
-    )) == "operating_reserve_requirements[$(FNM.MARKET_WIDE_ZONE),$t] : r_reg[7,$t] + r_reg[3,$t] + r_spin[7,$t] + r_spin[3,$t] + r_on_sup[7,$t] + r_on_sup[3,$t] + r_off_sup[7,$t] + r_off_sup[3,$t] + sl_or_req[$(FNM.MARKET_WIDE_ZONE),$t] ≥ 1.2"
+    )) == "operating_reserve_requirements[$(FNM.MARKET_WIDE_ZONE),$t] : r_reg[3,$t] + r_reg[7,$t] + r_spin[3,$t] + r_spin[7,$t] + r_on_sup[3,$t] + r_off_sup[3,$t] + sl_or_req[$(FNM.MARKET_WIDE_ZONE),$t] ≥ 1.2"
     return nothing
 end
 
 function tests_ramp_rates(fnm; slack=nothing)
     set_names!(fnm)
     t1, t2 = fnm.datetimes[1:2]
-    @test sprint(show, constraint_by_name(
-        fnm.model, "ramp_regulation[3,$t1]"
-    )) == "ramp_regulation[3,$t1] : r_reg[3,$t1] ≤ 1.25"
+    @test sprint(show, constraint_by_name(fnm.model, "ramp_regulation[3,$t1]")) ==
+        "ramp_regulation[3,$t1] : r_reg[3,$t1] ≤ 1.25"
     @test sprint(show, constraint_by_name(
         fnm.model, "ramp_spin_sup[3,$t1]"
     )) == "ramp_spin_sup[3,$t1] : r_spin[3,$t1] + r_on_sup[3,$t1] + r_off_sup[3,$t1] ≤ 2.5"
@@ -152,23 +174,23 @@ end
 
 function tests_energy_balance(fnm::FullNetworkModel{<:ED})
     set_names!(fnm)
-    load_names = get_load_names(PowerLoad, fnm.system)
-    D = get_fixed_loads(fnm.system)
+    load_names = axiskeys(get_load(fnm.system), 1)
+    D = get_load(fnm.system)
     @testset "Constraints were correctly defined" for t in fnm.datetimes
-        system_load = sum(D[f, t] for f in load_names)
+        system_load = sum(D(f, t) for f in load_names)
         @test sprint(show, constraint_by_name(fnm.model, "energy_balance[$t]")) ==
-            "energy_balance[$t] : p[7,$t] + p[3,$t] + sl_eb_gen[$t] - sl_eb_load[$t] = $(system_load)"
+            "energy_balance[$t] : p[3,$t] + p[7,$t] + sl_eb_gen[$t] - sl_eb_load[$t] = $(system_load)"
     end
     return nothing
 end
 function tests_energy_balance(fnm::FullNetworkModel{<:UC})
     set_names!(fnm)
-    load_names = get_load_names(PowerLoad, fnm.system)
-    D = get_fixed_loads(fnm.system)
+    load_names = axiskeys(get_load(fnm.system), 1)
+    D = get_load(fnm.system)
     @testset "Constraints were correctly defined" for t in fnm.datetimes
-        system_load = sum(D[f, t] for f in load_names)
+        system_load = sum(D(f, t) for f in load_names)
         @test sprint(show, constraint_by_name(fnm.model, "energy_balance[$t]")) ==
-            "energy_balance[$t] : p[7,$t] + p[3,$t] + inc[111_Bus1,$t] - dec[222_Bus1,$t] - psd[333_Bus1,$t] = $(system_load)"
+            "energy_balance[$t] : p[3,$t] + p[7,$t] + inc[111_Bus1,$t] - dec[222_Bus1,$t] - psd[333_Bus1,$t] = $(system_load)"
     end
     return nothing
 end
@@ -207,31 +229,31 @@ function tests_branch_flow_limits(T, fnm::FullNetworkModel)
         end
     end
 
-    mon_branches_names = get_monitored_branch_names(Branch, system)
-    mon_branches_rates_a = get_branch_rates(mon_branches_names, system)
-    mon_branches_rates_b = get_branch_rates_b(mon_branches_names, system)
+    mon_branches = filter(br -> br.is_monitored, get_branches(system))
     @testset "Thermal Branch Limits" begin
         for t in fnm.datetimes
-            for m in mon_branches_names, c in TEST_CONTINGENCIES
-                rate = c =="base_case" ? mon_branches_rates_a[m] : mon_branches_rates_b[m]
-                if c == "base_case"
-                    @test sprint(show, constraint_by_name(model, "branch_flow_max_base[$m,$t,$c]")) ==
-                    "branch_flow_max_base[$m,$t,$c] : fl[$m,$t,$c] - sl1_fl[$m,$t,$c] - sl2_fl[$m,$t,$c] ≤ $rate"
-                    @test sprint(show, constraint_by_name(model, "branch_flow_min_base[$m,$t,$c]")) ==
-                    "branch_flow_min_base[$m,$t,$c] : fl[$m,$t,$c] + sl1_fl[$m,$t,$c] + sl2_fl[$m,$t,$c] ≥ -$rate"
-                else
-                    @test sprint(show, constraint_by_name(model, "branch_flow_max_cont[$m,$t,$c]")) ==
-                    "branch_flow_max_cont[$m,$t,$c] : fl[$m,$t,$c] - sl1_fl[$m,$t,$c] - sl2_fl[$m,$t,$c] ≤ $rate"
-                    @test sprint(show, constraint_by_name(model, "branch_flow_min_cont[$m,$t,$c]")) ==
-                    "branch_flow_min_cont[$m,$t,$c] : fl[$m,$t,$c] + sl1_fl[$m,$t,$c] + sl2_fl[$m,$t,$c] ≥ -$rate"
+            for c in TEST_CONTINGENCIES
+                for m in keys(mon_branches)
+                    rate = c =="base_case" ? mon_branches[m].rate_a : mon_branches[m].rate_b
+                    if c == "base_case"
+                        @test sprint(show, constraint_by_name(model, "branch_flow_max_base[$m,$t,$c]")) ==
+                        "branch_flow_max_base[$m,$t,$c] : fl[$m,$t,$c] - sl1_fl[$m,$t,$c] - sl2_fl[$m,$t,$c] ≤ $rate"
+                        @test sprint(show, constraint_by_name(model, "branch_flow_min_base[$m,$t,$c]")) ==
+                        "branch_flow_min_base[$m,$t,$c] : fl[$m,$t,$c] + sl1_fl[$m,$t,$c] + sl2_fl[$m,$t,$c] ≥ -$rate"
+                    else
+                        @test sprint(show, constraint_by_name(model, "branch_flow_max_cont[$m,$t,$c]")) ==
+                        "branch_flow_max_cont[$m,$t,$c] : fl[$m,$t,$c] - sl1_fl[$m,$t,$c] - sl2_fl[$m,$t,$c] ≤ $rate"
+                        @test sprint(show, constraint_by_name(model, "branch_flow_min_cont[$m,$t,$c]")) ==
+                        "branch_flow_min_cont[$m,$t,$c] : fl[$m,$t,$c] + sl1_fl[$m,$t,$c] + sl2_fl[$m,$t,$c] ≥ -$rate"
+                    end
                 end
+                @test constraint_by_name(model, "branch_flow_max_base[\"Line2\",$t,\"base_case\"]") === nothing
+                @test constraint_by_name(model, "branch_flow_min_base[\"Line2\",$t,\"base_case\"]") === nothing
+                @test constraint_by_name(model, "branch_flow_max_cont[\"Line2\",$t,\"conting1\"]") === nothing
+                @test constraint_by_name(model, "branch_flow_min_cont[\"Line2\",$t,\"conting1\"]") === nothing
+                @test constraint_by_name(model, "branch_flow_max_cont[\"Line2\",$t,\"conting2\"]") === nothing
+                @test constraint_by_name(model, "branch_flow_min_cont[\"Line2\",$t,\"conting2\"]") === nothing
             end
-            @test constraint_by_name(model, "branch_flow_max_base[\"Line2\",$t,\"base_case\"]") === nothing
-            @test constraint_by_name(model, "branch_flow_min_base[\"Line2\",$t,\"base_case\"]") === nothing
-            @test constraint_by_name(model, "branch_flow_max_cont[\"Line2\",$t,\"conting1\"]") === nothing
-            @test constraint_by_name(model, "branch_flow_min_cont[\"Line2\",$t,\"conting1\"]") === nothing
-            @test constraint_by_name(model, "branch_flow_max_cont[\"Line2\",$t,\"conting2\"]") === nothing
-            @test constraint_by_name(model, "branch_flow_min_cont[\"Line2\",$t,\"conting2\"]") === nothing
         end
     end
     return nothing
@@ -239,7 +261,7 @@ end
 
 # A simple unit commitment with no ancillary services for the sake of tests.
 function _simple_template(
-    system::System, ::Type{UC}, solver, datetimes=get_forecast_timestamps(system);
+    system::System, ::Type{UC}, solver, datetimes=get_datetimes(system);
     slack=nothing
 )
     fnm = FullNetworkModel{UC}(system, datetimes)
@@ -261,7 +283,7 @@ end
 
 # A simple economic dispatch with no ancillary services for the sake of tests.
 function _simple_template(
-    system::System, ::Type{ED}, solver, datetimes=get_forecast_timestamps(system);
+    system::System, ::Type{ED}, solver, datetimes=get_datetimes(system);
     slack = nothing
 )
     fnm = FullNetworkModel{ED}(system, datetimes)
@@ -367,12 +389,9 @@ end
     @testset "con_must_run!" begin
         # Create a system with a very cheap generator
         system = deepcopy(TEST_SYSTEM)
-        gen3 = get_component(ThermalGen, system, "3")
-        remove_time_series!(system, SingleTimeSeries, gen3, "offer_curve")
+        offers_ts = get_offer_curve(system)
         cheap_offer_curve = [(0.1, 200.0), (0.5, 800.0)]
-        datetimes = get_forecast_timestamps(system)
-        ta = TimeArray(datetimes, fill(cheap_offer_curve, 24))
-        add_time_series!(system, gen3, SingleTimeSeries("offer_curve", ta))
+        offers_ts(3, :) .= fill(cheap_offer_curve, 24)
 
         # Check that the more expensive generator is not committed
         fnm = _simple_template(system, UC, HiGHS.Optimizer)
@@ -382,10 +401,8 @@ end
         @test u[7, :].data == zeros(24)
 
         # Now replace the must run flag of the more expensive generator with 1's
-        gen7 = get_component(ThermalGen, system, "7")
-        remove_time_series!(system, SingleTimeSeries, gen7, "must_run")
-        ta = TimeArray(datetimes, fill(1, 24))
-        add_time_series!(system, gen7, SingleTimeSeries("must_run", ta))
+        must_run_ts = get_must_run(system)
+        must_run_ts(7, :) .= fill(1, 24)
 
         # Check that generator 7 is now committed throughout the day
         fnm = _simple_template(system, UC, HiGHS.Optimizer)
@@ -398,11 +415,8 @@ end
     @testset "con_availability!" begin
         # Edit system so that gen3 is unavailable during the last hour
         system = deepcopy(TEST_SYSTEM)
-        gen7 = get_component(ThermalGen, system, "7")
-        remove_time_series!(system, SingleTimeSeries, gen7, "availability")
-        datetimes = get_forecast_timestamps(system)
-        ta = TimeArray(datetimes, vcat(ones(Int, 23), 0))
-        add_time_series!(system, gen7, SingleTimeSeries("availability", ta))
+        availability_ts = get_availability(system)
+        availability_ts(7, :) .= vcat(ones(Int, 23), 0)
 
         # Check that gen3 was not committed during the last hour
         fnm = _simple_template(system, UC, HiGHS.Optimizer)

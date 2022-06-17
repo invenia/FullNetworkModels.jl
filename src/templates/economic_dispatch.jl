@@ -2,7 +2,7 @@ const _DEFAULT_ED_SLACK = 1e6
 
 """
     economic_dispatch(
-        system::System, solver=nothing, datetimes=get_forecast_timestamps(system);
+        system::System, solver=nothing, datetimes=get_datetimes(system);
         slack=1e6, branch_flows=false
     ) -> FullNetworkModel{ED}
 
@@ -39,10 +39,10 @@ $(latex(con_thermal_branch!))
     since the economic dispatch model built here is solved hourly, and its highly
     likely that these constraints are not binding within an hourly time period.
 
-# Arguments
- - `system::System`: The PowerSystems system that provides the input data.
+Arguments:
+ - `system::SystemRT`: The FullNetworkSystems system that provides the input data.
  - `solver`: The solver of choice, e.g. `HiGHS.Optimizer`.
- - `datetimes=get_forecast_timestamps(system)`: The time periods considered in the model.
+ - `datetimes=get_datetimes(system)`: The time periods considered in the model.
 
 # Keywords
  - `slack=1e6`: The slack penalty for the soft constraints.
@@ -51,7 +51,7 @@ $(latex(con_thermal_branch!))
    in the formulation.
 """
 function economic_dispatch(
-    system::System, solver=nothing, datetimes=get_forecast_timestamps(system);
+    system::SystemRT, solver=nothing, datetimes=get_datetimes(system);
     slack=_DEFAULT_ED_SLACK, threshold=_SF_THRESHOLD, branch_flows::Bool=false
 )
     # Get the individual slack values to be used in each soft constraint
@@ -99,7 +99,7 @@ fnm = ed(system, solver)
 function economic_dispatch(; slack=_DEFAULT_ED_SLACK, keywords...)
     slack = Slacks(slack)  # if we've an invalid `slack` argument, force error ASAP.
     return function _economic_dispatch(
-        system::System, solver=nothing, datetimes=get_forecast_timestamps(system)
+        system::SystemRT, solver=nothing, datetimes=get_datetimes(system)
     )
         return economic_dispatch(system, solver, datetimes; slack=slack, keywords...)
     end

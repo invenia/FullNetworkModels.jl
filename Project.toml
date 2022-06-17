@@ -1,25 +1,27 @@
 name = "FullNetworkModels"
 uuid = "73927447-18cb-4351-9246-c402eb8d0c47"
 authors = ["Invenia Technical Computing Corporation"]
-version = "6.6.0"
+version = "7.0.0-DEV"
 
 [deps]
+AxisKeys = "94b1ba4f-4ee9-5380-92f1-94cde586c3c5"
 Dates = "ade2ca70-3891-5945-98fb-dc099432e06a"
+Dictionaries = "85a47980-9c8c-11e8-2b9f-f7ca1fa99fb4"
+FullNetworkSystems = "877b7152-b508-43dc-81fb-72341a693988"
 JuMP = "4076af6c-e467-56ae-b986-b466b2749572"
 Memento = "f28f55f0-a522-5efc-85c2-fe41dfb9b2d9"
-PowerSystems = "bcd98974-b02a-5e2f-9ee0-a103f5c450dd"
-PowerSystemsExtras = "5c12387c-8993-487c-b7f8-95b63bb251f1"
 TimerOutputs = "a759f4b9-e2f1-59dc-863e-4aeb61b1ea8f"
 
 [compat]
+AxisKeys = "0.2"
+Dictionaries = "0.3"
 ElectricityMarkets = "1.14"
-FullNetworkDataPrep = "0.24"
+FullNetworkDataPrep = "0.25"
+FullNetworkSystems = "1"
 HiGHS = "1"
+InlineStrings = "1"
 JuMP = "1.1"
 Memento = "1.1"
-PowerSystems = "1.5"
-PowerSystemsExtras = "0.1.5"
-TimeSeries = "0.23"
 TimerOutputs = "0.5"
 julia = "1.5"
 
@@ -27,9 +29,10 @@ julia = "1.5"
 ElectricityMarkets = "fc2b1cf9-69e4-584d-aa69-fb07a6454787"
 FullNetworkDataPrep = "a21943b2-60f3-11e9-2dbc-73f7bf1f23ac"
 HiGHS = "87dc4568-4c63-4d18-b0c0-bb2238e4078b"
+InlineStrings = "842dd82b-1e85-43dc-bf29-5d0ee9dffc48"
 MathOptInterface = "b8f27783-ece8-5eb3-8dc8-9495eed66fee"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 TimeSeries = "9e3dc215-6440-5c97-bce1-76c03772f85e"
 
 [targets]
-test = ["ElectricityMarkets", "FullNetworkDataPrep", "HiGHS", "MathOptInterface", "Test", "TimeSeries"]
+test = ["ElectricityMarkets", "FullNetworkDataPrep", "HiGHS", "InlineStrings", "MathOptInterface", "Test", "TimeSeries"]

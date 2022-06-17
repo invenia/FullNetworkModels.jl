@@ -51,12 +51,16 @@ function obj_thermal_variable_cost!(fnm::FullNetworkModel{T}) where T
     model = fnm.model
     system = fnm.system
     datetimes = fnm.datetimes
-    unit_codes = get_unit_codes(ThermalGen, system)
-    offer_curves = get_offer_curves(system, datetimes)
+    unit_codes = keys(get_generators(system))
+    offer_curves = _keyed_to_dense(get_offer_curve(system))
     # Get properties of the offer curves: prices, block MW limits, number of blocks
     Λ, block_lims, n_blocks = _curve_properties(offer_curves)
     # Add variables and constraints for thermal generation blocks
-    u = T === UC ? model[:u] : get_commitment_status(system, datetimes)
+    if T === UC
+        u = model[:u]
+    else
+        u = _keyed_to_dense(get_commitment(system))
+    end
     _var_thermal_gen_blocks!(model, unit_codes, block_lims, datetimes, n_blocks, u)
     # Add thermal variable cost to objective
     _obj_thermal_variable_cost!(model, unit_codes, datetimes, n_blocks, Λ)
@@ -77,7 +81,7 @@ Adds the no-load cost of thermal generators to the model formulation:
 $(latex(obj_thermal_noload_cost!))
 """
 function obj_thermal_noload_cost!(fnm::FullNetworkModel)
-    return _obj_thermal_linear_cost!(fnm, :u, get_noload_cost)
+    return _obj_static_cost!(fnm, :u, :no_load_cost)
 end
 
 function latex(::typeof(obj_thermal_startup_cost!))
@@ -94,7 +98,7 @@ Adds the start-up cost of thermal generators to the model formulation:
 $(latex(obj_thermal_startup_cost!))
 """
 function obj_thermal_startup_cost!(fnm::FullNetworkModel)
-    return _obj_thermal_linear_cost!(fnm, :v, get_startup_cost)
+    return _obj_static_cost!(fnm, :v, :startup_cost)
 end
 
 function latex(::typeof(obj_ancillary_costs!))
@@ -114,18 +118,10 @@ Adds to the objective function:
 $(latex(obj_ancillary_costs!))
 """
 function obj_ancillary_costs!(fnm::FullNetworkModel)
-    _obj_thermal_linear_cost!(
-        fnm, :r_reg, get_regulation_cost; unit_codes=get_regulation_providers(fnm.system)
-    )
-    _obj_thermal_linear_cost!(
-        fnm, :r_spin, get_spinning_cost; unit_codes=get_spinning_providers(fnm.system)
-    )
-    _obj_thermal_linear_cost!(
-        fnm, :r_on_sup, get_on_sup_cost; unit_codes=get_on_sup_providers(fnm.system)
-    )
-    _obj_thermal_linear_cost!(
-        fnm, :r_off_sup, get_off_sup_cost; unit_codes=get_off_sup_providers(fnm.system)
-    )
+    _obj_thermal_linear_cost!(fnm, :r_reg, get_regulation)
+    _obj_thermal_linear_cost!(fnm, :r_spin, get_spinning)
+    _obj_thermal_linear_cost!(fnm, :r_on_sup, get_supplemental_on)
+    _obj_thermal_linear_cost!(fnm, :r_off_sup, get_supplemental_off)
     return fnm
 end
 
@@ -197,14 +193,14 @@ function obj_bids!(fnm::FullNetworkModel)
     system = fnm.system
     datetimes = fnm.datetimes
     total_bid_cost = AffExpr()
-    for (bidtype, v) in ((Increment, :inc), (Decrement, :dec), (PriceSensitiveDemand, :psd))
-        bid_names = get_bid_names(bidtype, system)
-        bids = get_bid_curves(bidtype, system, datetimes)
+    for (v, bidtype) in ((:inc, :increment), (:dec, :decrement), (:psd, :price_sensitive_demand))
+        bids = _keyed_to_dense(get_bids(system, bidtype))
+        bid_names = axes(bids, 1)
         # Get properties of the bid curves: prices, block MW limits, number of blocks
         Λ, block_lims, n_blocks = _curve_properties(bids; blocks=true)
         # Add variables and constraints for bid blocks and cost to objective function
         _var_bid_blocks!(model, bid_names, block_lims, datetimes, n_blocks, v)
-        sense = bidtype === Increment ? 1 : -1
+        sense = bidtype === :increment ? 1 : -1
         bid_cost = _variable_cost(model, bid_names, datetimes, n_blocks, Λ, v, sense)
         add_to_expression!(total_bid_cost, bid_cost)
     end

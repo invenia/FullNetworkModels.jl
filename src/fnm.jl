@@ -54,16 +54,16 @@ only after the model has been built.
 - `model::Model` (optional): The `JuMP.Model` describing the optimization problem.
     Defaults to an empty model, with `set_string_names_on_creation(model) == false` .
 - `solver` (optional): A solver constructor to attach to an empty `JuMP.Model`.
-- `datetimes::Vector{DateTime}=get_forecast_timestamps(system)` (optional): The time periods
+- `datetimes::Vector{DateTime}=get_datetimes(system)` (optional): The time periods
   which should be modelled. Must be a subset of the times for which the system has data.
-  Defaults to all datetimes in the system (see [`get_forecast_timestamps`](@ref)).
+  Defaults to all datetimes in the system.
 """
 struct FullNetworkModel{T<:UCED}
     system::System
     model::Model
     datetimes::Vector{DateTime}
     function FullNetworkModel{T}(
-        system::System, model::Model, datetimes=get_forecast_timestamps(system)
+        system::System, model::Model, datetimes=get_datetimes(system)
     ) where T<:UCED
         new{T}(system, model, datetimes)
     end
@@ -76,7 +76,7 @@ function FullNetworkModel{T}(
 end
 
 function FullNetworkModel{T}(
-    system::System, datetimes::AbstractVector{<:DateTime}=get_forecast_timestamps(system)
+    system::System, datetimes::AbstractVector{<:DateTime}=get_datetimes(system)
 ) where T<:UCED
     model = Model()
     set_string_names_on_creation(model, false)
@@ -90,7 +90,7 @@ function FullNetworkModel{T}(system::System, datetime::DateTime) where T<:UCED
 end
 
 function FullNetworkModel{T}(
-    system::System, solver, datetimes=get_forecast_timestamps(system)
+    system::System, solver, datetimes=get_datetimes(system)
 ) where T<:UCED
     model = Model(solver; add_bridges=false)
     set_string_names_on_creation(model, false)
@@ -108,7 +108,12 @@ function Base.show(io::IO, fnm::T) where {T <: FullNetworkModel}
     end
     min == max ? print(io, "\nTime period: ", min) : print(io, "\nTime periods: ", min, " to ", max)
     # System
-    print(io, "\nSystem: $(length(get_components(Component, fnm.system))) components")
+    num_components = sum(
+        length(c) for c in [
+            get_buses(fnm.system), get_generators(fnm.system), get_branches(fnm.system)
+        ]
+    )
+    print(io, "\nSystem: $(num_components) components")
     # Model
     n_vars = num_variables(fnm.model)
     con_list = list_of_constraint_types(fnm.model)

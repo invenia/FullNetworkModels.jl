@@ -23,7 +23,7 @@ thermal generators in `system` and by the time periods considered:
 $(latex(var_thermal_generation!))
 """
 function var_thermal_generation!(fnm::FullNetworkModel)
-    unit_codes = get_unit_codes(ThermalGen, fnm.system)
+    unit_codes = keys(get_generators(fnm.system))
     @variable(fnm.model, p[g in unit_codes, t in fnm.datetimes] >= 0)
     return fnm
 end
@@ -43,7 +43,7 @@ thermal generators in `system` and by the time periods considered:
 $(latex(var_commitment!))
 """
 function var_commitment!(fnm::FullNetworkModel)
-    unit_codes = get_unit_codes(ThermalGen, fnm.system)
+    unit_codes = keys(get_generators(fnm.system))
     @variable(fnm.model, u[g in unit_codes, t in fnm.datetimes], Bin)
     return fnm
 end
@@ -76,7 +76,7 @@ function var_startup_shutdown!(fnm::FullNetworkModel)
     model = fnm.model
     system = fnm.system
     datetimes = fnm.datetimes
-    unit_codes = get_unit_codes(ThermalGen, system)
+    unit_codes = keys(get_generators(fnm.system))
     _var_startup_shutdown!(model, unit_codes, datetimes)
     _con_startup_shutdown!(model, system, unit_codes, datetimes)
     return fnm
@@ -94,7 +94,7 @@ function _con_startup_shutdown!(model::Model, system, unit_codes, datetimes)
     v = model[:v]
     w = model[:w]
     U0 = get_initial_commitment(system)
-    Δh = Hour(_get_resolution_in_minutes(system) / 60) # assume hourly resolution
+    Δh = first(diff(datetimes))
     h1 = first(datetimes)
     # Add the constraints that model the start-up and shutdown variables
     @constraint(
@@ -105,7 +105,7 @@ function _con_startup_shutdown!(model::Model, system, unit_codes, datetimes)
     @constraint(
         model,
         startup_shutdown_definition_initial[g in unit_codes],
-        u[g, h1] - U0[g] == v[g, h1] - w[g, h1]
+        u[g, h1] - U0(g) == v[g, h1] - w[g, h1]
     )
     return model
 end
@@ -148,25 +148,39 @@ $(latex(_var_reg_commitment!))
 $(latex(_con_reg_commitment!))
 """
 function var_ancillary_services!(fnm::FullNetworkModel{<:UC})
-    unit_codes = get_unit_codes(ThermalGen, fnm.system)
-    _var_ancillary_services!(fnm.model, unit_codes, fnm.datetimes)
+    unit_codes = keys(get_generators(fnm.system))
+    _var_ancillary_services!(fnm, unit_codes, fnm.datetimes)
     _var_reg_commitment!(fnm.model, unit_codes, fnm.datetimes)
     _con_reg_commitment!(fnm.model, unit_codes, fnm.datetimes)
     return fnm
 end
 
 function var_ancillary_services!(fnm::FullNetworkModel{<:ED})
-    unit_codes = get_unit_codes(ThermalGen, fnm.system)
-    _var_ancillary_services!(fnm.model, unit_codes, fnm.datetimes)
+    unit_codes = keys(get_generators(fnm.system))
+    _var_ancillary_services!(fnm, unit_codes, fnm.datetimes)
     return fnm
 end
 
-function _var_ancillary_services!(model::Model, unit_codes, datetimes)
-    @variable(model, r_reg[g in unit_codes, t in datetimes] >= 0)
-    @variable(model, r_spin[g in unit_codes, t in datetimes] >= 0)
-    @variable(model, r_on_sup[g in unit_codes, t in datetimes] >= 0)
-    @variable(model, r_off_sup[g in unit_codes, t in datetimes] >= 0)
+function _var_ancillary_services!(fnm::FullNetworkModel, unit_codes, datetimes)
+    system = fnm.system
+    model = fnm.model
+    reg_pairs = _provider_indices(get_regulation(system))
+    spin_pairs = _provider_indices(get_spinning(system))
+    sup_on_pairs = _provider_indices(get_supplemental_on(system))
+    sup_off_pairs = _provider_indices(get_supplemental_off(system))
+
+    @variable(model, r_reg[g in unit_codes, t in datetimes; (g, t) in reg_pairs] >= 0)
+    @variable(model, r_spin[g in unit_codes, t in datetimes; (g, t) in spin_pairs] >= 0)
+    @variable(model, r_on_sup[g in unit_codes, t in datetimes; (g, t) in sup_on_pairs] >= 0)
+    @variable(model, r_off_sup[g in unit_codes, t in datetimes; (g, t) in sup_off_pairs] >= 0)
     return model
+end
+
+function _provider_indices(ts)
+    coords = findall(.!(ismissing.(ts)))
+    return map(coords) do i
+        getindex.(axiskeys(ts), Tuple(i))
+    end
 end
 
 function _var_reg_commitment!(model::Model, unit_codes, datetimes)
@@ -201,9 +215,9 @@ $(latex(var_bids!))
 The created variables are named `inc`, `dec`, `psd`.
 """
 function var_bids!(fnm::FullNetworkModel)
-    inc_names = get_bid_names(Increment, fnm.system)
-    dec_names = get_bid_names(Decrement, fnm.system)
-    psd_names = get_bid_names(PriceSensitiveDemand, fnm.system)
+    inc_names = axiskeys(get_bids(fnm.system, :increment), 1)
+    dec_names = axiskeys(get_bids(fnm.system, :decrement), 1)
+    psd_names = axiskeys(get_bids(fnm.system, :price_sensitive_demand), 1)
     @variable(fnm.model, inc[i in inc_names, t in fnm.datetimes] >= 0)
     @variable(fnm.model, dec[d in dec_names, t in fnm.datetimes] >= 0)
     @variable(fnm.model, psd[s in psd_names, t in fnm.datetimes] >= 0)

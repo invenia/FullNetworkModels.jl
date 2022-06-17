@@ -1,12 +1,13 @@
 module FullNetworkModels
 
+using AxisKeys
+using AxisKeys: sortkeys
 using Dates
+using Dictionaries
+using FullNetworkSystems
 using JuMP
 using JuMP.Containers: DenseAxisArray
 using Memento
-using PowerSystems
-using PowerSystemsExtras
-using PowerSystemsExtras: PTDF # to avoid conflict with PowerSystems.jl
 using TimerOutputs
 
 const LOGGER = getlogger(@__MODULE__)
@@ -35,7 +36,6 @@ include("model/variables.jl")
 # Templates
 include("templates/unit_commitment.jl")
 include("templates/economic_dispatch.jl")
-include("templates/deprecated.jl")
 
 # Types
 export FullNetworkModel
@@ -43,56 +43,6 @@ export UCED
 export UC
 export ED
 
-# Accessor functions
-export get_availability
-export get_bid_curves
-export get_bid_names
-export get_bid_names_perbus
-export get_branch_break_points
-export get_branch_names
-export get_branch_penalties
-export get_branch_rates
-export get_branch_rates_b
-export get_bus_names
-export get_commitment_reg_status
-export get_commitment_status
-export get_fixed_loads
-export get_forecast_timestamps
-export get_generator_time_series
-export get_initial_commitment
-export get_initial_downtime
-export get_initial_generation
-export get_initial_uptime
-export get_load_names
-export get_load_names_perbus
-export get_lodf_dict
-export get_minimum_downtime
-export get_minimum_uptime
-export get_monitored_branch_names
-export get_must_run_flag
-export get_noload_cost
-export get_off_sup_cost
-export get_off_sup_providers
-export get_offer_curves
-export get_on_sup_cost
-export get_on_sup_providers
-export get_operating_reserve_requirements
-export get_pmax
-export get_pmin
-export get_ptdf
-export get_ramp_rates
-export get_regmax
-export get_regmin
-export get_regulation_cost
-export get_regulation_providers
-export get_regulation_requirements
-export get_reserve_zones
-export get_spinning_cost
-export get_spinning_providers
-export get_startup_cost
-export get_startup_limits
-export get_unit_codes
-export get_unit_codes_perbus
 export has_constraint
 export has_variable
 
