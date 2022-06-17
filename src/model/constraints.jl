@@ -78,7 +78,7 @@ function con_generation_limits!(fnm::FullNetworkModel{<:ED})
     datetimes = fnm.datetimes
 
     p = model[:p]
-    unit_codes = keys(get_generators(fnm.system))
+    unit_codes = keys(get_generators(system))
     U = _keyed_to_dense(get_commitment(system))
     Pmin = _keyed_to_dense(get_pmin(system))
     Pmax = _keyed_to_dense(get_pmax(system))
@@ -127,7 +127,7 @@ The constraints added are named, respectively, `ancillary_max`, `ancillary_min`,
 function con_ancillary_limits!(fnm::FullNetworkModel{<:UC})
     system = fnm.system
     datetimes = fnm.datetimes
-    unit_codes = keys(get_generators(fnm.system))
+    unit_codes = keys(get_generators(system))
     Pmax = _keyed_to_dense(get_pmax(system))
     Pregmax = _keyed_to_dense(get_regmax(system))
     Pmin = _keyed_to_dense(get_pmin(system))
@@ -158,7 +158,7 @@ The constraints added are named, respectively, `ancillary_max`, `ancillary_min`,
 function con_ancillary_limits!(fnm::FullNetworkModel{<:ED})
     system = fnm.system
     datetimes = fnm.datetimes
-    unit_codes = keys(get_generators(fnm.system))
+    unit_codes = keys(get_generators(system))
     Pmax = _keyed_to_dense(get_pmax(system))
     Pregmax = _keyed_to_dense(get_regmax(system))
     Pmin = _keyed_to_dense(get_pmin(system))
