@@ -51,7 +51,7 @@ Arguments:
    in the formulation.
 """
 function economic_dispatch(
-    system::SystemRT, solver=nothing, datetimes=get_datetimes(system);
+    ::Type{MISO}, system::SystemRT, solver=nothing, datetimes=get_datetimes(system);
     slack=_DEFAULT_ED_SLACK, threshold=_SF_THRESHOLD, branch_flows::Bool=false
 )
     # Get the individual slack values to be used in each soft constraint
@@ -99,8 +99,8 @@ fnm = ed(system, solver)
 function economic_dispatch(; slack=_DEFAULT_ED_SLACK, keywords...)
     slack = Slacks(slack)  # if we've an invalid `slack` argument, force error ASAP.
     return function _economic_dispatch(
-        system::SystemRT, solver=nothing, datetimes=get_datetimes(system)
+        G::Type{<:Grid}, system::SystemRT, solver=nothing, datetimes=get_datetimes(system)
     )
-        return economic_dispatch(system, solver, datetimes; slack=slack, keywords...)
+        return economic_dispatch(G, system, solver, datetimes; slack=slack, keywords...)
     end
 end

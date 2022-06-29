@@ -65,7 +65,7 @@ $(latex(con_thermal_branch!))
  - `ramp_rates::Bool=true`: Whether or not to include ramp rate constraints.
 """
 function unit_commitment(
-    system::SystemDA, solver=nothing, datetimes=get_datetimes(system);
+    ::Type{MISO}, system::SystemDA, solver=nothing, datetimes=get_datetimes(system);
     relax_integrality=false, slack=_DEFAULT_UC_SLACK, threshold=_SF_THRESHOLD,
     branch_flows::Bool=false, ramp_rates::Bool=true
 )
@@ -129,8 +129,8 @@ fnm = uc(system, solver)
 function unit_commitment(; slack=_DEFAULT_UC_SLACK, keywords...)
     slack = Slacks(slack)  # if we've an invalid `slack` argument, force error ASAP.
     return function _unit_commitment(
-        system::SystemDA, solver=nothing, datetimes=get_datetimes(system)
+        G::Type{<:Grid}, system::SystemDA, solver=nothing, datetimes=get_datetimes(system)
     )
-        return unit_commitment(system, solver, datetimes; slack=slack, keywords...)
+        return unit_commitment(G, system, solver, datetimes; slack=slack, keywords...)
     end
 end
