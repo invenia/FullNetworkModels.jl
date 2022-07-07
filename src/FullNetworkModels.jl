@@ -3,7 +3,8 @@ module FullNetworkModels
 using AxisKeys
 using AxisKeys: sortkeys
 using Dates
-using Dictionaries
+using Dictionaries: Dictionary
+using ElectricityMarkets: Grid, MISO
 using FullNetworkSystems
 using JuMP
 using JuMP.Containers: DenseAxisArray
