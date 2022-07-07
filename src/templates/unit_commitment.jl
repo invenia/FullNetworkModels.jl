@@ -1,7 +1,36 @@
 const _DEFAULT_UC_SLACK = nothing
 
 """
-    unit_commitment(
+    UnitCommitment(; keywords...)
+
+Return a callable that receives a `System` and returns a `FullNetworkModel` with the
+formulation determined by the given keywords.
+
+# Example
+
+```julia
+uc = UnitCommitment(branch_flows=true, ramp_rates=true, slack=:ramp_rates => 1e3])
+fnm = uc(system, solver)
+```
+"""
+Base.@kwdef struct UnitCommitment
+    slack::Slacks
+    branch_flows::Bool
+    ramp_rates::Bool
+    relax_integrality::Bool
+end
+
+function UnitCommitment(; slack=_DEFAULT_UC_SLACK, keywords...)
+    slack = Slacks(slack)  # if we've an invalid `slack` argument, force error ASAP.
+    return function _unit_commitment(
+        system::SystemDA, solver=nothing, datetimes=get_datetimes(system)
+    )
+        return UnitCommitment(system, solver, datetimes; slack=slack, keywords...)
+    end
+end
+
+"""
+    (uc::UnitCommitment)(
         system::SystemDA, solver=nothing, datetimes=get_datetimes(system);
         relax_integrality=false, slack=nothing, threshold=$_SF_THRESHOLD,
         branch_flows::Bool=false, ramp_rates::Bool=true,
@@ -64,7 +93,7 @@ $(latex(con_thermal_branch!))
  - `branch_flows::Bool=false`: Whether or not to inlcude thermal branch flow constraints.
  - `ramp_rates::Bool=true`: Whether or not to include ramp rate constraints.
 """
-function unit_commitment(
+function (uc::UnitCommitment)(
     system::SystemDA, solver=nothing, datetimes=get_datetimes(system);
     relax_integrality=false, slack=_DEFAULT_UC_SLACK, threshold=_SF_THRESHOLD,
     branch_flows::Bool=false, ramp_rates::Bool=true
@@ -111,26 +140,4 @@ function unit_commitment(
     end
     @timeit_debug get_timer("FNTimer") "set optimizer" set_optimizer(fnm, solver; add_bridges=false)
     return fnm
-end
-
-"""
-    unit_commitment(; keywords...)
-
-Return a callable that receives a `System` and returns a `FullNetworkModel` with the
-formulation determined by the given keywords.
-
-# Example
-
-```julia
-uc = unit_commitment(branch_flows=true, ramp_rates=true, slack=:ramp_rates => 1e3])
-fnm = uc(system, solver)
-```
-"""
-function unit_commitment(; slack=_DEFAULT_UC_SLACK, keywords...)
-    slack = Slacks(slack)  # if we've an invalid `slack` argument, force error ASAP.
-    return function _unit_commitment(
-        system::SystemDA, solver=nothing, datetimes=get_datetimes(system)
-    )
-        return unit_commitment(system, solver, datetimes; slack=slack, keywords...)
-    end
 end

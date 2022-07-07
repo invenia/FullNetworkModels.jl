@@ -1,7 +1,34 @@
 const _DEFAULT_ED_SLACK = 1e6
 
 """
-    economic_dispatch(
+    EconomicDispatch(; keywords...)
+
+Return a callable that receives a `System` and returns a `FullNetworkModel` with the
+formulation determined by the given keywords.
+
+# Example
+
+```julia
+ed = EconomicDispatch(branch_flows=true)
+fnm = ed(system, solver)
+```
+"""
+Base.@kwdef struct EconomicDispatch
+    slack::Slacks
+    branch_flows::Bool
+end
+
+function EconomicDispatch(; slack=_DEFAULT_ED_SLACK, keywords...)
+    slack = Slacks(slack)  # if we've an invalid `slack` argument, force error ASAP.
+    return function _economic_dispatch(
+        system::SystemRT, solver=nothing, datetimes=get_datetimes(system)
+    )
+        return EconomicDispatch(system, solver, datetimes; slack=slack, keywords...)
+    end
+end
+
+"""
+    (ed::EconomicDispatch)(
         system::System, solver=nothing, datetimes=get_datetimes(system);
         slack=1e6, branch_flows=false
     ) -> FullNetworkModel{ED}
@@ -50,7 +77,7 @@ Arguments:
  - `branch_flows::Bool=false`: Whether or not to consider thermal branch flow limits
    in the formulation.
 """
-function economic_dispatch(
+function (ed::EconomicDispatch)(
     system::SystemRT, solver=nothing, datetimes=get_datetimes(system);
     slack=_DEFAULT_ED_SLACK, threshold=_SF_THRESHOLD, branch_flows::Bool=false
 )
@@ -81,26 +108,4 @@ function economic_dispatch(
     end
     @timeit_debug get_timer("FNTimer") "set optimizer" set_optimizer(fnm, solver; add_bridges=false)
     return fnm
-end
-
-"""
-    economic_dispatch(; keywords...)
-
-Return a callable that receives a `System` and returns a `FullNetworkModel` with the
-formulation determined by the given keywords.
-
-# Example
-
-```julia
-ed = economic_dispatch(branch_flows=true)
-fnm = ed(system, solver)
-```
-"""
-function economic_dispatch(; slack=_DEFAULT_ED_SLACK, keywords...)
-    slack = Slacks(slack)  # if we've an invalid `slack` argument, force error ASAP.
-    return function _economic_dispatch(
-        system::SystemRT, solver=nothing, datetimes=get_datetimes(system)
-    )
-        return economic_dispatch(system, solver, datetimes; slack=slack, keywords...)
-    end
 end
