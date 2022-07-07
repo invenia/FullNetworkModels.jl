@@ -13,7 +13,7 @@ uc = UnitCommitment(branch_flows=true, ramp_rates=true, slack=:ramp_rates => 1e3
 fnm = uc(system, solver)
 ```
 """
-Base.@kwdef struct UnitCommitment
+struct UnitCommitment
     slack::Slacks
     branch_flows::Bool
     ramp_rates::Bool
@@ -23,9 +23,9 @@ end
 function UnitCommitment(; slack=_DEFAULT_UC_SLACK, keywords...)
     slack = Slacks(slack)  # if we've an invalid `slack` argument, force error ASAP.
     return function _unit_commitment(
-        system::SystemDA, solver=nothing, datetimes=get_datetimes(system)
+        grid, system::SystemDA, solver=nothing, datetimes=get_datetimes(system)
     )
-        return UnitCommitment(system, solver, datetimes; slack=slack, keywords...)
+        return UnitCommitment(grid, system, solver, datetimes; slack=slack, keywords...)
     end
 end
 

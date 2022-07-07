@@ -13,7 +13,7 @@ ed = EconomicDispatch(branch_flows=true)
 fnm = ed(system, solver)
 ```
 """
-Base.@kwdef struct EconomicDispatch
+struct EconomicDispatch
     slack::Slacks
     branch_flows::Bool
 end
