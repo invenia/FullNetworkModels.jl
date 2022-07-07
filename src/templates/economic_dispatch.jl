@@ -78,7 +78,7 @@ Arguments:
    in the formulation.
 """
 function (ed::EconomicDispatch)(
-    system::SystemRT, solver=nothing, datetimes=get_datetimes(system);
+    ::Type{MISO}, system::SystemRT, solver=nothing, datetimes=get_datetimes(system);
     slack=_DEFAULT_ED_SLACK, threshold=_SF_THRESHOLD, branch_flows::Bool=false
 )
     # Get the individual slack values to be used in each soft constraint

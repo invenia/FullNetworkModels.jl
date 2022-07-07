@@ -94,7 +94,7 @@ $(latex(con_thermal_branch!))
  - `ramp_rates::Bool=true`: Whether or not to include ramp rate constraints.
 """
 function (uc::UnitCommitment)(
-    system::SystemDA, solver=nothing, datetimes=get_datetimes(system);
+    ::Type{MISO}, system::SystemDA, solver=nothing, datetimes=get_datetimes(system);
     relax_integrality=false, slack=_DEFAULT_UC_SLACK, threshold=_SF_THRESHOLD,
     branch_flows::Bool=false, ramp_rates::Bool=true
 )

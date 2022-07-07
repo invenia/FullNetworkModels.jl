@@ -1,6 +1,6 @@
 using AxisKeys
 using Dates
-using ElectricityMarkets
+using ElectricityMarkets: MISO
 using FullNetworkDataPrep.TestUtils: fake_3bus_system
 using FullNetworkDataPrep: DA, RT
 using FullNetworkModels
