@@ -16,7 +16,7 @@ Structure containing all the information on the full network model. Contains a J
 
 To construct a `FullNetworkModel` for all datetimes in a `System` use
 `FullNetworkModel{UC}(system::System)` or `FullNetworkModel{ED}(system::System)`,
-depending on if building a [`UC`](@ref) or [`ED`](@ref) problem.
+depending on if building a [`UnitCommitment`](@ref) or [`EconomicDispatch`](@ref) problem.
 
 Or to specify exactly which datetimes to model use
 `FullNetworkModel{ED}(system::System, datetimes::Vector{DateTime})`.
