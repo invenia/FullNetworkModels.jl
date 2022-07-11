@@ -4,8 +4,8 @@ struct UnitCommitment
     slack::Slacks
     branch_flows::Bool
     ramp_rates::Bool
-    relax_integrality::Bool
     threshold::Float64
+    relax_integrality::Bool
 end
 
 """
@@ -32,11 +32,15 @@ uc = UnitCommitment(
 fnm = uc(system, solver)
 ```
 """
-function UnitCommitment(; slack=_DEFAULT_UC_SLACK, kws...)
+function UnitCommitment(;
+    slack=_DEFAULT_UC_SLACK,
+    branch_flows=false,
+    ramp_rates=true,
+    threshold=_SF_THRESHOLD,
+    relax_integrality=false,
+)
     slack = Slacks(slack)  # if we've an invalid `slack` argument, force error ASAP.
-    return UnitCommitment(
-        slack, kws[:branch_flows], kws[:ramp_rates], kws[:relax_integrality], kws[:threshold]
-    )
+    return UnitCommitment(slack, branch_flows, ramp_rates, threshold, relax_integrality)
 end
 
 """

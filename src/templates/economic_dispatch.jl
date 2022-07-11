@@ -19,13 +19,11 @@ struct EconomicDispatch
     threshold::Float64
 end
 
-function EconomicDispatch(; slack=_DEFAULT_ED_SLACK, keywords...)
+function EconomicDispatch(;
+    slack=_DEFAULT_ED_SLACK, branch_flows=false, threshold=_SF_THRESHOLD
+)
     slack = Slacks(slack)  # if we've an invalid `slack` argument, force error ASAP.
-    return function _economic_dispatch(
-        system::SystemRT, solver=nothing, datetimes=get_datetimes(system)
-    )
-        return EconomicDispatch(system, solver, datetimes; slack=slack, keywords...)
-    end
+    return EconomicDispatch(slack, branch_flows, threshold)
 end
 
 """
