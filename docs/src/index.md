@@ -26,6 +26,15 @@ ed_model = economic_dispatch(rt_system, HiGHS.Optimizer)
 optimize!(ed_model)
 ```
 
+Alternatively, you can define [formulation types](@ref types) and use them to instantiate the JuMP problem.
+This is especially useful when working with a higher-level API such as FullNetworkSimulations.jl, since you can specify just the formulation type without having to directly deal with the JuMP problem.
+For example, the two steps below are equivalent to the one-liner `fnm = unit_commitment(system, solver; branch_flows=true)`:
+
+```julia
+uc = UnitCommitment(branch_flows=true)
+fnm = uc(system, HiGHS.Optimizer)
+```
+
 To build your own models, you can use the [modelling functions](@ref modelling).
 
 !!! note "Formulations are based on MISO"
