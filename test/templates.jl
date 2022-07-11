@@ -204,7 +204,7 @@ end
         @test obj_no_conting <= obj
     end
 
-    @testset "Basic economic dispatch" begin
+    @testset "economic_dispatch" begin
         fnm = economic_dispatch(MISO, TEST_SYSTEM_RT)
         test_no_names(fnm)
         tests_thermal_variable(fnm, "p")
@@ -255,7 +255,7 @@ end
         @test obj_high_slack > obj_low_slack
     end
 
-    @testset "Economic dispatch with branch flows" begin
+    @testset "economic_dispatch(branch_flows=true)" begin
         fnm = economic_dispatch(MISO, TEST_SYSTEM_RT, highs_opt; branch_flows=true)
         test_no_names(fnm)
         tests_branch_flow_limits(ED, fnm)
