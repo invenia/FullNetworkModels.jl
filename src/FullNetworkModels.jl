@@ -41,8 +41,8 @@ include("templates/economic_dispatch.jl")
 
 # Types
 export FullNetworkModel
-export UC
-export ED
+export EconomicDispatch
+export UnitCommitment
 
 export has_constraint
 export has_variable
@@ -75,8 +75,6 @@ export obj_thermal_startup_cost!
 export obj_thermal_variable_cost!
 
 # Templates
-export EconomicDispatch
-export UnitCommitment
 export economic_dispatch
 export unit_commitment
 
