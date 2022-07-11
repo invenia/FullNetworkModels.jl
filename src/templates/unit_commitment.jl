@@ -1,39 +1,47 @@
 const _DEFAULT_UC_SLACK = nothing
 
-"""
-    UnitCommitment(; keywords...)
-
-Return a callable that receives a `System` and returns a `FullNetworkModel` with the
-formulation determined by the given keywords.
-
-# Example
-
-```julia
-uc = UnitCommitment(branch_flows=true, ramp_rates=true, slack=:ramp_rates => 1e3])
-fnm = uc(system, solver)
-```
-"""
 struct UnitCommitment
     slack::Slacks
     branch_flows::Bool
     ramp_rates::Bool
     relax_integrality::Bool
+    threshold::Float64
 end
 
-function UnitCommitment(; slack=_DEFAULT_UC_SLACK, keywords...)
+"""
+    UnitCommitment(; kws...)
+
+Return a struct indicating details of the formulation that will be used to solve the unit
+commitment. This struct can then be used as a callable to build the JuMP problem by passing
+the system and solver.
+
+# Keywords
+ - `relax_integrality`: If set to `true`, binary variables will be relaxed.
+ - `slack=nothing`: The slack penalty for the soft constraints.
+   For more info on specifying slacks, refer to the [docs on soft constraints](@ref soft_constraints).
+ - `threshold=$_SF_THRESHOLD`: The threshold (cutoff value) to be applied to the shift factors. Only relevant when `branch_flows=true`.
+ - `branch_flows::Bool=false`: Whether or not to inlcude thermal branch flow constraints.
+ - `ramp_rates::Bool=true`: Whether or not to include ramp rate constraints.
+
+# Example
+
+```julia
+uc = UnitCommitment(
+    relax_integrality=true, branch_flows=true, ramp_rates=true, slack=:ramp_rates => 1e3
+)
+fnm = uc(system, solver)
+```
+"""
+function UnitCommitment(; slack=_DEFAULT_UC_SLACK, kws...)
     slack = Slacks(slack)  # if we've an invalid `slack` argument, force error ASAP.
-    return function _unit_commitment(
-        grid, system::SystemDA, solver=nothing, datetimes=get_datetimes(system)
+    return UnitCommitment(
+        slack, kws[:branch_flows], kws[:ramp_rates], kws[:relax_integrality], kws[:threshold]
     )
-        return UnitCommitment(grid, system, solver, datetimes; slack=slack, keywords...)
-    end
 end
 
 """
     (uc::UnitCommitment)(
-        system::SystemDA, solver=nothing, datetimes=get_datetimes(system);
-        relax_integrality=false, slack=nothing, threshold=$_SF_THRESHOLD,
-        branch_flows::Bool=false, ramp_rates::Bool=true,
+        system::SystemDA, solver=nothing, datetimes=get_datetimes(system)
     ) -> FullNetworkModel{UC}
 
 Defines the unit commitment formulation.
@@ -84,20 +92,16 @@ $(latex(con_thermal_branch!))
  - `system::SystemDA`: The FullNetworkSystems system that provides the input data.
  - `solver`: The solver of choice, e.g. `HiGHS.Optimizer`.
  - `datetimes=get_datetimes(system)`: The time periods considered in the model.
-
-# Keywords
- - `relax_integrality=false`: If set to `true`, binary variables will be relaxed.
- - `slack=nothing`: The slack penalty for the soft constraints.
-   For more info on specifying slacks, refer to the [docs on soft constraints](@ref soft_constraints).
- - `threshold=$_SF_THRESHOLD`: The threshold (cutoff value) to be applied to the shift factors. Only relevant when `branch_flows=true`.
- - `branch_flows::Bool=false`: Whether or not to inlcude thermal branch flow constraints.
- - `ramp_rates::Bool=true`: Whether or not to include ramp rate constraints.
 """
 function (uc::UnitCommitment)(
-    ::Type{MISO}, system::SystemDA, solver=nothing, datetimes=get_datetimes(system);
-    relax_integrality=false, slack=_DEFAULT_UC_SLACK, threshold=_SF_THRESHOLD,
-    branch_flows::Bool=false, ramp_rates::Bool=true
+    ::Type{MISO}, system::SystemDA, solver=nothing, datetimes=get_datetimes(system)
 )
+    # Get kwargs from `uc`
+    slack = uc.slack
+    branch_flows = uc.branch_flows
+    ramp_rates = uc.ramp_rates
+    relax_integrality = uc.relax_integrality
+    threshold = uc.threshold
     # Get the individual slack values to be used in each soft constraint
     @timeit_debug get_timer("FNTimer") "specify slacks" sl = Slacks(slack)
     # Initialize FNM

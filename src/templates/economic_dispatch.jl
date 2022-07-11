@@ -16,6 +16,7 @@ fnm = ed(system, solver)
 struct EconomicDispatch
     slack::Slacks
     branch_flows::Bool
+    threshold::Float64
 end
 
 function EconomicDispatch(; slack=_DEFAULT_ED_SLACK, keywords...)
@@ -78,9 +79,12 @@ Arguments:
    in the formulation.
 """
 function (ed::EconomicDispatch)(
-    ::Type{MISO}, system::SystemRT, solver=nothing, datetimes=get_datetimes(system);
-    slack=_DEFAULT_ED_SLACK, threshold=_SF_THRESHOLD, branch_flows::Bool=false
+    ::Type{MISO}, system::SystemRT, solver=nothing, datetimes=get_datetimes(system)
 )
+    # Get kwargs from `ed`
+    slack = ed.slack
+    branch_flows = ed.branch_flows
+    threshold = ed.threshold
     # Get the individual slack values to be used in each soft constraint
     @timeit_debug get_timer("FNTimer") "specify slacks" sl = Slacks(slack)
     # Initialize FNM
