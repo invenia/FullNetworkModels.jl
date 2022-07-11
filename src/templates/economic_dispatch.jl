@@ -1,32 +1,6 @@
 const _DEFAULT_ED_SLACK = 1e6
 
 """
-    EconomicDispatch(; keywords...)
-
-Return a callable that receives a `System` and returns a `FullNetworkModel` with the
-formulation determined by the given keywords.
-
-# Example
-
-```julia
-ed = EconomicDispatch(branch_flows=true)
-fnm = ed(system, solver)
-```
-
-or, equivalently,
-
-```julia
-fnm = economic_dispatch(system, solver; branch_flows=true)
-```
-"""
-function EconomicDispatch(;
-    slack=_DEFAULT_ED_SLACK, branch_flows=false, threshold=_SF_THRESHOLD
-)
-    slack = Slacks(slack)  # if we've an invalid `slack` argument, force error ASAP.
-    return EconomicDispatch(slack, branch_flows, threshold)
-end
-
-"""
     (ed::EconomicDispatch)(
         system::System, solver=nothing, datetimes=get_datetimes(system);
         slack=1e6, branch_flows=false

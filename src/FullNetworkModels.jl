@@ -19,8 +19,9 @@ const MARKET_WIDE_ZONE = -9999
 # Default threshold (cutoff) value for shift factors
 const _SF_THRESHOLD = 1e-4
 
-# Type
-include("fnm.jl")
+# Types
+include("types/formulations.jl")
+include("types/fnm.jl")
 
 # Utility functions
 include("utils/api_extensions.jl")

@@ -1,49 +1,6 @@
 const _DEFAULT_UC_SLACK = nothing
 
 """
-    UnitCommitment(; kws...)
-
-Return a struct indicating details of the formulation that will be used to solve the unit
-commitment. This struct can then be used as a callable to build the JuMP problem by passing
-the system and solver.
-
-# Keywords
- - `relax_integrality`: If set to `true`, binary variables will be relaxed.
- - `slack=nothing`: The slack penalty for the soft constraints.
-   For more info on specifying slacks, refer to the [docs on soft constraints](@ref soft_constraints).
- - `threshold=$_SF_THRESHOLD`: The threshold (cutoff value) to be applied to the shift factors. Only relevant when `branch_flows=true`.
- - `branch_flows::Bool=false`: Whether or not to inlcude thermal branch flow constraints.
- - `ramp_rates::Bool=true`: Whether or not to include ramp rate constraints.
-
-# Example
-
-```julia
-uc = UnitCommitment(
-    relax_integrality=true, branch_flows=true, slack=:ramp_rates => 1e3
-)
-fnm = uc(system, solver)
-```
-
-or, equivalently,
-
-```julia
-fnm = unit_commitment(
-    system, solver; relax_integrality=true, branch_flows=true, slack=:ramp_rates => 1e3
-)
-```
-"""
-function UnitCommitment(;
-    slack=_DEFAULT_UC_SLACK,
-    branch_flows=false,
-    ramp_rates=true,
-    threshold=_SF_THRESHOLD,
-    relax_integrality=false,
-)
-    slack = Slacks(slack)  # if we've an invalid `slack` argument, force error ASAP.
-    return UnitCommitment(slack, branch_flows, ramp_rates, threshold, relax_integrality)
-end
-
-"""
     (uc::UnitCommitment)(
         system::SystemDA, solver=nothing, datetimes=get_datetimes(system)
     ) -> FullNetworkModel{UC}

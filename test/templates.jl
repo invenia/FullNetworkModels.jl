@@ -9,7 +9,7 @@ end
 
 @testset "Templates" begin
     highs_opt = optimizer_with_attributes(HiGHS.Optimizer, MOI.Silent() => true)
-    @testset "Basic unit commitment" begin
+    @testset "unit_commitment" begin
         fnm = unit_commitment(MISO, TEST_SYSTEM)
         test_no_names(fnm)
         tests_thermal_variable(fnm, "p")
@@ -27,7 +27,7 @@ end
         tests_energy_balance(fnm)
     end
 
-    @testset "Unit commitment with soft ramps and no ramps" begin
+    @testset "unit_commitment with soft ramps and no ramps" begin
         # Modify system so that hard ramp constraints result in infeasibility
         system_infeasible = deepcopy(TEST_SYSTEM)
         init_gen = get_initial_generation(system_infeasible)
@@ -40,8 +40,10 @@ end
         @test termination_status(fnm.model) == TerminationStatusCode(2)
 
         # Now do the same with soft ramp constraints – should be feasible
-        uc_soft_ramps = UnitCommitment(relax_integrality=true, slack=:ramp_rates => 1e3)
-        fnm_soft_ramps = uc_soft_ramps(MISO, system_infeasible, highs_opt)
+        fnm_soft_ramps = unit_commitment(
+            MISO, system_infeasible, highs_opt;
+            relax_integrality=true, slack=:ramp_rates => 1e3
+        )
         # Basic ramp rate tests with correct slack
         tests_ramp_rates(fnm_soft_ramps; slack=1e3)
 
@@ -51,8 +53,9 @@ end
 
         # Now do the same for no ramp constraints - should be feasible and have a lower
         # objective value (since there's no penalty for violating soft constraints)
-        uc_no_ramps = UnitCommitment(relax_integrality=true, ramp_rates=false)
-        fnm_no_ramps = uc_no_ramps(MISO, system_infeasible, highs_opt)
+        fnm_no_ramps = unit_commitment(
+            MISO, system_infeasible, highs_opt; relax_integrality=true, ramp_rates=false
+        )
         test_no_names(fnm_no_ramps)
         optimize!(fnm_no_ramps)
         @test termination_status(fnm_no_ramps.model) == TerminationStatusCode(1)
@@ -76,7 +79,7 @@ end
         end
     end
 
-    @testset "Unit commitment with branch flows" begin
+    @testset "unit_commitment(branch_flows=true)" begin
         fnm = unit_commitment(MISO, TEST_SYSTEM, highs_opt; branch_flows=true)
         test_no_names(fnm)
         tests_branch_flow_limits(UC, fnm)
@@ -214,15 +217,13 @@ end
         tests_energy_balance(fnm)
 
         # Solve the original ED with slack = nothing
-        ed_no_slack = EconomicDispatch(slack=nothing)
-        fnm = ed_no_slack(MISO, TEST_SYSTEM_RT, highs_opt)
+        fnm = economic_dispatch(MISO, TEST_SYSTEM_RT, highs_opt; slack=nothing)
         optimize!(fnm)
         # Should be feasible
         @test termination_status(fnm.model) == TerminationStatusCode(1)
         obj_orig = objective_value(fnm.model)
         # Solve it with slack = 1e4
-        ed_slack_1e4 = EconomicDispatch(slack=1e4)
-        fnm = ed_slack_1e4(MISO, TEST_SYSTEM_RT, highs_opt)
+        fnm = economic_dispatch(MISO, TEST_SYSTEM_RT, highs_opt; slack=1e4)
         optimize!(fnm)
         # Should be feasible with a smaller objective value.
         @test termination_status(fnm.model) == TerminationStatusCode(1)
@@ -236,16 +237,15 @@ end
         insert!(zones, 1, zone1_new)
 
         # Solve with no slack – should be infeasible
-        fnm = ed_no_slack(MISO, system_infeasible, highs_opt)
+        fnm = economic_dispatch(MISO, system_infeasible, highs_opt; slack=nothing)
         optimize!(fnm)
         @test termination_status(fnm.model) == TerminationStatusCode(2)
         # Solve with two different values of slack – should be feasible with different objectives
-        ed_slack_1e2 = EconomicDispatch(slack=1e2)
-        fnm = ed_slack_1e2(MISO, system_infeasible, highs_opt)
+        fnm = economic_dispatch(MISO, system_infeasible, highs_opt; slack=1e2)
         optimize!(fnm)
         @test termination_status(fnm.model) == TerminationStatusCode(1)
         obj_low_slack = objective_value(fnm.model)
-        fnm = ed_slack_1e4(MISO, system_infeasible, highs_opt)
+        fnm = economic_dispatch(MISO, system_infeasible, highs_opt; slack=1e4)
         optimize!(fnm)
         @test termination_status(fnm.model) == TerminationStatusCode(1)
         obj_high_slack = objective_value(fnm.model)
@@ -553,8 +553,7 @@ end
         optimize!(fnm)
 
         # Apply a threshold of 1.0, meaning that all shift factors will be zero
-        ed_thresh = EconomicDispatch(branch_flows=true, threshold=1.0)
-        fnm_thresh = ed_thresh(MISO, system, solver)
+        fnm_thresh = economic_dispatch(MISO, system, solver; branch_flows=true, threshold=1.0)
         set_silent(fnm_thresh.model) # to reduce test verbosity
         optimize!(fnm_thresh)
 
