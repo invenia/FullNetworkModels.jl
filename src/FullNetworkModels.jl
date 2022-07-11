@@ -41,8 +41,10 @@ include("templates/economic_dispatch.jl")
 
 # Types
 export FullNetworkModel
-export EconomicDispatch
 export UnitCommitment
+export EconomicDispatch
+export UC
+export ED
 
 export has_constraint
 export has_variable
