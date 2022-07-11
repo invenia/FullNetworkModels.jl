@@ -19,9 +19,17 @@ the system and solver.
 
 ```julia
 uc = UnitCommitment(
-    relax_integrality=true, branch_flows=true, ramp_rates=true, slack=:ramp_rates => 1e3
+    relax_integrality=true, branch_flows=true, slack=:ramp_rates => 1e3
 )
 fnm = uc(system, solver)
+```
+
+or, equivalently,
+
+```julia
+fnm = unit_commitment(
+    system, solver; relax_integrality=true, branch_flows=true, slack=:ramp_rates => 1e3
+)
 ```
 """
 function UnitCommitment(;

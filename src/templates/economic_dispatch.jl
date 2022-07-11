@@ -12,6 +12,12 @@ formulation determined by the given keywords.
 ed = EconomicDispatch(branch_flows=true)
 fnm = ed(system, solver)
 ```
+
+or, equivalently,
+
+```julia
+fnm = economic_dispatch(system, solver; branch_flows=true)
+```
 """
 function EconomicDispatch(;
     slack=_DEFAULT_ED_SLACK, branch_flows=false, threshold=_SF_THRESHOLD
