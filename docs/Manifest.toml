@@ -182,7 +182,9 @@ version = "0.10.30"
 
 [[deps.FullNetworkModels]]
 deps = ["AxisKeys", "Dates", "Dictionaries", "ElectricityMarkets", "FullNetworkSystems", "JuMP", "Memento", "TimerOutputs"]
-path = ".."
+git-tree-sha1 = "bd2f25d94bf8a56dfa7a5e18d1a522e5b9744132"
+repo-rev = "rs/struct"
+repo-url = "https://gitlab.invenia.ca/invenia/research/FullNetworkModels.jl"
 uuid = "73927447-18cb-4351-9246-c402eb8d0c47"
 version = "8.0.0-DEV"
 
