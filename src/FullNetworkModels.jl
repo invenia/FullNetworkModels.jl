@@ -75,8 +75,8 @@ export obj_thermal_startup_cost!
 export obj_thermal_variable_cost!
 
 # Templates
-export economic_dispatch
-export unit_commitment
+export EconomicDispatch
+export UnitCommitment
 
 # API extensions
 export optimize!
