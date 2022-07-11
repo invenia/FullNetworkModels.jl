@@ -13,12 +13,6 @@ ed = EconomicDispatch(branch_flows=true)
 fnm = ed(system, solver)
 ```
 """
-struct EconomicDispatch
-    slack::Slacks
-    branch_flows::Bool
-    threshold::Float64
-end
-
 function EconomicDispatch(;
     slack=_DEFAULT_ED_SLACK, branch_flows=false, threshold=_SF_THRESHOLD
 )
@@ -111,3 +105,5 @@ function (ed::EconomicDispatch)(
     @timeit_debug get_timer("FNTimer") "set optimizer" set_optimizer(fnm, solver; add_bridges=false)
     return fnm
 end
+
+economic_dispatch(args...; kwargs...) = EconomicDispatch(; kwargs...)(args...)

@@ -94,54 +94,6 @@ function _curve_properties(curves; blocks=false)
     return prices, limits, n_blocks
 end
 
-"""
-    Slacks(values)
-
-Represents the slack penalties for each soft constraint.
-
-The value `nothing` means "no slack" i.e. a hard constraint.
-
-# Examples
-- All values are `nothing` by default:
-  ```julia
-  julia> Slacks()
-  Slacks:
-    energy_balance = nothing
-    ramp_rates = nothing
-    ancillary_requirements = nothing
-  ```
-
-- If `values` is a single value (including `nothing`), set all slack penalties to that value:
-  ```julia
-  julia> Slacks(1e-3)
-  Slacks:
-    energy_balance = 0.001
-    ramp_rates = 0.001
-    ancillary_requirements = 0.001
-  ```
-
-- If `values` is a `Pair` or collection of `Pair`s, then the values are set according to the
-  specifications in the pairs:
-  ```julia
-  julia> Slacks(:ramp_rates => 1e-3)
-  Slacks:
-    energy_balance = nothing
-    ramp_rates = 0.001
-    ancillary_requirements = nothing
-
-  julia> Slacks([:ramp_rates => 1e-3, :ancillary_requirements => 1e-4])
-  Slacks:
-    energy_balance = nothing
-    ramp_rates = 0.001
-    ancillary_requirements = 0.0001
-  ```
-"""
-Base.@kwdef struct Slacks
-    energy_balance::Union{Float64, Nothing}=nothing
-    ramp_rates::Union{Float64, Nothing}=nothing
-    ancillary_requirements::Union{Float64, Nothing}=nothing
-end
-
 function Slacks(slacks::Union{Number,Nothing})
     names = fieldnames(Slacks)
     N = fieldcount(Slacks)

@@ -1,13 +1,5 @@
 const _DEFAULT_UC_SLACK = nothing
 
-struct UnitCommitment
-    slack::Slacks
-    branch_flows::Bool
-    ramp_rates::Bool
-    threshold::Float64
-    relax_integrality::Bool
-end
-
 """
     UnitCommitment(; kws...)
 
@@ -149,3 +141,5 @@ function (uc::UnitCommitment)(
     @timeit_debug get_timer("FNTimer") "set optimizer" set_optimizer(fnm, solver; add_bridges=false)
     return fnm
 end
+
+unit_commitment(args...; kwargs...) = UnitCommitment(; kwargs...)(args...)

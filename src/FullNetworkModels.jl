@@ -40,7 +40,6 @@ include("templates/economic_dispatch.jl")
 
 # Types
 export FullNetworkModel
-export UCED
 export UC
 export ED
 
@@ -77,6 +76,8 @@ export obj_thermal_variable_cost!
 # Templates
 export EconomicDispatch
 export UnitCommitment
+export economic_dispatch
+export unit_commitment
 
 # API extensions
 export optimize!

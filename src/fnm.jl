@@ -1,26 +1,71 @@
 """
-    UCED
+    Slacks(values)
 
-Abstract type describing unit commitment and economic dispatch.
+Represents the slack penalties for each soft constraint.
+
+The value `nothing` means "no slack" i.e. a hard constraint.
+
+# Examples
+- All values are `nothing` by default:
+  ```julia
+  julia> Slacks()
+  Slacks:
+    energy_balance = nothing
+    ramp_rates = nothing
+    ancillary_requirements = nothing
+  ```
+
+- If `values` is a single value (including `nothing`), set all slack penalties to that value:
+  ```julia
+  julia> Slacks(1e-3)
+  Slacks:
+    energy_balance = 0.001
+    ramp_rates = 0.001
+    ancillary_requirements = 0.001
+  ```
+
+- If `values` is a `Pair` or collection of `Pair`s, then the values are set according to the
+  specifications in the pairs:
+  ```julia
+  julia> Slacks(:ramp_rates => 1e-3)
+  Slacks:
+    energy_balance = nothing
+    ramp_rates = 0.001
+    ancillary_requirements = nothing
+
+  julia> Slacks([:ramp_rates => 1e-3, :ancillary_requirements => 1e-4])
+  Slacks:
+    energy_balance = nothing
+    ramp_rates = 0.001
+    ancillary_requirements = 0.0001
+  ```
 """
-abstract type UCED end
+Base.@kwdef struct Slacks
+    energy_balance::Union{Float64, Nothing}=nothing
+    ramp_rates::Union{Float64, Nothing}=nothing
+    ancillary_requirements::Union{Float64, Nothing}=nothing
+end
+
+struct UnitCommitment
+    slack::Slacks
+    branch_flows::Bool
+    ramp_rates::Bool
+    threshold::Float64
+    relax_integrality::Bool
+end
+
+struct EconomicDispatch
+    slack::Slacks
+    branch_flows::Bool
+    threshold::Float64
+end
+
+# Shorthand for the UnitCommitment and EconomicDispatch types
+const UC = UnitCommitment
+const ED = EconomicDispatch
 
 """
-    UC
-
-Abstract type describing unit commitment.
-"""
-abstract type UC <: UCED end
-
-"""
-    ED
-
-Abstract type describing economic dispatch.
-"""
-abstract type ED <: UCED end
-
-"""
-    FullNetworkModel{<:UCED}
+    FullNetworkModel{<:Union{UC,ED}}
 
 Structure containing all the information on the full network model. Contains a JuMP.jl
 `Model` and a PowerSystems.jl `System` for the period contemplated in `datetimes`.
@@ -32,8 +77,8 @@ Structure containing all the information on the full network model. Contains a J
 
 ---
 
-    FullNetworkModel{<:UCED}(system[, datetimes])
-    FullNetworkModel{<:UCED}(system[, model_or_solver, datetimes])
+    FullNetworkModel{<:Union{UC,ED}}(system[, datetimes])
+    FullNetworkModel{<:Union{UC,ED}}(system[, model_or_solver, datetimes])
 
 To construct a `FullNetworkModel` for all datetimes in a `System` use
 `FullNetworkModel{UC}(system::System)` or `FullNetworkModel{ED}(system::System)`,
@@ -58,32 +103,32 @@ only after the model has been built.
   which should be modelled. Must be a subset of the times for which the system has data.
   Defaults to all datetimes in the system.
 """
-struct FullNetworkModel{T<:UCED}
+struct FullNetworkModel{T<:Union{UC,ED}}
     system::System
     model::Model
     datetimes::Vector{DateTime}
     function FullNetworkModel{T}(
         system::System, model::Model, datetimes=get_datetimes(system)
-    ) where T<:UCED
+    ) where T<:Union{UC,ED}
         new{T}(system, model, datetimes)
     end
 end
 
 function FullNetworkModel{T}(
     system::System, model::Model, datetime::DateTime
-) where T<:UCED
+) where T<:Union{UC,ED}
     return FullNetworkModel{T}(system, model, [datetime])
 end
 
 function FullNetworkModel{T}(
     system::System, datetimes::AbstractVector{<:DateTime}=get_datetimes(system)
-) where T<:UCED
+) where T<:Union{UC,ED}
     model = Model()
     set_string_names_on_creation(model, false)
     return FullNetworkModel{T}(system, model, datetimes)
 end
 
-function FullNetworkModel{T}(system::System, datetime::DateTime) where T<:UCED
+function FullNetworkModel{T}(system::System, datetime::DateTime) where T<:Union{UC,ED}
     model = Model()
     set_string_names_on_creation(model, false)
     return FullNetworkModel{T}(system, model, [datetime])
@@ -91,7 +136,7 @@ end
 
 function FullNetworkModel{T}(
     system::System, solver, datetimes=get_datetimes(system)
-) where T<:UCED
+) where T<:Union{UC,ED}
     model = Model(solver; add_bridges=false)
     set_string_names_on_creation(model, false)
     return FullNetworkModel{T}(system, model, datetimes)
