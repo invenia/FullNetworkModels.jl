@@ -43,6 +43,8 @@ include("templates/economic_dispatch.jl")
 export FullNetworkModel
 export UnitCommitment
 export EconomicDispatch
+export UC
+export ED
 
 # Templates
 export economic_dispatch

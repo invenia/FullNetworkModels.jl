@@ -1,5 +1,3 @@
-const _DEFAULT_UC_SLACK = nothing
-
 """
     (uc::UnitCommitment)(
         ::Type{MISO}, system::SystemDA, solver=nothing, datetimes=get_datetimes(system)

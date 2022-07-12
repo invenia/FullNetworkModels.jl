@@ -1,3 +1,6 @@
+const _DEFAULT_UC_SLACK = nothing
+const _DEFAULT_ED_SLACK = 1e6
+
 """
     Slacks(values)
 

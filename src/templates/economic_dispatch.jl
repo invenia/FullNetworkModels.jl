@@ -1,5 +1,3 @@
-const _DEFAULT_ED_SLACK = 1e6
-
 """
     (ed::EconomicDispatch)(
         system::System, solver=nothing, datetimes=get_datetimes(system)

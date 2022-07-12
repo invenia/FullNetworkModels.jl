@@ -584,7 +584,7 @@ end
     # Don't want to spend time building many models, but do want to test that we have all
     # the same methods as `unit_commitment`, so we use `methods` as a quick/rough check.
     # Should accept (system,) or (system, solver) or (system, solver, datetimes)
-    @test length(methods(uc)) == 3 == (length(methods(unit_commitment)) - 1)
+    @test length(methods(uc)) == 3
 
     @test_throws Exception UnitCommitment(slack=:wrong => 1)
     @test_throws Exception UnitCommitment(slack=[:wrong => 1])
