@@ -103,7 +103,7 @@ function (uc::UnitCommitment)(
 end
 
 """
-    function unit_commitment(args...; kwargs...) -> FullNetworkModel{UC}
+    unit_commitment(args...; kwargs...) -> FullNetworkModel{UC}
 
 Returns a [`FullNetworkModel`](@ref) with the `UnitCommitment` formulation according to the
 selected `kwargs`. Using `unit_commitment` is equivalent to defining a `UnitCommitment`

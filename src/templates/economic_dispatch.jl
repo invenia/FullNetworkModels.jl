@@ -76,7 +76,7 @@ function (ed::EconomicDispatch)(
 end
 
 """
-    function economic_dispatch(args...; kwargs...) -> FullNetworkModel{ED}
+    economic_dispatch(args...; kwargs...) -> FullNetworkModel{ED}
 
 Returns a [`FullNetworkModel`](@ref) with the `EconomicDispatch` formulation according to the
 selected `kwargs`. Using `economic_dispatch` is equivalent to defining a `EconomicDispatch`
