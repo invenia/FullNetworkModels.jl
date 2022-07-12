@@ -59,6 +59,23 @@ Slacks(itr...) = Slacks(NamedTuple(itr...))
 Slacks(nt::NamedTuple) = Slacks(; nt...)
 Slacks(sl::Slacks) = sl
 
+function Base.show(io::IO, sl::Slacks)
+    print(io, "Slacks(")
+    vals = map(fieldnames(Slacks)) do x
+        string(x, "=", getfield(sl, x))
+    end
+    join(io, vals, ", ")
+    print(io, ")")
+end
+
+function Base.show(io::IO, mime::MIME"text/plain", sl::Slacks)
+    print(io, "Slacks:")
+    foreach(fieldnames(Slacks)) do x
+        print(io, "\n")
+        print(io, "  ", x, " = ", getfield(sl, x))
+    end
+end
+
 ###
 ### Unit Commitment
 ###
