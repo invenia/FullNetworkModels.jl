@@ -49,13 +49,13 @@ end
 """
     UnitCommitment(; keywords...)
 
-Return a struct indicating details of the formulation that will be used to solve the unit
+Type defining the formulation that will be used to solve the unit
 commitment. This struct can then be used as a callable to build the JuMP problem by passing
 the system and solver.
 
 # Keywords
  - `relax_integrality`: If set to `true`, binary variables will be relaxed.
- - `slack=nothing`: The slack penalty for the soft constraints.
+ - `slack=$_DEFAULT_UC_SLACK`: The slack penalty for the soft constraints.
    For more info on specifying slacks, refer to the [docs on soft constraints](@ref soft_constraints).
  - `threshold=$_SF_THRESHOLD`: The threshold (cutoff value) to be applied to the shift factors. Only relevant when `branch_flows=true`.
  - `branch_flows::Bool=false`: Whether or not to inlcude thermal branch flow constraints.
@@ -67,14 +67,14 @@ the system and solver.
 uc = UnitCommitment(
     relax_integrality=true, branch_flows=true, slack=:ramp_rates => 1e3
 )
-fnm = uc(system, solver)
+fnm = uc(MISO, system, solver)
 ```
 
 or, equivalently,
 
 ```julia
 fnm = unit_commitment(
-    system, solver; relax_integrality=true, branch_flows=true, slack=:ramp_rates => 1e3
+    MISO, system, solver; relax_integrality=true, branch_flows=true, slack=:ramp_rates => 1e3
 )
 ```
 """
@@ -88,12 +88,12 @@ end
 
 function UnitCommitment(;
     slack=_DEFAULT_UC_SLACK,
-    branch_flows=false,
-    ramp_rates=true,
-    threshold=_SF_THRESHOLD,
-    relax_integrality=false,
+    branch_flows::Bool=false,
+    ramp_rates::Bool=true,
+    threshold::Number=_SF_THRESHOLD,
+    relax_integrality::Bool=false,
 )
-    slack = Slacks(slack)  # if we've an invalid `slack` argument, force error ASAP.
+    slack = Slacks(slack)
     return UnitCommitment(slack, branch_flows, ramp_rates, threshold, relax_integrality)
 end
 
@@ -107,13 +107,13 @@ formulation determined by the given keywords.
 
 ```julia
 ed = EconomicDispatch(branch_flows=true)
-fnm = ed(system, solver)
+fnm = ed(MISO, system, solver)
 ```
 
 or, equivalently,
 
 ```julia
-fnm = economic_dispatch(system, solver; branch_flows=true)
+fnm = economic_dispatch(MISO, system, solver; branch_flows=true)
 ```
 """
 struct EconomicDispatch
@@ -125,10 +125,9 @@ end
 function EconomicDispatch(;
     slack=_DEFAULT_ED_SLACK, branch_flows=false, threshold=_SF_THRESHOLD
 )
-    slack = Slacks(slack)  # if we've an invalid `slack` argument, force error ASAP.
+    slack = Slacks(slack)  
     return EconomicDispatch(slack, branch_flows, threshold)
 end
 
-# Shorthand for the UnitCommitment and EconomicDispatch types
 const UC = UnitCommitment
 const ED = EconomicDispatch

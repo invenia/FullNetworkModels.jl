@@ -2,8 +2,7 @@ const _DEFAULT_ED_SLACK = 1e6
 
 """
     (ed::EconomicDispatch)(
-        system::System, solver=nothing, datetimes=get_datetimes(system);
-        slack=1e6, branch_flows=false
+        system::System, solver=nothing, datetimes=get_datetimes(system)
     ) -> FullNetworkModel{ED}
 
 Defines the economic dispatch formulation.
@@ -53,12 +52,10 @@ Arguments:
 function (ed::EconomicDispatch)(
     ::Type{MISO}, system::SystemRT, solver=nothing, datetimes=get_datetimes(system)
 )
-    # Get kwargs from `ed`
-    slack = ed.slack
+    sl = ed.slack
     branch_flows = ed.branch_flows
     threshold = ed.threshold
     # Get the individual slack values to be used in each soft constraint
-    @timeit_debug get_timer("FNTimer") "specify slacks" sl = Slacks(slack)
     # Initialize FNM
     @timeit_debug get_timer("FNTimer") "initialise FNM" fnm = FullNetworkModel{ED}(system, datetimes)
     # Variables

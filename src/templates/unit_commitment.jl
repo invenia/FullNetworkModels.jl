@@ -2,7 +2,7 @@ const _DEFAULT_UC_SLACK = nothing
 
 """
     (uc::UnitCommitment)(
-        system::SystemDA, solver=nothing, datetimes=get_datetimes(system)
+        ::Type{MISO}, system::SystemDA, solver=nothing, datetimes=get_datetimes(system)
     ) -> FullNetworkModel{UC}
 
 Defines the unit commitment formulation.
@@ -57,14 +57,11 @@ $(latex(con_thermal_branch!))
 function (uc::UnitCommitment)(
     ::Type{MISO}, system::SystemDA, solver=nothing, datetimes=get_datetimes(system)
 )
-    # Get kwargs from `uc`
-    slack = uc.slack
+    sl = uc.slack
     branch_flows = uc.branch_flows
     ramp_rates = uc.ramp_rates
     relax_integrality = uc.relax_integrality
     threshold = uc.threshold
-    # Get the individual slack values to be used in each soft constraint
-    @timeit_debug get_timer("FNTimer") "specify slacks" sl = Slacks(slack)
     # Initialize FNM
     @timeit_debug get_timer("FNTimer") "initialise FNM" fnm = FullNetworkModel{UC}(system, datetimes)
     # Variables

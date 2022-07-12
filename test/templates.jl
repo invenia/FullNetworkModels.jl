@@ -565,7 +565,7 @@ end
 end
 
 # https://gitlab.invenia.ca/invenia/research/FullNetworkModels.jl/-/issues/75
-@testset "zero-arg constructors return structs that can be used as callables" begin
+@testset "zero-arg constructors return callable structs" begin
     solver = HiGHS.Optimizer
 
     uc = UnitCommitment(ramp_rates=true, slack=:energy_balance => nothing)
