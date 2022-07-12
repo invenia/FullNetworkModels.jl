@@ -581,8 +581,6 @@ end
     @test !haskey(fnm.model, :ramp_up)
     @test haskey(fnm.model, :sl_eb_gen)
 
-    # Don't want to spend time building many models, but do want to test that we have all
-    # the same methods as `unit_commitment`, so we use `methods` as a quick/rough check.
     # Should accept (system,) or (system, solver) or (system, solver, datetimes)
     @test length(methods(uc)) == 3
 

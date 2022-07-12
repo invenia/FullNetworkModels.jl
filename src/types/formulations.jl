@@ -86,14 +86,6 @@ uc = UnitCommitment(
 )
 fnm = uc(MISO, system, solver)
 ```
-
-or, equivalently,
-
-```julia
-fnm = unit_commitment(
-    MISO, system, solver; relax_integrality=true, branch_flows=true, slack=:ramp_rates => 1e3
-)
-```
 """
 struct UnitCommitment
     slack::Slacks

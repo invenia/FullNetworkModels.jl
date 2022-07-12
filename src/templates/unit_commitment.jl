@@ -102,4 +102,22 @@ function (uc::UnitCommitment)(
     return fnm
 end
 
+"""
+    function unit_commitment(args...; kwargs...) -> FullNetworkModel{UC}
+
+Returns a [`FullNetworkModel`](@ref) with the `UnitCommitment` formulation according to the
+selected `kwargs`. Using `unit_commitment` is equivalent to defining a `UnitCommitment`
+struct and then using it to create a FullNetworkModel in one step, i.e.,
+
+```julia
+fnm = unit_commitment(MISO, system, solver; branch_flows=true)
+```
+
+is equivalent to
+
+```julia
+uc = UnitCommitment(branch_flows=true)
+fnm = uc(MISO, system, solver)
+```
+"""
 unit_commitment(args...; kwargs...) = UnitCommitment(; kwargs...)(args...)
