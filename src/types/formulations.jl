@@ -100,6 +100,8 @@ struct UnitCommitment
     relax_integrality::Bool
 end
 
+const UC = UnitCommitment
+
 function UnitCommitment(;
     slack=_DEFAULT_UC_SLACK,
     branch_flows::Bool=false,
@@ -140,12 +142,11 @@ struct EconomicDispatch
     threshold::Float64
 end
 
+const ED = EconomicDispatch
+
 function EconomicDispatch(;
     slack=_DEFAULT_ED_SLACK, branch_flows=false, threshold=_SF_THRESHOLD
 )
-    slack = Slacks(slack)  
+    slack = Slacks(slack)
     return EconomicDispatch(slack, branch_flows, threshold)
 end
-
-const UC = UnitCommitment
-const ED = EconomicDispatch
