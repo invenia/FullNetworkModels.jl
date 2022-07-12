@@ -141,7 +141,7 @@ end
 const ED = EconomicDispatch
 
 function EconomicDispatch(;
-    slack=_DEFAULT_ED_SLACK, branch_flows=false, threshold=_SF_THRESHOLD
+    slack=_DEFAULT_ED_SLACK, branch_flows::Bool=false, threshold::Number=_SF_THRESHOLD
 )
     slack = Slacks(slack)
     return EconomicDispatch(slack, branch_flows, threshold)

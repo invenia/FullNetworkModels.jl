@@ -47,7 +47,6 @@ function (ed::EconomicDispatch)(
     sl = ed.slack
     branch_flows = ed.branch_flows
     threshold = ed.threshold
-    # Get the individual slack values to be used in each soft constraint
     # Initialize FNM
     @timeit_debug get_timer("FNTimer") "initialise FNM" fnm = FullNetworkModel{ED}(system, datetimes)
     # Variables

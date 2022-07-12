@@ -4,7 +4,7 @@ using ElectricityMarkets: MISO
 using FullNetworkDataPrep.TestUtils: fake_3bus_system
 using FullNetworkDataPrep: DA, RT
 using FullNetworkModels
-using FullNetworkModels: Slacks, UC, ED
+using FullNetworkModels: Slacks
 using FullNetworkSystems
 using FullNetworkSystems: System, get_must_run, get_load, Branch
 using HiGHS

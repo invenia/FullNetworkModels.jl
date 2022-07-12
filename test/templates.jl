@@ -571,7 +571,7 @@ end
     # test 3-arg method because it's the one called in FullNetworkSimulations._uc_day
     uc = UnitCommitment(ramp_rates=true, slack=:energy_balance => nothing)
     @test uc isa UnitCommitment
-    fnm = uc(MISO, TEST_SYSTEM)
+    fnm = uc(MISO, TEST_SYSTEM, solver)
     @test haskey(fnm.model, :ramp_up)
     @test !haskey(fnm.model, :sl_eb_gen)
 
@@ -581,12 +581,13 @@ end
     @test !haskey(fnm.model, :ramp_up)
     @test haskey(fnm.model, :sl_eb_gen)
 
-    # Should accept (system,) or (system, solver) or (system, solver, datetimes)
+    # Should accept (G, system,) or (G, system, solver) or (G, system, solver, datetimes)
     @test length(methods(uc)) == 3
 
     @test_throws Exception UnitCommitment(slack=:wrong => 1)
     @test_throws Exception UnitCommitment(slack=[:wrong => 1])
 
+    # test 4-arg method because it's the one called in FullNetworkSimulations._ed_hour!
     datetime = first(get_datetimes(TEST_SYSTEM_RT))
     ed = EconomicDispatch(branch_flows=true, slack=:energy_balance => nothing)
     @test ed isa EconomicDispatch
@@ -602,6 +603,7 @@ end
     # test `datetimes` argument correctly passed through
     @test fnm.datetimes == [datetime]
 
+    @test length(methods(ed)) == 3
     @test_throws Exception EconomicDispatch(slack=:wrong => 1)
     @test_throws Exception EconomicDispatch(slack=[:wrong => 1])
 end
