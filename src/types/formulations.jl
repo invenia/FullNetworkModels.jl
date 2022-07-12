@@ -69,7 +69,7 @@ the system and solver.
 
 # Keywords
  - `relax_integrality`: If set to `true`, binary variables will be relaxed.
- - `slack=$_DEFAULT_UC_SLACK`: The slack penalty for the soft constraints.
+ - `slack=$(FullNetworkModels._DEFAULT_UC_SLACK)`: The slack penalty for the soft constraints.
    For more info on specifying slacks, refer to the [docs on soft constraints](@ref soft_constraints).
  - `threshold=$_SF_THRESHOLD`: The threshold (cutoff value) to be applied to the shift factors. Only relevant when `branch_flows=true`.
  - `branch_flows::Bool=false`: Whether or not to inlcude thermal branch flow constraints.

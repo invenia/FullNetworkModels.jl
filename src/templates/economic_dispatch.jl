@@ -42,12 +42,6 @@ Arguments:
  - `system::SystemRT`: The FullNetworkSystems system that provides the input data.
  - `solver`: The solver of choice, e.g. `HiGHS.Optimizer`.
  - `datetimes=get_datetimes(system)`: The time periods considered in the model.
-
-# Keywords
- - `slack=1e6`: The slack penalty for the soft constraints.
-   For more info on specifying slacks, refer to the [docs on soft constraints](@ref soft_constraints).
- - `branch_flows::Bool=false`: Whether or not to consider thermal branch flow limits
-   in the formulation.
 """
 function (ed::EconomicDispatch)(
     ::Type{MISO}, system::SystemRT, solver=nothing, datetimes=get_datetimes(system)

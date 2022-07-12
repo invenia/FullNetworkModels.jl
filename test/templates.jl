@@ -568,6 +568,7 @@ end
 @testset "zero-arg constructors return callable structs" begin
     solver = HiGHS.Optimizer
 
+    # test 3-arg method because it's the one called in FullNetworkSimulations._uc_day
     uc = UnitCommitment(ramp_rates=true, slack=:energy_balance => nothing)
     @test uc isa UnitCommitment
     fnm = uc(MISO, TEST_SYSTEM)
@@ -579,6 +580,11 @@ end
     fnm = uc(MISO, TEST_SYSTEM, solver)
     @test !haskey(fnm.model, :ramp_up)
     @test haskey(fnm.model, :sl_eb_gen)
+
+    # Don't want to spend time building many models, but do want to test that we have all
+    # the same methods as `unit_commitment`, so we use `methods` as a quick/rough check.
+    # Should accept (system,) or (system, solver) or (system, solver, datetimes)
+    @test length(methods(uc)) == 3 == (length(methods(unit_commitment)) - 1)
 
     @test_throws Exception UnitCommitment(slack=:wrong => 1)
     @test_throws Exception UnitCommitment(slack=[:wrong => 1])
