@@ -565,36 +565,34 @@ end
 end
 
 # https://gitlab.invenia.ca/invenia/research/FullNetworkModels.jl/-/issues/75
-@testset "zero-arg templates returning structs" begin
+@testset "zero-arg constructors return structs that can be used as callables" begin
     solver = HiGHS.Optimizer
 
-    # test 2-arg method because it's the one called in FullNetworkSimulations._uc_day
-    fnm = unit_commitment(
-        MISO, TEST_SYSTEM, solver; ramp_rates=true, slack=:energy_balance => nothing
-    )
+    uc = UnitCommitment(ramp_rates=true, slack=:energy_balance => nothing)
+    @test uc isa UnitCommitment
+    fnm = uc(MISO, TEST_SYSTEM)
     @test haskey(fnm.model, :ramp_up)
     @test !haskey(fnm.model, :sl_eb_gen)
-    fnm = unit_commitment(
-        MISO, TEST_SYSTEM, solver; ramp_rates=false, slack=:energy_balance => 1e3
-    )
+
+    uc = UnitCommitment(ramp_rates=false, slack=:energy_balance => 1e3)
+    @test uc isa UnitCommitment
+    fnm = uc(MISO, TEST_SYSTEM, solver)
     @test !haskey(fnm.model, :ramp_up)
     @test haskey(fnm.model, :sl_eb_gen)
 
     @test_throws Exception UnitCommitment(slack=:wrong => 1)
     @test_throws Exception UnitCommitment(slack=[:wrong => 1])
 
-    # test 3-arg method because it's the one called in FullNetworkSimulations._ed_hour!
     datetime = first(get_datetimes(TEST_SYSTEM_RT))
-    fnm = economic_dispatch(
-        MISO, TEST_SYSTEM_RT, solver, datetime;
-        branch_flows=true, slack=:energy_balance => nothing
-    )
+    ed = EconomicDispatch(branch_flows=true, slack=:energy_balance => nothing)
+    @test ed isa EconomicDispatch
+    fnm = ed(MISO, TEST_SYSTEM_RT, solver, datetime)
     @test haskey(fnm.model, :branch_flows_base)
     @test !haskey(fnm.model, :sl_eb_gen)
-    fnm = economic_dispatch(
-        MISO, TEST_SYSTEM_RT, solver, datetime;
-        branch_flows=false, slack=:energy_balance => 1e3
-    )
+
+    ed = EconomicDispatch(branch_flows=false, slack=:energy_balance => 1e3)
+    @test ed isa EconomicDispatch
+    fnm = ed(MISO, TEST_SYSTEM_RT, solver, datetime)
     @test !haskey(fnm.model, :branch_flows_base)
     @test haskey(fnm.model, :sl_eb_gen)
     # test `datetimes` argument correctly passed through
