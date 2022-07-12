@@ -46,6 +46,16 @@ Base.@kwdef struct Slacks
     ancillary_requirements::Union{Float64, Nothing}=nothing
 end
 
+function Slacks(slacks::Union{Number,Nothing})
+    names = fieldnames(Slacks)
+    N = fieldcount(Slacks)
+    return Slacks(NamedTuple{names}(ntuple(_ -> slacks, N)))
+end
+Slacks(slack::Pair{Symbol}) = Slacks(tuple(slack))
+Slacks(itr...) = Slacks(NamedTuple(itr...))
+Slacks(nt::NamedTuple) = Slacks(; nt...)
+Slacks(sl::Slacks) = sl
+
 """
     UnitCommitment(; keywords...)
 
