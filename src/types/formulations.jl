@@ -56,6 +56,10 @@ Slacks(itr...) = Slacks(NamedTuple(itr...))
 Slacks(nt::NamedTuple) = Slacks(; nt...)
 Slacks(sl::Slacks) = sl
 
+###
+### Unit Commitment
+###
+
 """
     UnitCommitment(; keywords...)
 
@@ -106,6 +110,10 @@ function UnitCommitment(;
     slack = Slacks(slack)  # if we've an invalid `slack` argument, force error ASAP.
     return UnitCommitment(slack, branch_flows, ramp_rates, threshold, relax_integrality)
 end
+
+###
+### Economic Dispatch
+###
 
 """
     EconomicDispatch(; keywords...)
