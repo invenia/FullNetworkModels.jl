@@ -44,6 +44,10 @@ export FullNetworkModel
 export UnitCommitment
 export EconomicDispatch
 
+# Templates
+export economic_dispatch
+export unit_commitment
+
 export has_constraint
 export has_variable
 
@@ -73,10 +77,6 @@ export obj_bids!
 export obj_thermal_noload_cost!
 export obj_thermal_startup_cost!
 export obj_thermal_variable_cost!
-
-# Templates
-export economic_dispatch
-export unit_commitment
 
 # API extensions
 export optimize!
