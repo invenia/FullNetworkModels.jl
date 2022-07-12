@@ -66,16 +66,15 @@ Slacks(sl::Slacks) = sl
 """
     UnitCommitment(; keywords...)
 
-Type defining the formulation that will be used to solve the unit
-commitment. This struct can then be used as a callable to build the JuMP problem by passing
-the system and solver.
+Type defining the unit commitment formulation.
+Return a callable that receives a `System` and returns a `FullNetworkModel` with the given formulation.
 
 # Keywords
  - `relax_integrality`: If set to `true`, binary variables will be relaxed.
  - `slack=$(FullNetworkModels._DEFAULT_UC_SLACK)`: The slack penalty for the soft constraints.
    For more info on specifying slacks, refer to the [docs on soft constraints](@ref soft_constraints).
- - `threshold=$_SF_THRESHOLD`: The threshold (cutoff value) to be applied to the shift factors. Only relevant when `branch_flows=true`.
  - `branch_flows::Bool=false`: Whether or not to inlcude thermal branch flow constraints.
+ - `threshold=$_SF_THRESHOLD`: The threshold (cutoff value) to be applied to the shift factors. Only relevant when `branch_flows=true`.
  - `ramp_rates::Bool=true`: Whether or not to include ramp rate constraints.
 
 # Example
@@ -115,20 +114,22 @@ end
 """
     EconomicDispatch(; keywords...)
 
-Return a callable that receives a `System` and returns a `FullNetworkModel` with the
-formulation determined by the given keywords.
+Type defining the economic dispatch formulation.
+Return a callable that receives a `System` and returns a `FullNetworkModel` with the given formulation.
+
+# Keywords
+ - `slack=$(FullNetworkModels._DEFAULT_ED_SLACK)`: The slack penalty for the soft constraints.
+   For more info on specifying slacks, refer to the [docs on soft constraints](@ref soft_constraints).
+ - `branch_flows::Bool=false`: Whether or not to inlcude thermal branch flow constraints.
+ - `threshold=$_SF_THRESHOLD`: The threshold (cutoff value) to be applied to the shift factors.
+   Only relevant when `branch_flows=true`.
+
 
 # Example
 
 ```julia
 ed = EconomicDispatch(branch_flows=true)
 fnm = ed(MISO, system, solver)
-```
-
-or, equivalently,
-
-```julia
-fnm = economic_dispatch(MISO, system, solver; branch_flows=true)
 ```
 """
 struct EconomicDispatch
