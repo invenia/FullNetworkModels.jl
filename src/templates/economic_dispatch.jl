@@ -1,6 +1,6 @@
 """
     (ed::EconomicDispatch)(
-        system::System, solver=nothing, datetimes=get_datetimes(system)
+        ::Type{MISO}, system::System, solver=nothing, datetimes=get_datetimes(system)
     ) -> FullNetworkModel{ED}
 
 Defines the economic dispatch formulation.
