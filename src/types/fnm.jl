@@ -1,26 +1,5 @@
 """
-    UCED
-
-Abstract type describing unit commitment and economic dispatch.
-"""
-abstract type UCED end
-
-"""
-    UC
-
-Abstract type describing unit commitment.
-"""
-abstract type UC <: UCED end
-
-"""
-    ED
-
-Abstract type describing economic dispatch.
-"""
-abstract type ED <: UCED end
-
-"""
-    FullNetworkModel{<:UCED}
+    FullNetworkModel{<:Union{UC,ED}}
 
 Structure containing all the information on the full network model. Contains a JuMP.jl
 `Model` and a PowerSystems.jl `System` for the period contemplated in `datetimes`.
@@ -32,12 +11,12 @@ Structure containing all the information on the full network model. Contains a J
 
 ---
 
-    FullNetworkModel{<:UCED}(system[, datetimes])
-    FullNetworkModel{<:UCED}(system[, model_or_solver, datetimes])
+    FullNetworkModel{<:Union{UC,ED}}(system[, datetimes])
+    FullNetworkModel{<:Union{UC,ED}}(system[, model_or_solver, datetimes])
 
 To construct a `FullNetworkModel` for all datetimes in a `System` use
 `FullNetworkModel{UC}(system::System)` or `FullNetworkModel{ED}(system::System)`,
-depending on if building a [`UC`](@ref) or [`ED`](@ref) problem.
+depending on if building a [`UnitCommitment`](@ref) or [`EconomicDispatch`](@ref) problem.
 
 Or to specify exactly which datetimes to model use
 `FullNetworkModel{ED}(system::System, datetimes::Vector{DateTime})`.
@@ -58,32 +37,32 @@ only after the model has been built.
   which should be modelled. Must be a subset of the times for which the system has data.
   Defaults to all datetimes in the system.
 """
-struct FullNetworkModel{T<:UCED}
+struct FullNetworkModel{T<:Union{UC,ED}}
     system::System
     model::Model
     datetimes::Vector{DateTime}
     function FullNetworkModel{T}(
         system::System, model::Model, datetimes=get_datetimes(system)
-    ) where T<:UCED
+    ) where T<:Union{UC,ED}
         new{T}(system, model, datetimes)
     end
 end
 
 function FullNetworkModel{T}(
     system::System, model::Model, datetime::DateTime
-) where T<:UCED
+) where T<:Union{UC,ED}
     return FullNetworkModel{T}(system, model, [datetime])
 end
 
 function FullNetworkModel{T}(
     system::System, datetimes::AbstractVector{<:DateTime}=get_datetimes(system)
-) where T<:UCED
+) where T<:Union{UC,ED}
     model = Model()
     set_string_names_on_creation(model, false)
     return FullNetworkModel{T}(system, model, datetimes)
 end
 
-function FullNetworkModel{T}(system::System, datetime::DateTime) where T<:UCED
+function FullNetworkModel{T}(system::System, datetime::DateTime) where T<:Union{UC,ED}
     model = Model()
     set_string_names_on_creation(model, false)
     return FullNetworkModel{T}(system, model, [datetime])
@@ -91,7 +70,7 @@ end
 
 function FullNetworkModel{T}(
     system::System, solver, datetimes=get_datetimes(system)
-) where T<:UCED
+) where T<:Union{UC,ED}
     model = Model(solver; add_bridges=false)
     set_string_names_on_creation(model, false)
     return FullNetworkModel{T}(system, model, datetimes)

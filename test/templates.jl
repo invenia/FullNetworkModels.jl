@@ -12,7 +12,6 @@ end
     @testset "unit_commitment" begin
         fnm = unit_commitment(MISO, TEST_SYSTEM)
         test_no_names(fnm)
-        datetimes = fnm.datetimes
         tests_thermal_variable(fnm, "p")
         tests_commitment(fnm)
         tests_startup_shutdown(fnm)
@@ -27,6 +26,7 @@ end
         tests_ramp_rates(fnm)
         tests_energy_balance(fnm)
     end
+
     @testset "unit_commitment with soft ramps and no ramps" begin
         # Modify system so that hard ramp constraints result in infeasibility
         system_infeasible = deepcopy(TEST_SYSTEM)
@@ -41,7 +41,8 @@ end
 
         # Now do the same with soft ramp constraints – should be feasible
         fnm_soft_ramps = unit_commitment(
-            MISO, system_infeasible, highs_opt; slack=[:ramp_rates => 1e3], relax_integrality=true
+            MISO, system_infeasible, highs_opt;
+            relax_integrality=true, slack=:ramp_rates => 1e3
         )
         # Basic ramp rate tests with correct slack
         tests_ramp_rates(fnm_soft_ramps; slack=1e3)
@@ -53,7 +54,7 @@ end
         # Now do the same for no ramp constraints - should be feasible and have a lower
         # objective value (since there's no penalty for violating soft constraints)
         fnm_no_ramps = unit_commitment(
-            MISO, system_infeasible, highs_opt; relax_integrality=true, ramp_rates=false,
+            MISO, system_infeasible, highs_opt; relax_integrality=true, ramp_rates=false
         )
         test_no_names(fnm_no_ramps)
         optimize!(fnm_no_ramps)
@@ -77,6 +78,7 @@ end
             @test all(==(0.0), value.(fnm_no_ramps.model[:psd]))
         end
     end
+
     @testset "unit_commitment(branch_flows=true)" begin
         fnm = unit_commitment(MISO, TEST_SYSTEM, highs_opt; branch_flows=true)
         test_no_names(fnm)
@@ -91,7 +93,7 @@ end
         mon_branches = filter(br -> br.is_monitored, get_branches(TEST_SYSTEM))
         mon_branches_names = string.(collect(keys(mon_branches)))
 
-        @testset "branch bounds" for c in TEST_CONTINGENCIES
+        @testset "branch flow limits" for c in TEST_CONTINGENCIES
             for m in mon_branches_names
                 t_branch = get_branches(TEST_SYSTEM)[m]
                 rate = c == "base_case" ? t_branch.rate_a : t_branch.rate_b
@@ -199,8 +201,6 @@ end
         optimize!(fnm)
         @test termination_status(fnm.model) == TerminationStatusCode(1)
         obj_no_conting = objective_value(fnm.model)
-
-        # Compare objectives without and with contingencies
         @test obj_no_conting <= obj
     end
 
@@ -217,13 +217,13 @@ end
         tests_energy_balance(fnm)
 
         # Solve the original ED with slack = nothing
-        fnm = economic_dispatch(MISO, TEST_SYSTEM_RT, highs_opt; slack = nothing)
+        fnm = economic_dispatch(MISO, TEST_SYSTEM_RT, highs_opt; slack=nothing)
         optimize!(fnm)
         # Should be feasible
         @test termination_status(fnm.model) == TerminationStatusCode(1)
         obj_orig = objective_value(fnm.model)
         # Solve it with slack = 1e4
-        fnm = economic_dispatch(MISO, TEST_SYSTEM_RT, highs_opt; slack = 1e4)
+        fnm = economic_dispatch(MISO, TEST_SYSTEM_RT, highs_opt; slack=1e4)
         optimize!(fnm)
         # Should be feasible with a smaller objective value.
         @test termination_status(fnm.model) == TerminationStatusCode(1)
@@ -254,6 +254,7 @@ end
         @test obj_low_slack > obj_orig
         @test obj_high_slack > obj_low_slack
     end
+
     @testset "economic_dispatch(branch_flows=true)" begin
         fnm = economic_dispatch(MISO, TEST_SYSTEM_RT, highs_opt; branch_flows=true)
         test_no_names(fnm)
@@ -427,15 +428,13 @@ end
         lodf = get_lodf(system_no_contingencies)
         delete!(lodf, "conting1")
         delete!(lodf, "conting2")
-
         fnm = economic_dispatch(MISO, system_no_contingencies, highs_opt; branch_flows=true)
         optimize!(fnm)
         @test termination_status(fnm.model) == TerminationStatusCode(1)
         obj_no_conting = objective_value(fnm.model)
-
-        # Compare objectives without and with contingencies
         @test obj_no_conting <= obj
     end
+
     @testset "Energy balance as soft constraint: $T" for (T, t_system, solver) in (
         (UC, TEST_SYSTEM, highs_opt),
         (ED, TEST_SYSTEM_RT, highs_opt)
@@ -498,6 +497,10 @@ end
 # Test that templates don't error for a given `datetimes` argument
 function test_templates(datetimes)
     solver = HiGHS.Optimizer
+    uc = UnitCommitment()
+    ed = EconomicDispatch()
+    @test uc(MISO, TEST_SYSTEM, solver, datetimes) isa FullNetworkModel
+    @test ed(MISO, TEST_SYSTEM_RT, solver, datetimes) isa FullNetworkModel
     @test unit_commitment(MISO, TEST_SYSTEM, solver, datetimes) isa FullNetworkModel
     @test economic_dispatch(MISO, TEST_SYSTEM_RT, solver, datetimes) isa FullNetworkModel
     return nothing
@@ -513,7 +516,9 @@ end
     end
     @testset "Single datetime" begin
         # only need economic dispatch for a single datetime
-        @test economic_dispatch(MISO, TEST_SYSTEM_RT, HiGHS.Optimizer, first(datetimes)) isa FullNetworkModel
+        @test economic_dispatch(
+            MISO, TEST_SYSTEM_RT, HiGHS.Optimizer, first(datetimes)
+        ) isa FullNetworkModel
     end
 end
 
@@ -525,14 +530,12 @@ end
         loads("Load2_Bus3") .= loads("Load2_Bus3") .* 10.0 # increase load to induce congestion
 
         fnm = unit_commitment(MISO, system, solver; relax_integrality=true, branch_flows=true)
-        set_silent(fnm.model) # to reduce test verbosity
         optimize!(fnm)
 
         # Apply a threshold of 1.0, meaning that all shift factors will be zero
         fnm_thresh = unit_commitment(
             MISO, system, solver; relax_integrality=true, branch_flows=true, threshold=1.0
         )
-        set_silent(fnm_thresh.model) # to reduce test verbosity
         optimize!(fnm_thresh)
 
         # There is congestion due to high load
@@ -562,40 +565,45 @@ end
 end
 
 # https://gitlab.invenia.ca/invenia/research/FullNetworkModels.jl/-/issues/75
-@testset "zero-arg templates returning callables" begin
+@testset "zero-arg constructors return callable structs" begin
     solver = HiGHS.Optimizer
 
-    # test 2-arg method because it's the one called in FullNetworkSimulations._uc_day
-    uc = unit_commitment(ramp_rates=true, slack=:energy_balance => nothing)
+    # test 3-arg method because it's the one called in FullNetworkSimulations._uc_day
+    uc = UnitCommitment(ramp_rates=true, slack=:energy_balance => nothing)
+    @test uc isa UnitCommitment
     fnm = uc(MISO, TEST_SYSTEM, solver)
     @test haskey(fnm.model, :ramp_up)
     @test !haskey(fnm.model, :sl_eb_gen)
-    uc = unit_commitment(ramp_rates=false, slack=:energy_balance => 1e3)
+
+    uc = UnitCommitment(ramp_rates=false, slack=:energy_balance => 1e3)
+    @test uc isa UnitCommitment
     fnm = uc(MISO, TEST_SYSTEM, solver)
     @test !haskey(fnm.model, :ramp_up)
     @test haskey(fnm.model, :sl_eb_gen)
 
-    # Don't want to spend time building many models, but do want to test that we have all
-    # the same methods as `unit_commitment`, same we use `methods` as a quick/rough check.
-    # Should accept (system,) or (system, solver) or (system, solver, datetimes)
-    @test length(methods(uc)) == 3 == (length(methods(unit_commitment)) - 1)
-    @test_throws Exception unit_commitment(slack=:wrong => 1)
-    @test_throws Exception unit_commitment(slack=[:wrong => 1])
+    # Should accept (G, system,) or (G, system, solver) or (G, system, solver, datetimes)
+    @test length(methods(uc)) == 3
 
-    # test 3-arg method because it's the one called in FullNetworkSimulations._ed_hour!
+    @test_throws Exception UnitCommitment(slack=:wrong => 1)
+    @test_throws Exception UnitCommitment(slack=[:wrong => 1])
+
+    # test 4-arg method because it's the one called in FullNetworkSimulations._ed_hour!
     datetime = first(get_datetimes(TEST_SYSTEM_RT))
-    ed = economic_dispatch(branch_flows=true, slack=:energy_balance => nothing)
+    ed = EconomicDispatch(branch_flows=true, slack=:energy_balance => nothing)
+    @test ed isa EconomicDispatch
     fnm = ed(MISO, TEST_SYSTEM_RT, solver, datetime)
     @test haskey(fnm.model, :branch_flows_base)
     @test !haskey(fnm.model, :sl_eb_gen)
-    ed = economic_dispatch(branch_flows=false, slack=:energy_balance => 1e3)
+
+    ed = EconomicDispatch(branch_flows=false, slack=:energy_balance => 1e3)
+    @test ed isa EconomicDispatch
     fnm = ed(MISO, TEST_SYSTEM_RT, solver, datetime)
     @test !haskey(fnm.model, :branch_flows_base)
     @test haskey(fnm.model, :sl_eb_gen)
     # test `datetimes` argument correctly passed through
     @test fnm.datetimes == [datetime]
 
-    @test length(methods(ed)) == 3 == (length(methods(economic_dispatch)) - 1)
-    @test_throws Exception economic_dispatch(slack=:wrong => 1)
-    @test_throws Exception economic_dispatch(slack=[:wrong => 1])
+    @test length(methods(ed)) == 3
+    @test_throws Exception EconomicDispatch(slack=:wrong => 1)
+    @test_throws Exception EconomicDispatch(slack=[:wrong => 1])
 end

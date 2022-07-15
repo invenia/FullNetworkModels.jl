@@ -2,7 +2,6 @@
 
 ```@docs
 FullNetworkModel
-UCED
-UC
-ED
+UnitCommitment
+EconomicDispatch
 ```

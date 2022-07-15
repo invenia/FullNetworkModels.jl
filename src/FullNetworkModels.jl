@@ -19,8 +19,9 @@ const MARKET_WIDE_ZONE = -9999
 # Default threshold (cutoff) value for shift factors
 const _SF_THRESHOLD = 1e-4
 
-# Type
-include("fnm.jl")
+# Types
+include("types/formulations.jl")
+include("types/fnm.jl")
 
 # Utility functions
 include("utils/api_extensions.jl")
@@ -40,9 +41,14 @@ include("templates/economic_dispatch.jl")
 
 # Types
 export FullNetworkModel
-export UCED
+export UnitCommitment
+export EconomicDispatch
 export UC
 export ED
+
+# Templates
+export economic_dispatch
+export unit_commitment
 
 export has_constraint
 export has_variable
@@ -73,10 +79,6 @@ export obj_bids!
 export obj_thermal_noload_cost!
 export obj_thermal_startup_cost!
 export obj_thermal_variable_cost!
-
-# Templates
-export economic_dispatch
-export unit_commitment
 
 # API extensions
 export optimize!

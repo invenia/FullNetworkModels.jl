@@ -1,9 +1,6 @@
-const _DEFAULT_ED_SLACK = 1e6
-
 """
-    economic_dispatch(
-        system::System, solver=nothing, datetimes=get_datetimes(system);
-        slack=1e6, branch_flows=false
+    (ed::EconomicDispatch)(
+        ::Type{MISO}, system::System, solver=nothing, datetimes=get_datetimes(system)
     ) -> FullNetworkModel{ED}
 
 Defines the economic dispatch formulation.
@@ -43,19 +40,13 @@ Arguments:
  - `system::SystemRT`: The FullNetworkSystems system that provides the input data.
  - `solver`: The solver of choice, e.g. `HiGHS.Optimizer`.
  - `datetimes=get_datetimes(system)`: The time periods considered in the model.
-
-# Keywords
- - `slack=1e6`: The slack penalty for the soft constraints.
-   For more info on specifying slacks, refer to the [docs on soft constraints](@ref soft_constraints).
- - `branch_flows::Bool=false`: Whether or not to consider thermal branch flow limits
-   in the formulation.
 """
-function economic_dispatch(
-    ::Type{MISO}, system::SystemRT, solver=nothing, datetimes=get_datetimes(system);
-    slack=_DEFAULT_ED_SLACK, threshold=_SF_THRESHOLD, branch_flows::Bool=false
+function (ed::EconomicDispatch)(
+    ::Type{MISO}, system::SystemRT, solver=nothing, datetimes=get_datetimes(system)
 )
-    # Get the individual slack values to be used in each soft constraint
-    @timeit_debug get_timer("FNTimer") "specify slacks" sl = Slacks(slack)
+    sl = ed.slack
+    branch_flows = ed.branch_flows
+    threshold = ed.threshold
     # Initialize FNM
     @timeit_debug get_timer("FNTimer") "initialise FNM" fnm = FullNetworkModel{ED}(system, datetimes)
     # Variables
@@ -84,23 +75,21 @@ function economic_dispatch(
 end
 
 """
-    economic_dispatch(; keywords...)
+    economic_dispatch(args...; kwargs...) -> FullNetworkModel{ED}
 
-Return a callable that receives a `System` and returns a `FullNetworkModel` with the
-formulation determined by the given keywords.
-
-# Example
+Returns a [`FullNetworkModel`](@ref) with the `EconomicDispatch` formulation according to the
+selected `kwargs`. Using `economic_dispatch` is equivalent to defining a `EconomicDispatch`
+struct and then using it to create a FullNetworkModel in one step, i.e.,
 
 ```julia
-ed = economic_dispatch(branch_flows=true)
-fnm = ed(system, solver)
+fnm = economic_dispatch(MISO, system, solver; branch_flows=true)
+```
+
+is equivalent to
+
+```julia
+ed = EconomicDispatch(branch_flows=true)
+fnm = ed(MISO, system, solver)
 ```
 """
-function economic_dispatch(; slack=_DEFAULT_ED_SLACK, keywords...)
-    slack = Slacks(slack)  # if we've an invalid `slack` argument, force error ASAP.
-    return function _economic_dispatch(
-        G::Type{<:Grid}, system::SystemRT, solver=nothing, datetimes=get_datetimes(system)
-    )
-        return economic_dispatch(G, system, solver, datetimes; slack=slack, keywords...)
-    end
-end
+economic_dispatch(args...; kwargs...) = EconomicDispatch(; kwargs...)(args...)

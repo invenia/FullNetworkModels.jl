@@ -18,12 +18,21 @@ using JuMP
 
 date = Date(2020, 08, 06)
 da_system = build_system(MISO, DA, date)  # requires NDA access
-uc_model = unit_commitment(da_system, HiGHS.Optimizer)
+uc_model = unit_commitment(MISO, da_system, HiGHS.Optimizer)
 optimize!(uc_model)
 
 rt_system = build_system(MISO, RT, date)
-ed_model = economic_dispatch(rt_system, HiGHS.Optimizer)
+ed_model = economic_dispatch(MISO, rt_system, HiGHS.Optimizer)
 optimize!(ed_model)
+```
+
+Alternatively, you can define the formulation using [the `UnitCommitment` and `EconomicDispatch` types](@ref types), and use them to build the JuMP model.
+This is especially useful when working with a higher-level API such as FullNetworkSimulations.jl, since you can specify just the formulation type without having to directly deal with the JuMP problem.
+For example, the two steps below are equivalent to the one-liner `fnm = unit_commitment(MISO, system, solver; branch_flows=true)`:
+
+```julia
+uc = UnitCommitment(branch_flows=true)
+fnm = uc(MISO, system, HiGHS.Optimizer)
 ```
 
 To build your own models, you can use the [modelling functions](@ref modelling).

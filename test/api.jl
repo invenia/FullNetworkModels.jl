@@ -4,9 +4,9 @@
         fnm = FullNetworkModel{UC}(TEST_SYSTEM)
         t1 = DateTime(2017, 12, 15)
         t2 = DateTime(2017, 12, 15, 23)
-        @test sprint(show, fnm; context=:compact => true) == "FullNetworkModel{UC}($t1 … $t2)"
+        @test sprint(show, fnm; context=:compact => true) == "FullNetworkModel{UnitCommitment}($t1 … $t2)"
         @test sprint(show, fnm) == strip("""
-            FullNetworkModel{UC}
+            FullNetworkModel{UnitCommitment}
             Time periods: $t1 to $t2
             System: 9 components
             Model formulation: 0 variables and 0 constraints
@@ -15,7 +15,7 @@
         var_commitment!(fnm)
         n_units = length(fnm.datetimes) * length(get_generators(fnm.system))
         @test sprint(show, fnm) == strip("""
-            FullNetworkModel{UC}
+            FullNetworkModel{UnitCommitment}
             Time periods: $t1 to $t2
             System: 9 components
             Model formulation: $n_units variables and $n_units constraints
@@ -24,7 +24,7 @@
         )
         con_must_run!(fnm)
         @test sprint(show, fnm) == strip("""
-            FullNetworkModel{UC}
+            FullNetworkModel{UnitCommitment}
             Time periods: $t1 to $t2
             System: 9 components
             Model formulation: $n_units variables and $(2 * n_units) constraints

@@ -1,10 +1,6 @@
-const _DEFAULT_UC_SLACK = nothing
-
 """
-    unit_commitment(
-        system::SystemDA, solver=nothing, datetimes=get_datetimes(system);
-        relax_integrality=false, slack=nothing, threshold=$_SF_THRESHOLD,
-        branch_flows::Bool=false, ramp_rates::Bool=true,
+    (uc::UnitCommitment)(
+        ::Type{MISO}, system::SystemDA, solver=nothing, datetimes=get_datetimes(system)
     ) -> FullNetworkModel{UC}
 
 Defines the unit commitment formulation.
@@ -55,22 +51,15 @@ $(latex(con_thermal_branch!))
  - `system::SystemDA`: The FullNetworkSystems system that provides the input data.
  - `solver`: The solver of choice, e.g. `HiGHS.Optimizer`.
  - `datetimes=get_datetimes(system)`: The time periods considered in the model.
-
-# Keywords
- - `relax_integrality=false`: If set to `true`, binary variables will be relaxed.
- - `slack=nothing`: The slack penalty for the soft constraints.
-   For more info on specifying slacks, refer to the [docs on soft constraints](@ref soft_constraints).
- - `threshold=$_SF_THRESHOLD`: The threshold (cutoff value) to be applied to the shift factors. Only relevant when `branch_flows=true`.
- - `branch_flows::Bool=false`: Whether or not to inlcude thermal branch flow constraints.
- - `ramp_rates::Bool=true`: Whether or not to include ramp rate constraints.
 """
-function unit_commitment(
-    ::Type{MISO}, system::SystemDA, solver=nothing, datetimes=get_datetimes(system);
-    relax_integrality=false, slack=_DEFAULT_UC_SLACK, threshold=_SF_THRESHOLD,
-    branch_flows::Bool=false, ramp_rates::Bool=true
+function (uc::UnitCommitment)(
+    ::Type{MISO}, system::SystemDA, solver=nothing, datetimes=get_datetimes(system)
 )
-    # Get the individual slack values to be used in each soft constraint
-    @timeit_debug get_timer("FNTimer") "specify slacks" sl = Slacks(slack)
+    sl = uc.slack
+    branch_flows = uc.branch_flows
+    ramp_rates = uc.ramp_rates
+    relax_integrality = uc.relax_integrality
+    threshold = uc.threshold
     # Initialize FNM
     @timeit_debug get_timer("FNTimer") "initialise FNM" fnm = FullNetworkModel{UC}(system, datetimes)
     # Variables
@@ -114,23 +103,21 @@ function unit_commitment(
 end
 
 """
-    unit_commitment(; keywords...)
+    unit_commitment(args...; kwargs...) -> FullNetworkModel{UC}
 
-Return a callable that receives a `System` and returns a `FullNetworkModel` with the
-formulation determined by the given keywords.
-
-# Example
+Returns a [`FullNetworkModel`](@ref) with the `UnitCommitment` formulation according to the
+selected `kwargs`. Using `unit_commitment` is equivalent to defining a `UnitCommitment`
+struct and then using it to create a FullNetworkModel in one step, i.e.,
 
 ```julia
-uc = unit_commitment(branch_flows=true, ramp_rates=true, slack=:ramp_rates => 1e3])
-fnm = uc(system, solver)
+fnm = unit_commitment(MISO, system, solver; branch_flows=true)
+```
+
+is equivalent to
+
+```julia
+uc = UnitCommitment(branch_flows=true)
+fnm = uc(MISO, system, solver)
 ```
 """
-function unit_commitment(; slack=_DEFAULT_UC_SLACK, keywords...)
-    slack = Slacks(slack)  # if we've an invalid `slack` argument, force error ASAP.
-    return function _unit_commitment(
-        G::Type{<:Grid}, system::SystemDA, solver=nothing, datetimes=get_datetimes(system)
-    )
-        return unit_commitment(G, system, solver, datetimes; slack=slack, keywords...)
-    end
-end
+unit_commitment(args...; kwargs...) = UnitCommitment(; kwargs...)(args...)
