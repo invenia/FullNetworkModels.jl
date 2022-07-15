@@ -103,7 +103,7 @@ function (uc::UnitCommitment)(
 end
 
 """
-    unit_commitment(args...; kwargs...) -> FullNetworkModel{UC}
+    unit_commitment(::Type{<:Grid}, ::SystemDA, args...; kwargs...) -> FullNetworkModel{UC}
 
 Returns a [`FullNetworkModel`](@ref) with the `UnitCommitment` formulation according to the
 selected `kwargs`. Using `unit_commitment` is equivalent to defining a `UnitCommitment`
@@ -120,4 +120,6 @@ uc = UnitCommitment(branch_flows=true)
 fnm = uc(MISO, system, solver)
 ```
 """
-unit_commitment(args...; kwargs...) = UnitCommitment(; kwargs...)(args...)
+function unit_commitment(G::Type{<:Grid}, system::SystemDA, args...; kwargs...)
+    return UnitCommitment(; kwargs...)(G, System, args...)
+end
