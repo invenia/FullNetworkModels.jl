@@ -75,7 +75,7 @@ function (ed::EconomicDispatch)(
 end
 
 """
-    economic_dispatch(::Type{<:Grid}, ::SystemRT, args...; kwargs...) -> FullNetworkModel{ED}
+    economic_dispatch(args...; kwargs...) -> FullNetworkModel{ED}
 
 Returns a [`FullNetworkModel`](@ref) with the `EconomicDispatch` formulation according to the
 selected `kwargs`. Using `economic_dispatch` is equivalent to defining a `EconomicDispatch`
@@ -92,6 +92,4 @@ ed = EconomicDispatch(branch_flows=true)
 fnm = ed(MISO, system, solver)
 ```
 """
-function economic_dispatch(G::Type{<:Grid}, system::SystemRT, args...; kwargs...)
-    return EconomicDispatch(; kwargs...)(G, system, args...)
-end
+economic_dispatch(args...; kwargs...) = EconomicDispatch(; kwargs...)(args...)
