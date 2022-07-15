@@ -11,6 +11,7 @@ end
     highs_opt = optimizer_with_attributes(HiGHS.Optimizer, MOI.Silent() => true)
     @testset "unit_commitment" begin
         fnm = unit_commitment(MISO, TEST_SYSTEM)
+        @test fnm isa FullNetworkModel{UC}
         test_no_names(fnm)
         tests_thermal_variable(fnm, "p")
         tests_commitment(fnm)
@@ -25,6 +26,9 @@ end
         tests_operating_reserve_requirements(fnm)
         tests_ramp_rates(fnm)
         tests_energy_balance(fnm)
+        # `unit_commitment` should always return as `FullNetworkModel`, which
+        # requires passing at least a `Grid` type and a `System`.
+        @test_throws MethodError unit_commitment()
     end
 
     @testset "unit_commitment with soft ramps and no ramps" begin
@@ -206,6 +210,7 @@ end
 
     @testset "economic_dispatch" begin
         fnm = economic_dispatch(MISO, TEST_SYSTEM_RT)
+        @test fnm isa FullNetworkModel{ED}
         test_no_names(fnm)
         tests_thermal_variable(fnm, "p")
         tests_generation_limits(fnm)
@@ -215,6 +220,9 @@ end
         tests_regulation_requirements(fnm)
         tests_operating_reserve_requirements(fnm)
         tests_energy_balance(fnm)
+        # `economic_dispatch` should always return as `FullNetworkModel`, which
+        # requires passing at least a `Grid` type and a `System`.
+        @test_throws MethodError economic_dispatch()
 
         # Solve the original ED with slack = nothing
         fnm = economic_dispatch(MISO, TEST_SYSTEM_RT, highs_opt; slack=nothing)
