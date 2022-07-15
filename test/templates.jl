@@ -606,4 +606,9 @@ end
     @test length(methods(ed)) == 3
     @test_throws Exception EconomicDispatch(slack=:wrong => 1)
     @test_throws Exception EconomicDispatch(slack=[:wrong => 1])
+
+    # Error on incorrect keywords at construction time, not model-build time.
+    # https://gitlab.invenia.ca/invenia/research/FullNetworkModels.jl/-/issues/80
+    @test_throws MethodError UnitCommitment(branch_flovs=false)
+    @test_throws MethodError EconomicDispatch(branch_flovs=false)
 end
