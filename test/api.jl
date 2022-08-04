@@ -32,6 +32,14 @@
               Constraint names: must_run
             """
         )
+
+        for T in (UC, ED, Slacks)
+            x = T()
+            # `repr` prints valid code for reconstructing the object
+            @test eval(Meta.parse(repr(x))) == x
+            # defaut `show` in the REPL uses prettier printing including line breaks
+            @test startswith(sprint(show, MIME("text/plain"), x), "$T:\n  ")
+        end
     end
 
     @testset "API extensions" begin
