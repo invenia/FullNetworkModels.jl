@@ -10,7 +10,7 @@ end
 @testset "Templates" begin
     highs_opt = optimizer_with_attributes(HiGHS.Optimizer, MOI.Silent() => true)
     @testset "unit_commitment" begin
-        fnm = unit_commitment(MISO, TEST_SYSTEM)
+        fnm = unit_commitment(MISO, TEST_SYSTEM; relax_integrality=false)
         @test fnm isa FullNetworkModel{UC}
         test_no_names(fnm)
         tests_thermal_variable(fnm, "p")
@@ -38,15 +38,14 @@ end
         # Modify initial generation of unit 7
         init_gen[2] = 50.0
 
-        fnm = unit_commitment(MISO, system_infeasible, highs_opt; relax_integrality=true)
+        fnm = unit_commitment(MISO, system_infeasible, highs_opt)
         optimize!(fnm)
         # Should be infeasible
         @test termination_status(fnm.model) == TerminationStatusCode(2)
 
         # Now do the same with soft ramp constraints – should be feasible
         fnm_soft_ramps = unit_commitment(
-            MISO, system_infeasible, highs_opt;
-            relax_integrality=true, slack=:ramp_rates => 1e3
+            MISO, system_infeasible, highs_opt; slack=:ramp_rates => 1e3
         )
         # Basic ramp rate tests with correct slack
         tests_ramp_rates(fnm_soft_ramps; slack=1e3)
@@ -57,9 +56,7 @@ end
 
         # Now do the same for no ramp constraints - should be feasible and have a lower
         # objective value (since there's no penalty for violating soft constraints)
-        fnm_no_ramps = unit_commitment(
-            MISO, system_infeasible, highs_opt; relax_integrality=true, ramp_rates=false
-        )
+        fnm_no_ramps = unit_commitment(MISO, system_infeasible, highs_opt; ramp_rates=false)
         test_no_names(fnm_no_ramps)
         optimize!(fnm_no_ramps)
         @test termination_status(fnm_no_ramps.model) == TerminationStatusCode(1)
@@ -84,7 +81,8 @@ end
     end
 
     @testset "unit_commitment(branch_flows=true)" begin
-        fnm = unit_commitment(MISO, TEST_SYSTEM, highs_opt; branch_flows=true)
+        uc = UnitCommitment(branch_flows=true, relax_integrality=false)
+        fnm = uc(MISO, TEST_SYSTEM, highs_opt)
         test_no_names(fnm)
         tests_branch_flow_limits(UC, fnm)
 
@@ -117,7 +115,7 @@ end
         insert!(branches, "Transformer1", transformer1_new)
 
         # Solve, slack 1 should be active in base-case and conting2 but not in conting1
-        fnm = unit_commitment(MISO, system_sl1, highs_opt; branch_flows=true)
+        fnm = uc(MISO, system_sl1, highs_opt)
         optimize!(fnm)
         @test termination_status(fnm.model) == TerminationStatusCode(1)
         obj_sl1 = objective_value(fnm.model)
@@ -143,7 +141,7 @@ end
         insert!(branches, "Transformer1", transformer1_new)
 
         # Solve, slack 2 should be active
-        fnm = unit_commitment(MISO, system_sl2, highs_opt; branch_flows=true)
+        fnm = uc(MISO, system_sl2, highs_opt)
         optimize!(fnm)
         @test termination_status(fnm.model) == TerminationStatusCode(1)
         obj_sl2 = objective_value(fnm.model)
@@ -173,7 +171,7 @@ end
         insert!(branches, "Transformer1", transformer1_new)
 
         # Solve, slack 2 should be active in all cases
-        fnm = unit_commitment(MISO, system_sl2_all, highs_opt; branch_flows=true)
+        fnm = uc(MISO, system_sl2_all, highs_opt)
         optimize!(fnm)
         @test termination_status(fnm.model) == TerminationStatusCode(1)
         obj_sl2_all = objective_value(fnm.model)
@@ -201,7 +199,7 @@ end
         delete!(lodf, "conting1")
         delete!(lodf, "conting2")
 
-        fnm = unit_commitment(MISO, TEST_SYSTEM, highs_opt; branch_flows=true)
+        fnm = uc(MISO, TEST_SYSTEM, highs_opt)
         optimize!(fnm)
         @test termination_status(fnm.model) == TerminationStatusCode(1)
         obj_no_conting = objective_value(fnm.model)
@@ -537,13 +535,11 @@ end
         loads = get_load(system)
         loads("Load2_Bus3") .= loads("Load2_Bus3") .* 10.0 # increase load to induce congestion
 
-        fnm = unit_commitment(MISO, system, solver; relax_integrality=true, branch_flows=true)
+        fnm = unit_commitment(MISO, system, solver; branch_flows=true)
         optimize!(fnm)
 
         # Apply a threshold of 1.0, meaning that all shift factors will be zero
-        fnm_thresh = unit_commitment(
-            MISO, system, solver; relax_integrality=true, branch_flows=true, threshold=1.0
-        )
+        fnm_thresh = unit_commitment(MISO, system, solver; branch_flows=true, threshold=1.0)
         optimize!(fnm_thresh)
 
         # There is congestion due to high load
