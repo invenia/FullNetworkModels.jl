@@ -6,7 +6,7 @@
     # System with too much demand
     high_demand_system = deepcopy(TEST_SYSTEM)
     n_periods = length(get_datetimes(high_demand_system))
-    load_ts = get_load(high_demand_system)
+    load_ts = get_loads(high_demand_system)
     load_ts[1, :] .= fill(1e4, n_periods)
     @test !basic_feasibility_checks(high_demand_system)
 

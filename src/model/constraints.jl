@@ -129,9 +129,9 @@ function con_ancillary_limits!(fnm::FullNetworkModel{<:UC})
     datetimes = fnm.datetimes
     unit_codes = keys(get_generators(system))
     Pmax = _keyed_to_dense(get_pmax(system))
-    Pregmax = _keyed_to_dense(get_regmax(system))
+    Pregmax = _keyed_to_dense(get_regulation_max(system))
     Pmin = _keyed_to_dense(get_pmin(system))
-    Pregmin = _keyed_to_dense(get_regmin(system))
+    Pregmin = _keyed_to_dense(get_regulation_min(system))
 
     model = fnm.model
     u = model[:u]
@@ -160,9 +160,9 @@ function con_ancillary_limits!(fnm::FullNetworkModel{<:ED})
     datetimes = fnm.datetimes
     unit_codes = keys(get_generators(system))
     Pmax = _keyed_to_dense(get_pmax(system))
-    Pregmax = _keyed_to_dense(get_regmax(system))
+    Pregmax = _keyed_to_dense(get_regulation_max(system))
     Pmin = _keyed_to_dense(get_pmin(system))
-    Pregmin = _keyed_to_dense(get_regmin(system))
+    Pregmin = _keyed_to_dense(get_regulation_min(system))
     U = _keyed_to_dense(get_commitment(system))
     U_reg = _keyed_to_dense(get_regulation_commitment(system))
 
@@ -329,7 +329,7 @@ end
 function latex(::typeof(con_energy_balance_uc!))
     return """
         ``\\sum_{g \\in \\mathcal{G}} p_{g, t} + \\sum_{i \\in \\mathcal{I}} inc_{i, t} =
-        \\sum_{f \\in \\mathcal{F}} D_{f, t} + \\sum_{d \\in \\mathcal{D}} dec_{d, t} + \\sum_{s \\in \\mathcal{S}} psd_{s, t}, \\forall t \\in \\mathcal{T}``
+        \\sum_{f \\in \\mathcal{F}} D_{f, t} + \\sum_{d \\in \\mathcal{D}} dec_{d, t} + \\sum_{s \\in \\mathcal{S}} psl_{s, t}, \\forall t \\in \\mathcal{T}``
         """
 end
 
@@ -348,7 +348,7 @@ function con_energy_balance!(fnm::FullNetworkModel{<:ED}; slack=nothing)
     system = fnm.system
     datetimes = fnm.datetimes
     unit_codes = keys(get_generators(fnm.system))
-    D = _keyed_to_dense(get_load(system))
+    D = _keyed_to_dense(get_loads(system))
     load_names = axes(D, 1)
     p = model[:p]
     @constraint(
@@ -386,23 +386,23 @@ function con_energy_balance!(fnm::FullNetworkModel{<:UC}; slack=nothing)
     system = fnm.system
     datetimes = fnm.datetimes
     unit_codes = keys(get_generators(fnm.system))
-    D = _keyed_to_dense(get_load(system))
+    D = _keyed_to_dense(get_loads(system))
     load_names = axes(D, 1)
 
-    inc_names = axiskeys(get_bids(fnm.system, :increment), 1)
-    dec_names = axiskeys(get_bids(fnm.system, :decrement), 1)
-    psd_names = axiskeys(get_bids(fnm.system, :price_sensitive_demand), 1)
+    inc_names = axiskeys(get_increments(fnm.system), 1)
+    dec_names = axiskeys(get_decrements(fnm.system), 1)
+    psl_names = axiskeys(get_price_sensitive_loads(fnm.system), 1)
 
     p = model[:p]
     inc = model[:inc]
     dec = model[:dec]
-    psd = model[:psd]
+    psl = model[:psl]
     @constraint(
         model,
         energy_balance[t in datetimes],
         sum(p[g, t] for g in unit_codes) + sum(inc[i, t] for i in inc_names) ==
             sum(D[f, t] for f in load_names) + sum(dec[d, t] for d in dec_names) +
-            sum(psd[s, t] for s in psd_names)
+            sum(psl[s, t] for s in psl_names)
     )
     # If the constraints are supposed to be soft constraints, add slacks
     # We need one slack for excess load and one for excess generation
@@ -428,7 +428,7 @@ function latex(::typeof(_con_nodal_net_injection_uc!))
     return """
         ``p^{net}_{n, t} = \\sum_{g \\in \\mathcal{G_n}} p_{g, t} + \\sum_{i \\in \\mathcal{I}_n} inc_{i, t} -
         \\sum_{f \\in \\mathcal{F}_n} D_{f, t} - \\sum_{d \\in \\mathcal{D}_n} dec_{d, t} -
-        \\sum_{s \\in \\mathcal{S}_n} psd_{s, t}, \\forall n \\in \\mathcal{V}, t \\in \\mathcal{T}``
+        \\sum_{s \\in \\mathcal{S}_n} psl_{s, t}, \\forall n \\in \\mathcal{V}, t \\in \\mathcal{T}``
         """
 end
 
@@ -475,12 +475,12 @@ function _con_nodal_net_injection!(fnm::FullNetworkModel{<:UC}, bus_names, D, un
     system = fnm.system
     inc_names_perbus = get_incs_per_bus(system)
     dec_names_perbus = get_decs_per_bus(system)
-    psd_names_perbus = get_psds_per_bus(system)
+    psl_names_perbus = get_psls_per_bus(system)
     @variable(model, p_net[n in bus_names, t in fnm.datetimes])
     p = model[:p]
     inc = model[:inc]
     dec = model[:dec]
-    psd = model[:psd]
+    psl = model[:psl]
     @constraint(
         model,
         nodal_net_injection[n in bus_names, t in fnm.datetimes],
@@ -489,7 +489,7 @@ function _con_nodal_net_injection!(fnm::FullNetworkModel{<:UC}, bus_names, D, un
             sum(inc[i, t] for i in inc_names_perbus[n]) -
             sum(D[f, t] for f in load_names_perbus[n]) -
             sum(dec[d, t] for d in dec_names_perbus[n]) -
-            sum(psd[s, t] for s in psd_names_perbus[n])
+            sum(psl[s, t] for s in psl_names_perbus[n])
     )
     return fnm
 end
@@ -767,7 +767,7 @@ function con_thermal_branch!(fnm::FullNetworkModel; threshold=_SF_THRESHOLD)
     #Shared Data
     system = fnm.system
     bus_names = sort(keys(get_buses(system)))
-    D = _keyed_to_dense(get_load(system))
+    D = _keyed_to_dense(get_loads(system))
     unit_codes_perbus = get_gens_per_bus(system)
     load_names_perbus = get_loads_per_bus(system)
 
@@ -776,7 +776,7 @@ function con_thermal_branch!(fnm::FullNetworkModel; threshold=_SF_THRESHOLD)
 
     ptdf_original = sortkeys(get_ptdf(system), dims=2)
     ptdf = _threshold(ptdf_original, threshold)
-    lodfs_original = get_lodf(system)
+    lodfs_original = get_lodfs(system)
     lodfs_converted = map(lodfs_original) do lodf
        _keyed_to_dense(_threshold(lodf, threshold))
     end
@@ -972,7 +972,7 @@ function con_generation_ramp_rates!(fnm::FullNetworkModel; slack=nothing)
     Δh = Hour(Δt / 60) # assume hourly resolution
     h1 = first(datetimes)
 
-    regmin = get_regmin(system)
+    regmin = get_regulation_min(system)
     RR = getproperty.(get_generators(system), :ramp_up)
     SU = DenseAxisArray(zeros(size(regmin)), axiskeys(regmin)...)
     for g in axes(SU, 1), t in axes(SU, 2)

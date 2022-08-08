@@ -51,10 +51,10 @@ tests_static_startup_cost(fnm) = tests_static_cost(fnm, :v, :startup_cost)
 function tests_ancillary_costs(fnm)
     set_names!(fnm)
     unit_codes = keys(get_generators(fnm.system))
-    cost_reg = get_regulation(fnm.system)
-    cost_spin = get_spinning(fnm.system)
-    cost_on_sup = get_supplemental_on(fnm.system)
-    cost_off_sup = get_supplemental_off(fnm.system)
+    cost_reg = get_regulation_offers(fnm.system)
+    cost_spin = get_spinning_offers(fnm.system)
+    cost_on_sup = get_on_supplemental_offers(fnm.system)
+    cost_off_sup = get_off_supplemental_offers(fnm.system)
     str = string(objective_function(fnm.model))
     @testset "All ancillary terms correctly added to objective" begin
         # Units in the test system provide all ancillary services except for first and last datetimes
@@ -127,20 +127,20 @@ end
         tests_static_startup_cost(fnm)
     end
     @testset "obj_bids!" begin
-        system = fake_3bus_system(MISO, DA; n_periods=2)
+        system = build_test_system(MISO, DA; n_periods=2)
         fnm = FullNetworkModel{UC}(system)
         var_bids!(fnm)
         obj_bids!(fnm)
         # Check if objective function accurately reflects the bids in the system
         # All bids have just one block equal to $100/pu
         # https://gitlab.invenia.ca/invenia/research/FullNetworkDataPrep.jl/-/blob/16f570e9116d86a2ce65e2e08aa702cefa268cc5/src/testutils.jl#L162
-        inc_name, dec_name, psd_name = ("111_Bus1", "222_Bus1", "333_Bus1")
-        inc_aux, dec_aux, psd_aux = fnm.model[:inc_aux], fnm.model[:dec_aux], fnm.model[:psd_aux]
+        inc_name, dec_name, psl_name = ("111_Bus1", "222_Bus1", "333_Bus1")
+        inc_aux, dec_aux, psl_aux = fnm.model[:inc_aux], fnm.model[:dec_aux], fnm.model[:psl_aux]
         t1, t2 = fnm.datetimes[1:2]
         @test objective_function(fnm.model) == 100 * (
             inc_aux[inc_name, t1, 1] + inc_aux[inc_name, t2, 1]
             - dec_aux[dec_name, t1, 1] - dec_aux[dec_name, t2, 1]
-            - psd_aux[psd_name, t1, 1] - psd_aux[psd_name, t2, 1]
+            - psl_aux[psl_name, t1, 1] - psl_aux[psl_name, t2, 1]
         )
     end
 end

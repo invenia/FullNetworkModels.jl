@@ -72,11 +72,11 @@ end
 
         @testset "bid results" begin
             # The MEC for the system is $6.25 and the bids are all $1/MW.
-            # This means INC should be cleared but DEC and PSD should not, since INCs should
-            # clear when below MEC and DECs/PSDs should clear when above MEC.
+            # This means INC should be cleared but DEC and psl should not, since INCs should
+            # clear when below MEC and DECs/PSLs should clear when above MEC.
             @test all(==(0.01), value.(fnm_no_ramps.model[:inc]))
             @test all(==(0.0), value.(fnm_no_ramps.model[:dec]))
-            @test all(==(0.0), value.(fnm_no_ramps.model[:psd]))
+            @test all(==(0.0), value.(fnm_no_ramps.model[:psl]))
         end
     end
 
@@ -195,7 +195,7 @@ end
 
         # Test for branch flow limits without contingencies
         system_no_contingencies = deepcopy(TEST_SYSTEM)
-        lodf = get_lodf(system_no_contingencies)
+        lodf = get_lodfs(system_no_contingencies)
         delete!(lodf, "conting1")
         delete!(lodf, "conting2")
 
@@ -431,7 +431,7 @@ end
 
         # Test for branch flow limits without contingencies
         system_no_contingencies = deepcopy(TEST_SYSTEM_RT)
-        lodf = get_lodf(system_no_contingencies)
+        lodf = get_lodfs(system_no_contingencies)
         delete!(lodf, "conting1")
         delete!(lodf, "conting2")
         fnm = economic_dispatch(MISO, system_no_contingencies, highs_opt; branch_flows=true)
@@ -455,7 +455,7 @@ end
 
         # Modify system such that we get infeasibility by excess load
         system_infe_load = deepcopy(t_system)
-        loads = get_load(system_infe_load)
+        loads = get_loads(system_infe_load)
         loads .= 10.0
 
         fnm_inf = _simple_template(system_infe_load, T, solver; slack=nothing)
@@ -479,7 +479,7 @@ end
         # commitment status are fixed, so it forces the optimisation to use the sl_eb_load.
         if T == ED
             system_infe_gen = deepcopy(t_system)
-            loads = get_load(system_infe_gen)
+            loads = get_loads(system_infe_gen)
             loads .= 0.1
 
             fnm_inf = _simple_template(system_infe_gen, T, solver; slack=nothing)
@@ -532,7 +532,7 @@ end
     solver = optimizer_with_attributes(HiGHS.Optimizer, MOI.Silent() => true)
     @testset "Unit commitment" begin
         system = deepcopy(TEST_SYSTEM)
-        loads = get_load(system)
+        loads = get_loads(system)
         loads("Load2_Bus3") .= loads("Load2_Bus3") .* 10.0 # increase load to induce congestion
 
         fnm = unit_commitment(MISO, system, solver; branch_flows=true)
@@ -549,7 +549,7 @@ end
     end
     @testset "Economic dispatch" begin
         system = deepcopy(TEST_SYSTEM_RT)
-        loads = get_load(system)
+        loads = get_loads(system)
         loads .= loads .* 10.0 # increase load to induce congestion
 
         fnm = economic_dispatch(MISO, system, solver; branch_flows=true)
