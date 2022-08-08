@@ -70,7 +70,7 @@ Type defining the unit commitment formulation.
 Return a callable that receives a `System` and returns a `FullNetworkModel` with the given formulation.
 
 # Keywords
- - `relax_integrality`: If set to `true`, binary variables will be relaxed.
+ - `relax_integrality::Bool=true`: If set to `true`, binary variables will be relaxed.
  - `slack=$(FullNetworkModels._DEFAULT_UC_SLACK)`: The slack penalty for the soft constraints.
    For more info on specifying slacks, refer to the [docs on soft constraints](@ref soft_constraints).
  - `branch_flows::Bool=false`: Whether or not to inlcude thermal branch flow constraints.
@@ -80,9 +80,7 @@ Return a callable that receives a `System` and returns a `FullNetworkModel` with
 # Example
 
 ```julia
-uc = UnitCommitment(
-    relax_integrality=true, branch_flows=true, slack=:ramp_rates => 1e3
-)
+uc = UnitCommitment(branch_flows=true, slack=:ramp_rates => 1e3)
 fnm = uc(MISO, system, solver)
 ```
 """
@@ -101,7 +99,7 @@ function UnitCommitment(;
     branch_flows::Bool=false,
     ramp_rates::Bool=true,
     threshold::Number=_SF_THRESHOLD,
-    relax_integrality::Bool=false,
+    relax_integrality::Bool=true,
 )
     slack = Slacks(slack)
     return UnitCommitment(slack, branch_flows, ramp_rates, threshold, relax_integrality)
