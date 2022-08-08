@@ -127,7 +127,7 @@ end
         tests_static_startup_cost(fnm)
     end
     @testset "obj_bids!" begin
-        system = fake_3bus_system(MISO, DA; n_periods=2)
+        system = build_test_system(MISO, DA; n_periods=2)
         fnm = FullNetworkModel{UC}(system)
         var_bids!(fnm)
         obj_bids!(fnm)

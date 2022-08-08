@@ -15,7 +15,7 @@
         @test objective_function(model) == sum(x) + expr
     end
     @testset "_variable_cost" begin
-        system = fake_3bus_system(MISO, DA; n_periods=2)
+        system = build_test_system(MISO, DA; n_periods=2)
         fnm = unit_commitment(MISO, system)
         unit_codes = keys(get_generators(fnm.system))
         offer_curves = FNM._keyed_to_dense(get_offer_curve(fnm.system))

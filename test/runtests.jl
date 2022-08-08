@@ -1,7 +1,7 @@
 using AxisKeys
 using Dates
 using ElectricityMarkets: MISO
-using FullNetworkDataPrep.TestUtils: fake_3bus_system
+using FullNetworkDataPrep.TestUtils: build_test_system
 using FullNetworkDataPrep: DA, RT
 using FullNetworkModels
 using FullNetworkModels: Slacks
@@ -16,8 +16,8 @@ using Test
 using TimeSeries
 
 const FNM = FullNetworkModels
-const TEST_SYSTEM = fake_3bus_system(MISO, DA)
-const TEST_SYSTEM_RT = fake_3bus_system(MISO, RT)
+const TEST_SYSTEM = build_test_system(MISO, DA)
+const TEST_SYSTEM_RT = build_test_system(MISO, RT)
 const TEST_LODF_DICT = get_lodfs(TEST_SYSTEM)
 const TEST_CONTINGENCIES = keys(TEST_LODF_DICT)
 
