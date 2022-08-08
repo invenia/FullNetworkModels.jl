@@ -18,7 +18,7 @@ using TimeSeries
 const FNM = FullNetworkModels
 const TEST_SYSTEM = fake_3bus_system(MISO, DA)
 const TEST_SYSTEM_RT = fake_3bus_system(MISO, RT)
-const TEST_LODF_DICT = get_lodf(TEST_SYSTEM)
+const TEST_LODF_DICT = get_lodfs(TEST_SYSTEM)
 const TEST_CONTINGENCIES = keys(TEST_LODF_DICT)
 
 # Name individual variables and constraints to allow us testing our expressions using `sprint`

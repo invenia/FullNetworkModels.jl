@@ -164,10 +164,10 @@ end
 function _var_ancillary_services!(fnm::FullNetworkModel, unit_codes, datetimes)
     system = fnm.system
     model = fnm.model
-    reg_pairs = _provider_indices(get_regulation(system))
-    spin_pairs = _provider_indices(get_spinning(system))
-    sup_on_pairs = _provider_indices(get_supplemental_on(system))
-    sup_off_pairs = _provider_indices(get_supplemental_off(system))
+    reg_pairs = _provider_indices(get_regulation_offers(system))
+    spin_pairs = _provider_indices(get_spinning_offers(system))
+    sup_on_pairs = _provider_indices(get_on_supplemental_offers(system))
+    sup_off_pairs = _provider_indices(get_off_supplemental_offers(system))
 
     @variable(model, r_reg[g in unit_codes, t in datetimes; (g, t) in reg_pairs] >= 0)
     @variable(model, r_spin[g in unit_codes, t in datetimes; (g, t) in spin_pairs] >= 0)
@@ -215,9 +215,9 @@ $(latex(var_bids!))
 The created variables are named `inc`, `dec`, `psd`.
 """
 function var_bids!(fnm::FullNetworkModel)
-    inc_names = axiskeys(get_bids(fnm.system, :increment), 1)
-    dec_names = axiskeys(get_bids(fnm.system, :decrement), 1)
-    psd_names = axiskeys(get_bids(fnm.system, :price_sensitive_demand), 1)
+    inc_names = axiskeys(get_increments(fnm.system), 1)
+    dec_names = axiskeys(get_decrements(fnm.system), 1)
+    psd_names = axiskeys(get_price_sensitive_loads(fnm.system), 1)
     @variable(fnm.model, inc[i in inc_names, t in fnm.datetimes] >= 0)
     @variable(fnm.model, dec[d in dec_names, t in fnm.datetimes] >= 0)
     @variable(fnm.model, psd[s in psd_names, t in fnm.datetimes] >= 0)

@@ -174,8 +174,8 @@ end
 
 function tests_energy_balance(fnm::FullNetworkModel{<:ED})
     set_names!(fnm)
-    load_names = axiskeys(get_load(fnm.system), 1)
-    D = get_load(fnm.system)
+    load_names = axiskeys(get_loads(fnm.system), 1)
+    D = get_loads(fnm.system)
     @testset "Constraints were correctly defined" for t in fnm.datetimes
         system_load = sum(D(f, t) for f in load_names)
         @test sprint(show, constraint_by_name(fnm.model, "energy_balance[$t]")) ==
@@ -185,8 +185,8 @@ function tests_energy_balance(fnm::FullNetworkModel{<:ED})
 end
 function tests_energy_balance(fnm::FullNetworkModel{<:UC})
     set_names!(fnm)
-    load_names = axiskeys(get_load(fnm.system), 1)
-    D = get_load(fnm.system)
+    load_names = axiskeys(get_loads(fnm.system), 1)
+    D = get_loads(fnm.system)
     @testset "Constraints were correctly defined" for t in fnm.datetimes
         system_load = sum(D(f, t) for f in load_names)
         @test sprint(show, constraint_by_name(fnm.model, "energy_balance[$t]")) ==

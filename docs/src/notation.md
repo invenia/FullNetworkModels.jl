@@ -32,9 +32,9 @@ MISO real-time market clearing ([PDF](https://drive.google.com/file/d/1IhAv-Djqc
 |$\mathcal{Q}_{g,t}$ | Set of offer curve blocks of generator $g$ at time $t$. |
 |$\mathcal{Q}_{g,t}$ | Set of offer curve blocks of generator $g$ at time $t$. |
 |$\mathcal{Q}_{i,t}$ | Set of offer curve blocks of virtual supply $i$ at time $t$. |
-|$\mathcal{Q}_{s,t}$ | Set of bid curve blocks of price-sensitive demand bid $s$ at time $t$. |
-|$\mathcal{S}$ | Set of price-sensitive demands. |
-|$\mathcal{S}_n$ | Set of price-sensitive demands at node $n$. |
+|$\mathcal{Q}_{s,t}$ | Set of bid curve blocks of price-sensitive load bid $s$ at time $t$. |
+|$\mathcal{S}$ | Set of price-sensitive loads. |
+|$\mathcal{S}_n$ | Set of price-sensitive loads at node $n$. |
 |$\mathcal{T}$ | Set of time epochs. |
 |$\mathcal{V}$ | Set of electric grid buses including the immediate ISO neighbours. |
 |$\mathcal{Z}$ | Set of defined reserve zones in the ISO. |
@@ -53,18 +53,18 @@ MISO real-time market clearing ([PDF](https://drive.google.com/file/d/1IhAv-Djqc
 |$DT^0_{g}$ | Number of time periods the unit has been off prior to the first time period of generator $g$ in hours. |
 |$DT_{g}$ | Minimum down-time of generator $g$ in hours. |
 |$D_{f,t}$ | Fixed demand $f$ at time $t$ in $\text{MW}$. |
-|$\overline{D}_{d,t,q}$ | Maximum energy dispatch of virtual demand $d$ at time $t$ for block $q$ in $\text{MW}$. |
-|$\overline{D}_{s,t,q}$ | Maximum energy dispatch of price-sensitive demand $s$ at time $t$ for block $q$ in $\text{MW}$. |
+|$\overline{D}_{d,t,q}$ | Maximum volume of virtual demand $d$ at time $t$ for block $q$ in $\text{MW}$. |
+|$\overline{D}_{s,t,q}$ | Maximum volume of price-sensitive load $s$ at time $t$ for block $q$ in $\text{MW}$. |
 |$FL^{rate-a}_m$ | Rate-A power flow limit on line/transformer $m$ in $\text{MW}$. |
 |$FL^{rate-b}_m$ | Rate-B power flow limit on line/transformer $m$ in $\text{MW}$. |
 |$NI_{n,t}$ | Net interchange at node $n$ at time $t$ in $\text{MW}$. |
 |$P^0_{g}$ | Initial output power of generator $g$ in $\text{MW}$ ($P^0_{g} \neq 0 ~\forall g \in \mathcal{G}^0_{on}, P^0_{g} = 0~\forall g \in \mathcal{G}^0_{off}$). |
 |$P^{max}_{g,t}$ | Economic maximum energy dispatch of generator $g$ at time $t$ in $\text{MW}$. |
 |$P^{min}_{g,t}$ | Economic minimum energy dispatch of generator $g$ at time $t$ in $\text{MW}$. |
-|$P^{reg-max}_{g,t}$ | Maximum energy dispatch of generator $g$ at time $t$ when committed to provide regulations reserve in $\text{MW}$. |
-|$P^{reg-min}_{g,t}$ | Minimum energy dispatch of generator $g$ at time $t$ when committed to provide regulations reserve in $\text{MW}$. |
+|$P^{reg-max}_{g,t}$ | Maximum energy dispatch of generator $g$ at time $t$ when committed to provide regulation in $\text{MW}$. |
+|$P^{reg-min}_{g,t}$ | Minimum energy dispatch of generator $g$ at time $t$ when committed to provide regulation in $\text{MW}$. |
 |$\overline{P}_{g,t,q}$ | Maximum energy dispatch of generator $g$ at time $t$ for block $q$ in $\text{MW}$. |
-|$\overline{P}_{i,t,q}$ | Maximum energy dispatch of virtual supply $i$ at time $t$ for block $q$ in $\text{MW}$. |
+|$\overline{P}_{i,t,q}$ | Maximum volume of virtual supply $i$ at time $t$ for block $q$ in $\text{MW}$. |
 |$RR_{g}$ | Ramp-rate of generator $g$ in $\text{MW}/\text{minute}$. |
 |$R^{OR-req}_{Tot,t}$ | Market-wide operating reserve requirement at time $t$ in $\text{MW}$. |
 |$R^{OR-req}_{z,t}$ | Zone $z$ operating reserve requirement at time $t$ in $\text{MW}$. |
@@ -93,7 +93,7 @@ MISO real-time market clearing ([PDF](https://drive.google.com/file/d/1IhAv-Djqc
 |$\Gamma^{reg-req}_{Tot,t}$ | Market-wide regulation requirement slack variable penalty cost at time $t$ in $\text{MW}$. |
 |$\Gamma^{reg-req}_{z,t}$ | Zone $z$ regulation requirement slack variable penalty cost at time $t$ in $\text{MW}$. |
 |$\Lambda^{bid}_{d,t,q}$ | Bid price of virtual demand $d$ at time $t$ for block $q$ in $\text{MW}$. |
-|$\Lambda^{bid}_{s,t,q}$ | Bid price of price-sensitive demand $s$ at time $t$ for block $q$ in $\text{MW}$. |
+|$\Lambda^{bid}_{s,t,q}$ | Bid price of price-sensitive load $s$ at time $t$ for block $q$ in $\text{MW}$. |
 |$\Lambda^{offer}_{g,t,q}$ | Offer price of generator $g$ at time $t$ for block $q$ in $\text{MW}$. |
 |$\Lambda^{offer}_{i,t,q}$ | Offer price of virtual supply $i$ at time $t$ for block $q$ in $\text{MW}$. |
 |$\text{ISF}_{m,n}$ | Injection shift factor on line/transformer $m$ for injection at bus $n$. |
@@ -107,18 +107,18 @@ MISO real-time market clearing ([PDF](https://drive.google.com/file/d/1IhAv-Djqc
 |$c_{d,t}(.)$ | Variable cost function of virtual demand $d$ at time $t$ in \$. |
 |$c_{g,t}(.)$ | Variable cost function of generator $g$ at time $t$ in \$. |
 |$c_{i,t}(.)$ | Variable cost function of virtual supply $i$ at time $t$ in \$. |
-|$c_{s,t}(.)$ | Variable cost function of price-sensitive demand $s$ at time $t$ in \$. |
-|$d_{d,t,q}$ | Energy dispatch of virtual demand $d$ at time $t$ for block $q$ in $\text{MW}$. |
-|$d_{d,t}$ | Energy dispatch of virtual demand $d$ at time $t$ in $\text{MW}$. |
-|$d_{s,t,q}$ | Energy dispatch of price-sensitive demand $s$ at time $t$ for block $q$ in $\text{MW}$. |
-|$d_{s,t}$ | Energy dispatch of price-sensitive demand $s$ at time $t$ in $\text{MW}$. |
+|$c_{s,t}(.)$ | Variable cost function of price-sensitive load $s$ at time $t$ in \$. |
+|$d_{d,t,q}$ | Cleared MW of virtual demand $d$ at time $t$ for block $q$ in $\text{MW}$. |
+|$d_{d,t}$ | Cleared MW of virtual demand $d$ at time $t$ in $\text{MW}$. |
+|$d_{s,t,q}$ | Cleared MW of price-sensitive load $s$ at time $t$ for block $q$ in $\text{MW}$. |
+|$d_{s,t}$ | Cleared MW of price-sensitive load $s$ at time $t$ in $\text{MW}$. |
 |$fl^{0}_{m,t}$ | Power flow on line/transformer $m$ at time $t$ in the base-case in $\text{MW}$. |
 |$fl^{c}_{m,t}$ | Power flow on line/transformer $m$ at time $t$ in the contingency scenario $c$ in $\text{MW}$. |
 |$p^{net}_{n,t}$ | Net power injection at node $n$ at time $t$ in $\text{MW}$. |
 |$p_{g,t,q}$ | Energy dispatch of generator $g$ at time $t$ for block $q$ in $\text{MW}$. |
 |$p_{g,t}$ | Energy dispatch of generator $g$ at time $t$ in $\text{MW}$. |
-|$p_{i,t,q}$ | Energy dispatch of virtual supply $i$ at time $t$ for block $q$ in $\text{MW}$. |
-|$p_{i,t}$ | Energy dispatch of virtual supply $i$ at time $t$ in $\text{MW}$. |
+|$p_{i,t,q}$ | Cleared MW of virtual supply $i$ at time $t$ for block $q$ in $\text{MW}$. |
+|$p_{i,t}$ | Cleared MW of virtual supply $i$ at time $t$ in $\text{MW}$. |
 |$r^{cont}_{g,t}$ | contingency reserve of generator $g$ at time $t$ in $\text{MW}$. |
 |$r^{off-sup}_{g,t}$ | Offline supplemental reserve of generator $g$ at time $t$ in $\text{MW}$. |
 |$r^{off-sup}_{g,t}$ | Offline supplemental reserve of generator $g$ at time $t$ in $\text{MW}$. |

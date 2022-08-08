@@ -191,14 +191,14 @@ function obj_bids!(fnm::FullNetworkModel)
     system = fnm.system
     datetimes = fnm.datetimes
     total_bid_cost = AffExpr()
-    for (v, bidtype) in ((:inc, :increment), (:dec, :decrement), (:psd, :price_sensitive_demand))
-        bids = _keyed_to_dense(get_bids(system, bidtype))
+    for (v, f) in ((:inc, get_increments), (:dec, get_decrements), (:psd, get_price_sensitive_loads))
+        bids = _keyed_to_dense(f(system))
         bid_names = axes(bids, 1)
         # Get properties of the bid curves: prices, block MW limits, number of blocks
         Λ, block_lims, n_blocks = _curve_properties(bids; blocks=true)
         # Add variables and constraints for bid blocks and cost to objective function
         _var_bid_blocks!(model, bid_names, block_lims, datetimes, n_blocks, v)
-        sense = bidtype === :increment ? 1 : -1
+        sense = v === :inc ? 1 : -1
         bid_cost = _variable_cost(model, bid_names, datetimes, n_blocks, Λ, v, sense)
         add_to_expression!(total_bid_cost, bid_cost)
     end

@@ -26,7 +26,7 @@ Verifies that the system is able to attend its demand in each hour by looking at
 system-wide generation capacity.
 """
 function _total_demand_feasibility(system, unit_codes, Pmax)
-    loads = get_load(system)
+    loads = get_loads(system)
     load_names = axiskeys(loads, 1)
     datetimes = get_datetimes(system)
     n_periods = length(datetimes)
@@ -89,14 +89,14 @@ be known beforehand. Nonetheless, this is a bound that has virtually zero probab
 being exceeded by the requirements unless there is some data issue.
 """
 function _ancillary_requirement_feasibility(system)
-    regmax = get_regmax(system)
+    regmax = get_regulation_max(system)
     zone_gens = gens_per_zone(system)
     reg_reqs = get_regulation_requirements(system)
     or_reqs = get_operating_reserve_requirements(system)
-    reg_pairs = _provider_indices(get_regulation(system))
-    spin_pairs = _provider_indices(get_spinning(system))
-    sup_on_pairs = _provider_indices(get_supplemental_on(system))
-    sup_off_pairs = _provider_indices(get_supplemental_off(system))
+    reg_pairs = _provider_indices(get_regulation_offers(system))
+    spin_pairs = _provider_indices(get_spinning_offers(system))
+    sup_on_pairs = _provider_indices(get_on_supplemental_offers(system))
+    sup_off_pairs = _provider_indices(get_off_supplemental_offers(system))
     or_pairs = union(
         reg_pairs, spin_pairs, sup_on_pairs, sup_off_pairs
     )

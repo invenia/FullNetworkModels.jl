@@ -129,9 +129,9 @@ function con_ancillary_limits!(fnm::FullNetworkModel{<:UC})
     datetimes = fnm.datetimes
     unit_codes = keys(get_generators(system))
     Pmax = _keyed_to_dense(get_pmax(system))
-    Pregmax = _keyed_to_dense(get_regmax(system))
+    Pregmax = _keyed_to_dense(get_regulation_max(system))
     Pmin = _keyed_to_dense(get_pmin(system))
-    Pregmin = _keyed_to_dense(get_regmin(system))
+    Pregmin = _keyed_to_dense(get_regulation_min(system))
 
     model = fnm.model
     u = model[:u]
@@ -160,9 +160,9 @@ function con_ancillary_limits!(fnm::FullNetworkModel{<:ED})
     datetimes = fnm.datetimes
     unit_codes = keys(get_generators(system))
     Pmax = _keyed_to_dense(get_pmax(system))
-    Pregmax = _keyed_to_dense(get_regmax(system))
+    Pregmax = _keyed_to_dense(get_regulation_max(system))
     Pmin = _keyed_to_dense(get_pmin(system))
-    Pregmin = _keyed_to_dense(get_regmin(system))
+    Pregmin = _keyed_to_dense(get_regulation_min(system))
     U = _keyed_to_dense(get_commitment(system))
     U_reg = _keyed_to_dense(get_regulation_commitment(system))
 
@@ -348,7 +348,7 @@ function con_energy_balance!(fnm::FullNetworkModel{<:ED}; slack=nothing)
     system = fnm.system
     datetimes = fnm.datetimes
     unit_codes = keys(get_generators(fnm.system))
-    D = _keyed_to_dense(get_load(system))
+    D = _keyed_to_dense(get_loads(system))
     load_names = axes(D, 1)
     p = model[:p]
     @constraint(
@@ -386,12 +386,12 @@ function con_energy_balance!(fnm::FullNetworkModel{<:UC}; slack=nothing)
     system = fnm.system
     datetimes = fnm.datetimes
     unit_codes = keys(get_generators(fnm.system))
-    D = _keyed_to_dense(get_load(system))
+    D = _keyed_to_dense(get_loads(system))
     load_names = axes(D, 1)
 
-    inc_names = axiskeys(get_bids(fnm.system, :increment), 1)
-    dec_names = axiskeys(get_bids(fnm.system, :decrement), 1)
-    psd_names = axiskeys(get_bids(fnm.system, :price_sensitive_demand), 1)
+    inc_names = axiskeys(get_increments(fnm.system), 1)
+    dec_names = axiskeys(get_decrements(fnm.system), 1)
+    psd_names = axiskeys(get_price_sensitive_loads(fnm.system), 1)
 
     p = model[:p]
     inc = model[:inc]
@@ -475,7 +475,7 @@ function _con_nodal_net_injection!(fnm::FullNetworkModel{<:UC}, bus_names, D, un
     system = fnm.system
     inc_names_perbus = get_incs_per_bus(system)
     dec_names_perbus = get_decs_per_bus(system)
-    psd_names_perbus = get_psds_per_bus(system)
+    psd_names_perbus = get_psls_per_bus(system)
     @variable(model, p_net[n in bus_names, t in fnm.datetimes])
     p = model[:p]
     inc = model[:inc]
@@ -767,7 +767,7 @@ function con_thermal_branch!(fnm::FullNetworkModel; threshold=_SF_THRESHOLD)
     #Shared Data
     system = fnm.system
     bus_names = sort(keys(get_buses(system)))
-    D = _keyed_to_dense(get_load(system))
+    D = _keyed_to_dense(get_loads(system))
     unit_codes_perbus = get_gens_per_bus(system)
     load_names_perbus = get_loads_per_bus(system)
 
@@ -776,7 +776,7 @@ function con_thermal_branch!(fnm::FullNetworkModel; threshold=_SF_THRESHOLD)
 
     ptdf_original = sortkeys(get_ptdf(system), dims=2)
     ptdf = _threshold(ptdf_original, threshold)
-    lodfs_original = get_lodf(system)
+    lodfs_original = get_lodfs(system)
     lodfs_converted = map(lodfs_original) do lodf
        _keyed_to_dense(_threshold(lodf, threshold))
     end
@@ -972,7 +972,7 @@ function con_generation_ramp_rates!(fnm::FullNetworkModel; slack=nothing)
     Δh = Hour(Δt / 60) # assume hourly resolution
     h1 = first(datetimes)
 
-    regmin = get_regmin(system)
+    regmin = get_regulation_min(system)
     RR = getproperty.(get_generators(system), :ramp_up)
     SU = DenseAxisArray(zeros(size(regmin)), axiskeys(regmin)...)
     for g in axes(SU, 1), t in axes(SU, 2)

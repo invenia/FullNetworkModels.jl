@@ -47,12 +47,12 @@ function tests_startup_shutdown(fnm)
     return nothing
 end
 
-function tests_bid_variables(fnm, label, bidtype)
+function tests_bid_variables(fnm, label, f)
     set_names!(fnm)
     @testset "Variables named `$label` were created with the correct indices" begin
         @test has_variable(fnm.model, label)
         @test issetequal(
-            fnm.model[Symbol(label)].axes[1], axiskeys(get_bids(fnm.system, bidtype), 1)
+            fnm.model[Symbol(label)].axes[1], axiskeys(f(fnm.system), 1)
         )
         @test issetequal(fnm.model[Symbol(label)].axes[2], fnm.datetimes)
     end
@@ -84,8 +84,8 @@ end
     end
     @testset "var_bids!" begin
         var_bids!(fnm)
-        tests_bid_variables(fnm, "inc", :increment)
-        tests_bid_variables(fnm, "dec", :decrement)
-        tests_bid_variables(fnm, "psd", :price_sensitive_demand)
+        tests_bid_variables(fnm, "inc", get_increments)
+        tests_bid_variables(fnm, "dec", get_decrements)
+        tests_bid_variables(fnm, "psd", get_price_sensitive_loads)
     end
 end
