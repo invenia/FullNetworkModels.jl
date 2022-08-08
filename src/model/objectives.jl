@@ -155,7 +155,7 @@ end
 
 function latex(::typeof(_obj_bid_variable_cost!))
     return """
-    ``\\sum_{t \\in \\mathcal{T}} \\sum_{i \\in \\mathcal{I}} \\sum_{q \\in \\mathcal{Q}_{i, t}} inc^{\\text{aux}}_{i, t, q} \\Lambda^{\\text{inc}}_{i, t, q} - \\sum_{t \\in \\mathcal{T}} \\sum_{d \\in \\mathcal{D}} \\sum_{q \\in \\mathcal{Q}_{d, t}} dec^{\\text{aux}}_{d, t, q} \\Lambda^{\\text{dec}}_{d, t, q} - \\sum_{t \\in \\mathcal{T}} \\sum_{s \\in \\mathcal{S}} \\sum_{q \\in \\mathcal{Q}_{s, t}} psd^{\\text{aux}}_{s, t, q} \\Lambda^{\\text{psd}}_{s, t, q}``
+    ``\\sum_{t \\in \\mathcal{T}} \\sum_{i \\in \\mathcal{I}} \\sum_{q \\in \\mathcal{Q}_{i, t}} inc^{\\text{aux}}_{i, t, q} \\Lambda^{\\text{inc}}_{i, t, q} - \\sum_{t \\in \\mathcal{T}} \\sum_{d \\in \\mathcal{D}} \\sum_{q \\in \\mathcal{Q}_{d, t}} dec^{\\text{aux}}_{d, t, q} \\Lambda^{\\text{dec}}_{d, t, q} - \\sum_{t \\in \\mathcal{T}} \\sum_{s \\in \\mathcal{S}} \\sum_{q \\in \\mathcal{Q}_{s, t}} psl^{\\text{aux}}_{s, t, q} \\Lambda^{\\text{psl}}_{s, t, q}``
     """
 end
 
@@ -165,8 +165,8 @@ function latex(::typeof(_var_bid_blocks!))
     ``inc_{i, t} = \\sum_{q \\in \\mathcal{Q}_{i, t}} inc^{\\text{aux}}_{i, t, q}, \\forall i \\in \\mathcal{I}, t \\in \\mathcal{T}`` \n
     ``0 \\leq dec^{\\text{aux}}_{d, t, q} \\leq \\bar{D}^{\\text{dec}}_{d, t, q}, \\forall d \\in \\mathcal{D}, t \\in \\mathcal{T}, q \\in \\mathcal{Q}_{d, t}`` \n
     ``dec_{d, t} = \\sum_{q \\in \\mathcal{Q}_{d, t}} dec^{\\text{aux}}_{d, t, q}, \\forall d \\in \\mathcal{D}, t \\in \\mathcal{T}`` \n
-    ``0 \\leq psd^{\\text{aux}}_{s, t, q} \\leq \\bar{D}^{\\text{psd}}_{s, t, q}, \\forall s \\in \\mathcal{S}, t \\in \\mathcal{T}, q \\in \\mathcal{Q}_{s, t}`` \n
-    ``psd_{i, t} = \\sum_{q \\in \\mathcal{Q}_{s, t}} psd^{\\text{aux}}_{s, t, q}, \\forall s \\in \\mathcal{S}, t \\in \\mathcal{T}`` \n
+    ``0 \\leq psl^{\\text{aux}}_{s, t, q} \\leq \\bar{D}^{\\text{psl}}_{s, t, q}, \\forall s \\in \\mathcal{S}, t \\in \\mathcal{T}, q \\in \\mathcal{Q}_{s, t}`` \n
+    ``psl_{i, t} = \\sum_{q \\in \\mathcal{Q}_{s, t}} psl^{\\text{aux}}_{s, t, q}, \\forall s \\in \\mathcal{S}, t \\in \\mathcal{T}`` \n
     """
 end
 
@@ -191,7 +191,7 @@ function obj_bids!(fnm::FullNetworkModel)
     system = fnm.system
     datetimes = fnm.datetimes
     total_bid_cost = AffExpr()
-    for (v, f) in ((:inc, get_increments), (:dec, get_decrements), (:psd, get_price_sensitive_loads))
+    for (v, f) in ((:inc, get_increments), (:dec, get_decrements), (:psl, get_price_sensitive_loads))
         bids = _keyed_to_dense(f(system))
         bid_names = axes(bids, 1)
         # Get properties of the bid curves: prices, block MW limits, number of blocks

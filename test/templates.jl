@@ -72,11 +72,11 @@ end
 
         @testset "bid results" begin
             # The MEC for the system is $6.25 and the bids are all $1/MW.
-            # This means INC should be cleared but DEC and PSD should not, since INCs should
-            # clear when below MEC and DECs/PSDs should clear when above MEC.
+            # This means INC should be cleared but DEC and psl should not, since INCs should
+            # clear when below MEC and DECs/PSLs should clear when above MEC.
             @test all(==(0.01), value.(fnm_no_ramps.model[:inc]))
             @test all(==(0.0), value.(fnm_no_ramps.model[:dec]))
-            @test all(==(0.0), value.(fnm_no_ramps.model[:psd]))
+            @test all(==(0.0), value.(fnm_no_ramps.model[:psl]))
         end
     end
 

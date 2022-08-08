@@ -86,6 +86,6 @@ end
         var_bids!(fnm)
         tests_bid_variables(fnm, "inc", get_increments)
         tests_bid_variables(fnm, "dec", get_decrements)
-        tests_bid_variables(fnm, "psd", get_price_sensitive_loads)
+        tests_bid_variables(fnm, "psl", get_price_sensitive_loads)
     end
 end

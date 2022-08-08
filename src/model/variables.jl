@@ -200,7 +200,7 @@ function latex(::typeof(var_bids!))
     return """
     ``inc_{g, t} \\geq 0, \\forall i \\in \\mathcal{I}, t \\in \\mathcal{T}`` \n
     ``dec_{g, t} \\geq 0, \\forall d \\in \\mathcal{D}, t \\in \\mathcal{T}`` \n
-    ``psd_{g, t} \\geq 0, \\forall s \\in \\mathcal{S}, t \\in \\mathcal{T}``
+    ``psl_{g, t} \\geq 0, \\forall s \\in \\mathcal{S}, t \\in \\mathcal{T}``
     """
 end
 
@@ -212,14 +212,14 @@ names and time periods.
 
 $(latex(var_bids!))
 
-The created variables are named `inc`, `dec`, `psd`.
+The created variables are named `inc`, `dec`, `psl`.
 """
 function var_bids!(fnm::FullNetworkModel)
     inc_names = axiskeys(get_increments(fnm.system), 1)
     dec_names = axiskeys(get_decrements(fnm.system), 1)
-    psd_names = axiskeys(get_price_sensitive_loads(fnm.system), 1)
+    psl_names = axiskeys(get_price_sensitive_loads(fnm.system), 1)
     @variable(fnm.model, inc[i in inc_names, t in fnm.datetimes] >= 0)
     @variable(fnm.model, dec[d in dec_names, t in fnm.datetimes] >= 0)
-    @variable(fnm.model, psd[s in psd_names, t in fnm.datetimes] >= 0)
+    @variable(fnm.model, psl[s in psl_names, t in fnm.datetimes] >= 0)
     return fnm
 end

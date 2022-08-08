@@ -190,7 +190,7 @@ function tests_energy_balance(fnm::FullNetworkModel{<:UC})
     @testset "Constraints were correctly defined" for t in fnm.datetimes
         system_load = sum(D(f, t) for f in load_names)
         @test sprint(show, constraint_by_name(fnm.model, "energy_balance[$t]")) ==
-            "energy_balance[$t] : p[3,$t] + p[7,$t] + inc[111_Bus1,$t] - dec[222_Bus1,$t] - psd[333_Bus1,$t] = $(system_load)"
+            "energy_balance[$t] : p[3,$t] + p[7,$t] + inc[111_Bus1,$t] - dec[222_Bus1,$t] - psl[333_Bus1,$t] = $(system_load)"
     end
     return nothing
 end

@@ -134,13 +134,13 @@ end
         # Check if objective function accurately reflects the bids in the system
         # All bids have just one block equal to $100/pu
         # https://gitlab.invenia.ca/invenia/research/FullNetworkDataPrep.jl/-/blob/16f570e9116d86a2ce65e2e08aa702cefa268cc5/src/testutils.jl#L162
-        inc_name, dec_name, psd_name = ("111_Bus1", "222_Bus1", "333_Bus1")
-        inc_aux, dec_aux, psd_aux = fnm.model[:inc_aux], fnm.model[:dec_aux], fnm.model[:psd_aux]
+        inc_name, dec_name, psl_name = ("111_Bus1", "222_Bus1", "333_Bus1")
+        inc_aux, dec_aux, psl_aux = fnm.model[:inc_aux], fnm.model[:dec_aux], fnm.model[:psl_aux]
         t1, t2 = fnm.datetimes[1:2]
         @test objective_function(fnm.model) == 100 * (
             inc_aux[inc_name, t1, 1] + inc_aux[inc_name, t2, 1]
             - dec_aux[dec_name, t1, 1] - dec_aux[dec_name, t2, 1]
-            - psd_aux[psd_name, t1, 1] - psd_aux[psd_name, t2, 1]
+            - psl_aux[psl_name, t1, 1] - psl_aux[psl_name, t2, 1]
         )
     end
 end

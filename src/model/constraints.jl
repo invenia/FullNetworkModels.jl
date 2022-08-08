@@ -329,7 +329,7 @@ end
 function latex(::typeof(con_energy_balance_uc!))
     return """
         ``\\sum_{g \\in \\mathcal{G}} p_{g, t} + \\sum_{i \\in \\mathcal{I}} inc_{i, t} =
-        \\sum_{f \\in \\mathcal{F}} D_{f, t} + \\sum_{d \\in \\mathcal{D}} dec_{d, t} + \\sum_{s \\in \\mathcal{S}} psd_{s, t}, \\forall t \\in \\mathcal{T}``
+        \\sum_{f \\in \\mathcal{F}} D_{f, t} + \\sum_{d \\in \\mathcal{D}} dec_{d, t} + \\sum_{s \\in \\mathcal{S}} psl_{s, t}, \\forall t \\in \\mathcal{T}``
         """
 end
 
@@ -391,18 +391,18 @@ function con_energy_balance!(fnm::FullNetworkModel{<:UC}; slack=nothing)
 
     inc_names = axiskeys(get_increments(fnm.system), 1)
     dec_names = axiskeys(get_decrements(fnm.system), 1)
-    psd_names = axiskeys(get_price_sensitive_loads(fnm.system), 1)
+    psl_names = axiskeys(get_price_sensitive_loads(fnm.system), 1)
 
     p = model[:p]
     inc = model[:inc]
     dec = model[:dec]
-    psd = model[:psd]
+    psl = model[:psl]
     @constraint(
         model,
         energy_balance[t in datetimes],
         sum(p[g, t] for g in unit_codes) + sum(inc[i, t] for i in inc_names) ==
             sum(D[f, t] for f in load_names) + sum(dec[d, t] for d in dec_names) +
-            sum(psd[s, t] for s in psd_names)
+            sum(psl[s, t] for s in psl_names)
     )
     # If the constraints are supposed to be soft constraints, add slacks
     # We need one slack for excess load and one for excess generation
@@ -428,7 +428,7 @@ function latex(::typeof(_con_nodal_net_injection_uc!))
     return """
         ``p^{net}_{n, t} = \\sum_{g \\in \\mathcal{G_n}} p_{g, t} + \\sum_{i \\in \\mathcal{I}_n} inc_{i, t} -
         \\sum_{f \\in \\mathcal{F}_n} D_{f, t} - \\sum_{d \\in \\mathcal{D}_n} dec_{d, t} -
-        \\sum_{s \\in \\mathcal{S}_n} psd_{s, t}, \\forall n \\in \\mathcal{V}, t \\in \\mathcal{T}``
+        \\sum_{s \\in \\mathcal{S}_n} psl_{s, t}, \\forall n \\in \\mathcal{V}, t \\in \\mathcal{T}``
         """
 end
 
@@ -475,12 +475,12 @@ function _con_nodal_net_injection!(fnm::FullNetworkModel{<:UC}, bus_names, D, un
     system = fnm.system
     inc_names_perbus = get_incs_per_bus(system)
     dec_names_perbus = get_decs_per_bus(system)
-    psd_names_perbus = get_psls_per_bus(system)
+    psl_names_perbus = get_psls_per_bus(system)
     @variable(model, p_net[n in bus_names, t in fnm.datetimes])
     p = model[:p]
     inc = model[:inc]
     dec = model[:dec]
-    psd = model[:psd]
+    psl = model[:psl]
     @constraint(
         model,
         nodal_net_injection[n in bus_names, t in fnm.datetimes],
@@ -489,7 +489,7 @@ function _con_nodal_net_injection!(fnm::FullNetworkModel{<:UC}, bus_names, D, un
             sum(inc[i, t] for i in inc_names_perbus[n]) -
             sum(D[f, t] for f in load_names_perbus[n]) -
             sum(dec[d, t] for d in dec_names_perbus[n]) -
-            sum(psd[s, t] for s in psd_names_perbus[n])
+            sum(psl[s, t] for s in psl_names_perbus[n])
     )
     return fnm
 end
