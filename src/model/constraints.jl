@@ -772,7 +772,7 @@ function con_thermal_branch!(fnm::FullNetworkModel; threshold=_SF_THRESHOLD)
     load_names_perbus = get_loads_per_bus(system)
 
     mon_branches = filter(br -> br.is_monitored, get_branches(system))
-    mon_branches_names = string.(collect(keys(mon_branches)))
+    mon_branches_names = collect(keys(mon_branches))
 
     ptdf_original = sortkeys(get_ptdf(system), dims=2)
     ptdf = _threshold(ptdf_original, threshold)

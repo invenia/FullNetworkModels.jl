@@ -1,7 +1,7 @@
 name = "FullNetworkModels"
 uuid = "73927447-18cb-4351-9246-c402eb8d0c47"
 authors = ["Invenia Technical Computing Corporation"]
-version = "9.1.0"
+version = "9.2.0"
 
 [deps]
 AxisKeys = "94b1ba4f-4ee9-5380-92f1-94cde586c3c5"
@@ -21,7 +21,7 @@ FullNetworkDataPrep = "0.25"
 FullNetworkSystems = "1"
 HiGHS = "1"
 InlineStrings = "1"
-JuMP = "1.1"
+JuMP = "1.2"
 Memento = "1.1"
 TimerOutputs = "0.5"
 julia = "1.5"

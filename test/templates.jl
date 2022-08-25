@@ -93,7 +93,7 @@ end
 
         # Verify that the branch flows are within bounds
         mon_branches = filter(br -> br.is_monitored, get_branches(TEST_SYSTEM))
-        mon_branches_names = string.(collect(keys(mon_branches)))
+        mon_branches_names = collect(keys(mon_branches))
 
         @testset "branch flow limits" for c in TEST_CONTINGENCIES
             for m in mon_branches_names
@@ -273,7 +273,7 @@ end
 
         # Verify that the branch flows are within bounds
         mon_branches = filter(br -> br.is_monitored, get_branches(TEST_SYSTEM))
-        mon_branches_names = string.(collect(keys(mon_branches)))
+        mon_branches_names = collect(keys(mon_branches))
         @testset "branch bounds" for c in TEST_CONTINGENCIES
             for m in mon_branches_names
                 t_branch = get_branches(TEST_SYSTEM_RT)[m]
