@@ -155,7 +155,7 @@ $(latex(con_ancillary_limits_ed!))
 The constraints added are named, respectively, `ancillary_max`, `ancillary_min`,
 `spin_and_sup_max`, and `off_sup_max`.
 """
-function con_ancillary_limits!(::Type{<:Grid}, fnm::FullNetworkModel{<:ED})
+function con_ancillary_limits!(G::Type{<:Grid}, fnm::FullNetworkModel{<:ED})
     system = fnm.system
     datetimes = fnm.datetimes
     unit_codes = keys(get_generators(system))
@@ -167,10 +167,10 @@ function con_ancillary_limits!(::Type{<:Grid}, fnm::FullNetworkModel{<:ED})
     U_reg = _keyed_to_dense(get_regulation_commitment(system))
 
     model = fnm.model
-    _con_ancillary_max!(model, unit_codes, datetimes, Pmax, Pregmax, U, U_reg)
-    _con_ancillary_min!(model, unit_codes, datetimes, Pmin, Pregmin, U, U_reg)
-    _con_spin_and_sup_max!(model, unit_codes, datetimes, Pmin, Pmax, U)
-    _con_off_sup_max!(model, unit_codes, datetimes, Pmin, Pmax, U)
+    _con_ancillary_max!(G, model, unit_codes, datetimes, Pmax, Pregmax, U, U_reg)
+    _con_ancillary_min!(G, model, unit_codes, datetimes, Pmin, Pregmin, U, U_reg)
+    _con_spin_and_sup_max!(G, model, unit_codes, datetimes, Pmin, Pmax, U)
+    _con_off_sup_max!(G, model, unit_codes, datetimes, Pmin, Pmax, U)
     return fnm
 end
 

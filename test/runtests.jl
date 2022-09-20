@@ -1,6 +1,6 @@
 using AxisKeys
 using Dates
-using ElectricityMarkets: MISO
+using ElectricityMarkets: Grid, MISO
 using FullNetworkDataPrep.TestUtils: build_test_system
 using FullNetworkDataPrep: DA, RT
 using FullNetworkModels
