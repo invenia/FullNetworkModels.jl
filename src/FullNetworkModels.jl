@@ -31,9 +31,9 @@ include("utils/accessors.jl")
 include("utils/feasibility_checks.jl")
 
 # Model functions
-include("model/constraints.jl")
-include("model/objectives.jl")
-include("model/variables.jl")
+include("model/general/constraints.jl")
+include("model/general/objectives.jl")
+include("model/general/variables.jl")
 
 # Templates
 include("templates/unit_commitment.jl")

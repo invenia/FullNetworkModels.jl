@@ -53,7 +53,7 @@ $(latex(con_thermal_branch!))
  - `datetimes=get_datetimes(system)`: The time periods considered in the model.
 """
 function (uc::UnitCommitment)(
-    ::Type{MISO}, system::SystemDA, solver=nothing, datetimes=get_datetimes(system)
+    G::Type{MISO}, system::SystemDA, solver=nothing, datetimes=get_datetimes(system)
 )
     sl = uc.slack
     branch_flows = uc.branch_flows
@@ -64,36 +64,36 @@ function (uc::UnitCommitment)(
     @timeit_debug get_timer("FNTimer") "initialise FNM" fnm = FullNetworkModel{UC}(system, datetimes)
     # Variables
     @timeit_debug get_timer("FNTimer") "add variables to model" begin
-        var_thermal_generation!(fnm)
-        var_commitment!(fnm)
-        var_startup_shutdown!(fnm)
-        var_ancillary_services!(fnm)
-        var_bids!(fnm)
+        var_thermal_generation!(G, fnm)
+        var_commitment!(G, fnm)
+        var_startup_shutdown!(G, fnm)
+        var_ancillary_services!(G, fnm)
+        var_bids!(G, fnm)
     end
     # Constraints
     @timeit_debug get_timer("FNTimer") "add constraints to model" begin
-        con_generation_limits!(fnm)
-        con_ancillary_limits!(fnm)
-        con_regulation_requirements!(fnm; slack=sl.ancillary_requirements)
-        con_operating_reserve_requirements!(fnm; slack=sl.ancillary_requirements)
-        con_energy_balance!(fnm; slack=sl.energy_balance)
-        con_must_run!(fnm)
-        con_availability!(fnm)
+        con_generation_limits!(G, fnm)
+        con_ancillary_limits!(G, fnm)
+        con_regulation_requirements!(G, fnm; slack=sl.ancillary_requirements)
+        con_operating_reserve_requirements!(G, fnm; slack=sl.ancillary_requirements)
+        con_energy_balance!(G, fnm; slack=sl.energy_balance)
+        con_must_run!(G, fnm)
+        con_availability!(G, fnm)
         if ramp_rates
-            con_generation_ramp_rates!(fnm; slack=sl.ramp_rates)
-            con_ancillary_ramp_rates!(fnm)
+            con_generation_ramp_rates!(G, fnm; slack=sl.ramp_rates)
+            con_ancillary_ramp_rates!(G, fnm)
         end
         branch_flows && @timeit_debug get_timer("FNTimer") "thermal branch constraints" begin
-            con_thermal_branch!(fnm; threshold)
+            con_thermal_branch!(G, fnm; threshold)
         end
     end
     # Objectives
     @timeit_debug get_timer("FNTimer") "add objectives to model" begin
-        obj_thermal_variable_cost!(fnm)
-        obj_thermal_noload_cost!(fnm)
-        obj_thermal_startup_cost!(fnm)
-        obj_ancillary_costs!(fnm)
-        obj_bids!(fnm)
+        obj_thermal_variable_cost!(G, fnm)
+        obj_thermal_noload_cost!(G, fnm)
+        obj_thermal_startup_cost!(G, fnm)
+        obj_ancillary_costs!(G, fnm)
+        obj_bids!(G, fnm)
     end
     if relax_integrality
         @timeit_debug get_timer("FNTimer") "relax integrality" JuMP.relax_integrality(fnm.model)

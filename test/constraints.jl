@@ -264,17 +264,18 @@ function _simple_template(
     system::System, ::Type{UC}, solver, datetimes=get_datetimes(system);
     slack=nothing
 )
+    G = Grid
     fnm = FullNetworkModel{UC}(system, datetimes)
-    var_thermal_generation!(fnm)
-    var_commitment!(fnm)
-    var_bids!(fnm)
-    con_generation_limits!(fnm)
-    con_energy_balance!(fnm; slack)
-    con_must_run!(fnm)
-    con_availability!(fnm)
-    obj_thermal_variable_cost!(fnm)
-    obj_thermal_noload_cost!(fnm)
-    obj_bids!(fnm)
+    var_thermal_generation!(G, fnm)
+    var_commitment!(G, fnm)
+    var_bids!(G, fnm)
+    con_generation_limits!(G, fnm)
+    con_energy_balance!(G, fnm; slack)
+    con_must_run!(G, fnm)
+    con_availability!(G, fnm)
+    obj_thermal_variable_cost!(G, fnm)
+    obj_thermal_noload_cost!(G, fnm)
+    obj_bids!(G, fnm)
     set_optimizer(fnm, solver)
     set_silent(fnm.model) # to reduce test verbosity
     set_names!(fnm)
@@ -286,11 +287,12 @@ function _simple_template(
     system::System, ::Type{ED}, solver, datetimes=get_datetimes(system);
     slack = nothing
 )
+    G = Grid
     fnm = FullNetworkModel{ED}(system, datetimes)
-    var_thermal_generation!(fnm)
-    con_generation_limits!(fnm)
-    con_energy_balance!(fnm; slack)
-    obj_thermal_variable_cost!(fnm)
+    var_thermal_generation!(G, fnm)
+    con_generation_limits!(G, fnm)
+    con_energy_balance!(G, fnm; slack)
+    obj_thermal_variable_cost!(G, fnm)
     set_optimizer(fnm, solver)
     set_silent(fnm.model) # to reduce test verbosity
     set_names!(fnm)
@@ -298,56 +300,57 @@ function _simple_template(
 end
 
 @testset "Constraints" begin
+    G = Grid
     @testset "con_generation_limits!" begin
-        @testset "ED with gen generator status as a parameter" begin
+        @testset "ED with generator status as a parameter" begin
             fnm = FullNetworkModel{ED}(TEST_SYSTEM_RT)
-            var_thermal_generation!(fnm)
-            con_generation_limits!(fnm)
+            var_thermal_generation!(G, fnm)
+            con_generation_limits!(G, fnm)
             tests_generation_limits(fnm)
         end
         @testset "UC with both thermal generation and commitment added" begin
             fnm = FullNetworkModel{UC}(TEST_SYSTEM)
-            var_thermal_generation!(fnm)
-            var_commitment!(fnm)
-            con_generation_limits!(fnm)
+            var_thermal_generation!(G, fnm)
+            var_commitment!(G, fnm)
+            con_generation_limits!(G, fnm)
             tests_generation_limits(fnm)
         end
     end
     @testset "Ancillary service constraints UC" begin
         fnm = FullNetworkModel{UC}(TEST_SYSTEM)
-        var_thermal_generation!(fnm)
-        var_commitment!(fnm)
-        var_ancillary_services!(fnm)
+        var_thermal_generation!(G, fnm)
+        var_commitment!(G, fnm)
+        var_ancillary_services!(G, fnm)
         @testset "con_ancillary_limits!" begin
-            con_ancillary_limits!(fnm)
+            con_ancillary_limits!(G, fnm)
             tests_ancillary_limits(fnm)
         end
         @testset "con_regulation_requirements!" begin
-            con_regulation_requirements!(fnm)
+            con_regulation_requirements!(G, fnm)
             set_names!(fnm; force=true)  # added new constraints which need names
             tests_regulation_requirements(fnm)
         end
         @testset "con_operating_reserve_requirements!" begin
-            con_operating_reserve_requirements!(fnm)
+            con_operating_reserve_requirements!(G, fnm)
             set_names!(fnm; force=true)  # added new constraints which need names
             tests_operating_reserve_requirements(fnm)
         end
     end
     @testset "Ancillary service constraints ED" begin
         fnm = FullNetworkModel{ED}(TEST_SYSTEM_RT)
-        var_thermal_generation!(fnm)
-        var_ancillary_services!(fnm)
+        var_thermal_generation!(G, fnm)
+        var_ancillary_services!(G, fnm)
         @testset "con_ancillary_limits!" begin
-            con_ancillary_limits!(fnm)
+            con_ancillary_limits!(G, fnm)
             tests_ancillary_limits(fnm)
         end
         @testset "con_regulation_requirements!" begin
-            con_regulation_requirements!(fnm)
+            con_regulation_requirements!(G, fnm)
             set_names!(fnm; force=true)  # added new constraints which need names
             tests_regulation_requirements(fnm)
         end
         @testset "con_operating_reserve_requirements!" begin
-            con_operating_reserve_requirements!(fnm)
+            con_operating_reserve_requirements!(G, fnm)
             set_names!(fnm; force=true)  # added new constraints which need names
             tests_operating_reserve_requirements(fnm)
         end
@@ -355,23 +358,23 @@ end
     @testset "Ramp constraints $T" for T in (UC, ED)
         @testset "Hard constraints" begin
             fnm = FullNetworkModel{T}(TEST_SYSTEM)
-            var_thermal_generation!(fnm)
-            var_commitment!(fnm)
-            var_startup_shutdown!(fnm)
-            var_ancillary_services!(fnm)
-            con_generation_ramp_rates!(fnm)
-            con_ancillary_ramp_rates!(fnm)
+            var_thermal_generation!(G, fnm)
+            var_commitment!(G, fnm)
+            var_startup_shutdown!(G, fnm)
+            var_ancillary_services!(G, fnm)
+            con_generation_ramp_rates!(G, fnm)
+            con_ancillary_ramp_rates!(G, fnm)
             tests_ramp_rates(fnm)
         end
 
         @testset "Soft constraints" begin
             fnm = FullNetworkModel{T}(TEST_SYSTEM)
-            var_thermal_generation!(fnm)
-            var_commitment!(fnm)
-            var_startup_shutdown!(fnm)
-            var_ancillary_services!(fnm)
-            con_generation_ramp_rates!(fnm; slack=1e4)
-            con_ancillary_ramp_rates!(fnm)
+            var_thermal_generation!(G, fnm)
+            var_commitment!(G, fnm)
+            var_startup_shutdown!(G, fnm)
+            var_ancillary_services!(G, fnm)
+            con_generation_ramp_rates!(G, fnm; slack=1e4)
+            con_ancillary_ramp_rates!(G, fnm)
             tests_ramp_rates(fnm; slack=1e4)
         end
     end
@@ -379,9 +382,9 @@ end
         ((UC, TEST_SYSTEM, nothing), (ED, TEST_SYSTEM_RT, 1e4))
         @testset "con_energy_balance!" begin
             fnm = FullNetworkModel{T}(t_system)
-            var_thermal_generation!(fnm)
-            T == UC && var_bids!(fnm)
-            con_energy_balance!(fnm, slack=slack)
+            var_thermal_generation!(G, fnm)
+            T == UC && var_bids!(G, fnm)
+            con_energy_balance!(G, fnm, slack=slack)
             tests_energy_balance(fnm)
         end
     end
@@ -433,9 +436,9 @@ end
         ((UC, TEST_SYSTEM), (ED, TEST_SYSTEM_RT))
         @testset "_con_branch_flow_limits!" begin
             fnm = FullNetworkModel{T}(t_system)
-            var_thermal_generation!(fnm)
-            T == UC && var_bids!(fnm)
-            con_thermal_branch!(fnm)
+            var_thermal_generation!(G, fnm)
+            T == UC && var_bids!(G, fnm)
+            con_thermal_branch!(G, fnm)
             tests_branch_flow_limits(T, fnm)
         end
     end

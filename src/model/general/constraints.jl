@@ -31,7 +31,7 @@ function latex(::typeof(_con_generation_limits_ed!))
 end
 
 """
-    con_generation_limits!(fnm::FullNetworkModel{UC})
+    con_generation_limits!(::Type{<:Grid}, fnm::FullNetworkModel{UC})
 
 Add generation limit constraints to the full network model:
 
@@ -39,7 +39,7 @@ $(latex(_con_generation_limits_uc!))
 
 The constraints added are named `generation_min` and `generation_max`.
 """
-function con_generation_limits!(fnm::FullNetworkModel{<:UC})
+function con_generation_limits!(::Type{<:Grid}, fnm::FullNetworkModel{<:UC})
     model = fnm.model
     system = fnm.system
     datetimes = fnm.datetimes
@@ -64,7 +64,7 @@ function con_generation_limits!(fnm::FullNetworkModel{<:UC})
 end
 
 """
-    con_generation_limits!(fnm::FullNetworkModel{ED})
+    con_generation_limits!(::Type{<:Grid}, fnm::FullNetworkModel{ED})
 
 Add generation limit constraints to the full network model:
 
@@ -72,7 +72,7 @@ $(latex(_con_generation_limits_ed!))
 
 The constraints added are named `generation_min` and `generation_max`.
 """
-function con_generation_limits!(fnm::FullNetworkModel{<:ED})
+function con_generation_limits!(::Type{<:Grid}, fnm::FullNetworkModel{<:ED})
     model = fnm.model
     system = fnm.system
     datetimes = fnm.datetimes
@@ -115,7 +115,7 @@ function latex(::typeof(con_ancillary_limits_ed!))
 end
 
 """
-    con_ancillary_limits!(fnm::FullNetworkModel{UC})
+    con_ancillary_limits!(::Type{<:Grid}, fnm::FullNetworkModel{UC})
 
 Add ancillary service limit constraints to the full network model:
 
@@ -124,7 +124,7 @@ $(latex(con_ancillary_limits_uc!))
 The constraints added are named, respectively, `ancillary_max`, `ancillary_min`,
 `regulation_max`, `spin_and_sup_max`, and `off_sup_max`.
 """
-function con_ancillary_limits!(fnm::FullNetworkModel{<:UC})
+function con_ancillary_limits!(G::Type{<:Grid}, fnm::FullNetworkModel{<:UC})
     system = fnm.system
     datetimes = fnm.datetimes
     unit_codes = keys(get_generators(system))
@@ -137,16 +137,16 @@ function con_ancillary_limits!(fnm::FullNetworkModel{<:UC})
     u = model[:u]
     u_reg = model[:u_reg]
 
-    _con_ancillary_max!(model, unit_codes, datetimes, Pmax, Pregmax, u, u_reg)
-    _con_ancillary_min!(model, unit_codes, datetimes, Pmin, Pregmin, u, u_reg)
-    _con_regulation_max!(model, unit_codes, datetimes, Pregmin, Pregmax, u_reg)
-    _con_spin_and_sup_max!(model, unit_codes, datetimes, Pmin, Pmax, u)
-    _con_off_sup_max!(model, unit_codes, datetimes, Pmin, Pmax, u)
+    _con_ancillary_max!(G, model, unit_codes, datetimes, Pmax, Pregmax, u, u_reg)
+    _con_ancillary_min!(G, model, unit_codes, datetimes, Pmin, Pregmin, u, u_reg)
+    _con_regulation_max!(G, model, unit_codes, datetimes, Pregmin, Pregmax, u_reg)
+    _con_spin_and_sup_max!(G, model, unit_codes, datetimes, Pmin, Pmax, u)
+    _con_off_sup_max!(G, model, unit_codes, datetimes, Pmin, Pmax, u)
     return fnm
 end
 
 """
-    con_ancillary_limits!(fnm::FullNetworkModel{ED})
+    con_ancillary_limits!(::Type{<:Grid}, fnm::FullNetworkModel{ED})
 
 Add ancillary service limit constraints to the full network model:
 
@@ -155,7 +155,7 @@ $(latex(con_ancillary_limits_ed!))
 The constraints added are named, respectively, `ancillary_max`, `ancillary_min`,
 `spin_and_sup_max`, and `off_sup_max`.
 """
-function con_ancillary_limits!(fnm::FullNetworkModel{<:ED})
+function con_ancillary_limits!(::Type{<:Grid}, fnm::FullNetworkModel{<:ED})
     system = fnm.system
     datetimes = fnm.datetimes
     unit_codes = keys(get_generators(system))
@@ -181,7 +181,7 @@ function latex(::typeof(con_regulation_requirements!))
 end
 
 """
-    con_regulation_requirements!(fnm::FullNetworkModel; slack)
+    con_regulation_requirements!(::Type{<:Grid}, fnm::FullNetworkModel; slack)
 
 Adds zonal and market-wide regulation requirements to the full network model:
 
@@ -191,15 +191,15 @@ Note:
     - For `fnm::FullNetworkModel{<:ED}` this defaults to a soft constraint (`slack=1e6`).
     - For `fnm::FullNetworkModel{<:UC}` this defaults to a hard constraint (`slack=nothing`).
 """
-function con_regulation_requirements!(fnm::FullNetworkModel{<:UC}; slack=nothing)
-    return con_regulation_requirements!(fnm, slack)
+function con_regulation_requirements!(G::Type{<:Grid}, fnm::FullNetworkModel{<:UC}; slack=nothing)
+    return con_regulation_requirements!(G, fnm, slack)
 end
 
-function con_regulation_requirements!(fnm::FullNetworkModel{<:ED}; slack=1e6)
-    return con_regulation_requirements!(fnm, slack)
+function con_regulation_requirements!(G::Type{<:Grid}, fnm::FullNetworkModel{<:ED}; slack=1e6)
+    return con_regulation_requirements!(G, fnm, slack)
 end
 
-function con_regulation_requirements!(fnm::FullNetworkModel, slack)
+function con_regulation_requirements!(::Type{<:Grid}, fnm::FullNetworkModel, slack)
     model = fnm.model
     system = fnm.system
     datetimes = fnm.datetimes
@@ -238,21 +238,21 @@ function latex(::typeof(con_operating_reserve_requirements!))
 end
 
 """
-    con_operating_reserve_requirements!(fnm::FullNetworkModel)
+    con_operating_reserve_requirements!(::Type{<:Grid}, fnm::FullNetworkModel)
 
 Adds zonal and market-wide operating reserve requirements to the full network model:
 
 $(latex(con_operating_reserve_requirements!))
 """
-function con_operating_reserve_requirements!(fnm::FullNetworkModel{<:UC}; slack=nothing)
-    return con_operating_reserve_requirements!(fnm, slack)
+function con_operating_reserve_requirements!(G::Type{<:Grid}, fnm::FullNetworkModel{<:UC}; slack=nothing)
+    return con_operating_reserve_requirements!(G, fnm, slack)
 end
 
-function con_operating_reserve_requirements!(fnm::FullNetworkModel{<:ED}; slack=1e6)
-    return con_operating_reserve_requirements!(fnm, slack)
+function con_operating_reserve_requirements!(G::Type{<:Grid}, fnm::FullNetworkModel{<:ED}; slack=1e6)
+    return con_operating_reserve_requirements!(G, fnm, slack)
 end
 
-function con_operating_reserve_requirements!(fnm::FullNetworkModel, slack)
+function con_operating_reserve_requirements!(::Type{<:Grid}, fnm::FullNetworkModel, slack)
     model = fnm.model
     system = fnm.system
     datetimes = fnm.datetimes
@@ -334,7 +334,7 @@ function latex(::typeof(con_energy_balance_uc!))
 end
 
 """
-    con_energy_balance!(fnm::FullNetworkModel{ED})
+    con_energy_balance!(::Type{<:Grid}, fnm::FullNetworkModel{ED})
 
 Adds the energy balance constraints to the full network model. The constraints ensure that
 the total generation in the system meets the demand in each time period, assuming no loss:
@@ -343,7 +343,7 @@ $(latex(con_energy_balance_ed!))
 
 The constraint is named `energy_balance`.
 """
-function con_energy_balance!(fnm::FullNetworkModel{<:ED}; slack=nothing)
+function con_energy_balance!(::Type{<:Grid}, fnm::FullNetworkModel{<:ED}; slack=nothing)
     model = fnm.model
     system = fnm.system
     datetimes = fnm.datetimes
@@ -371,7 +371,7 @@ function con_energy_balance!(fnm::FullNetworkModel{<:ED}; slack=nothing)
 end
 
 """
-    con_energy_balance!(fnm::FullNetworkModel{UC})
+    con_energy_balance!(::Type{<:Grid}, fnm::FullNetworkModel{UC})
 
 Adds the energy balance constraints to the full network model. The constraints ensure that
 the total generation in the system meets the demand in each time period, including bids such
@@ -381,7 +381,7 @@ $(latex(con_energy_balance_uc!))
 
 The constraint is named `energy_balance`.
 """
-function con_energy_balance!(fnm::FullNetworkModel{<:UC}; slack=nothing)
+function con_energy_balance!(::Type{<:Grid}, fnm::FullNetworkModel{<:UC}; slack=nothing)
     model = fnm.model
     system = fnm.system
     datetimes = fnm.datetimes
@@ -433,7 +433,9 @@ function latex(::typeof(_con_nodal_net_injection_uc!))
 end
 
 """
-    _con_nodal_net_injection!(fnm::FullNetworkModel{ED}, bus_names, D, unit_codes_perbus, load_names_perbus)
+    _con_nodal_net_injection!(
+        ::Type{<:Grid}, fnm::FullNetworkModel{ED}, bus_names, D, unit_codes_perbus, load_names_perbus
+    )
 
 Adds the Net Nodal Injection constraints to the full network model. The constraints calculate
 the net injection per node for all the buses of the system.
@@ -444,7 +446,9 @@ $(latex(_con_nodal_net_injection_ed!))
 
 The constraint is named `nodal_net_injection`.
 """
-function _con_nodal_net_injection!(fnm::FullNetworkModel{<:ED}, bus_names, D, unit_codes_perbus, load_names_perbus)
+function _con_nodal_net_injection!(
+    ::Type{<:Grid}, fnm::FullNetworkModel{<:ED}, bus_names, D, unit_codes_perbus, load_names_perbus
+)
     model = fnm.model
     @variable(model, p_net[n in bus_names, t in fnm.datetimes])
     p = model[:p]
@@ -459,7 +463,9 @@ function _con_nodal_net_injection!(fnm::FullNetworkModel{<:ED}, bus_names, D, un
 end
 
 """
-    _con_nodal_net_injection!(fnm::FullNetworkModel{UC}, bus_names, D, unit_codes_perbus, load_names_perbus)
+    _con_nodal_net_injection!(
+        ::Type{<:Grid}, fnm::FullNetworkModel{UC}, bus_names, D, unit_codes_perbus, load_names_perbus
+    )
 
 Adds the Net Nodal Injection constraints to the full network model. The constraints calculate
 the net injection per node for all the buses of the system.
@@ -470,7 +476,9 @@ $(latex(_con_nodal_net_injection_uc!))
 
 The constraint is named `nodal_net_injection`.
 """
-function _con_nodal_net_injection!(fnm::FullNetworkModel{<:UC}, bus_names, D, unit_codes_perbus, load_names_perbus)
+function _con_nodal_net_injection!(
+    ::Type{<:Grid}, fnm::FullNetworkModel{<:UC}, bus_names, D, unit_codes_perbus, load_names_perbus
+)
     model = fnm.model
     system = fnm.system
     inc_names_perbus = get_incs_per_bus(system)
@@ -503,6 +511,7 @@ end
 
 """
     _con_branch_flows!(
+        ::Type{<:Grid},
         fnm::FullNetworkModel,
         mon_branches_names,
         branches_names_monitored_or_out,
@@ -524,6 +533,7 @@ The constraints are named `branch_flows_base` for the base case and `branch_flow
 for the contingencies.
 """
 function _con_branch_flows!(
+    ::Type{<:Grid},
     fnm::FullNetworkModel,
     mon_branches_names,
     branches_names_monitored_or_out,
@@ -566,7 +576,14 @@ function latex(::typeof(_con_branch_flow_limits!))
 end
 
 """
-    _con_branch_flow_limits!(fnm::FullNetworkModel, mon_branches_names, mon_branches_rates_a, mon_branches_rates_b, contingencies)
+    _con_branch_flow_limits!(
+        ::Type{<:Grid},
+        fnm::FullNetworkModel,
+        mon_branches_names,
+        mon_branches_rates_a,
+        mon_branches_rates_b,
+        contingencies
+    )
 
 Adds the thermal branch constraints for all scenarios of the system to the full network model.
 The scenarios include the base case and selected contingencies. The constraints ensure that
@@ -585,6 +602,7 @@ The constraint is named `branch_flow_max` for the high boundary and `branch_flow
 for the lower boundary.
 """
 function _con_branch_flow_limits!(
+    ::Type{<:Grid},
     fnm::FullNetworkModel,
     mon_branches,
     mon_branches_names,
@@ -625,8 +643,10 @@ function latex(::typeof(_con_branch_flow_slacks!))
     ``0 <= sl2^{fl}_{m, t, c}``
     """
 end
+
 """
      _con_branch_flow_slacks!(
+        ::Type{<:Grid},
          fnm::FullNetworkModel,
          mon_branches_names,
          mon_branches_rates_a,
@@ -670,6 +690,7 @@ The constraint is named `branch_flow_sl1_max` for the first step slack and `bran
 for the second step slack.
 """
 function _con_branch_flow_slacks!(
+    ::Type{<:Grid},
     fnm::FullNetworkModel,
     mon_branches,
     mon_branches_names,
@@ -740,7 +761,7 @@ end
 
 
 """
-    con_thermal_branch!(fnm::FullNetworkModel)
+    con_thermal_branch!(::Type{<:Grid}, fnm::FullNetworkModel)
 
 Adds the nodal net injections, branch flows, and branch flow limits constraints for the case
 base and the selected contingencyies to the full network model. The nodal net injection
@@ -763,7 +784,7 @@ $(latex(_con_branch_flow_limits!))
 The constraints are named `nodal_net_injection`, `branch_flows_base`, `branch_flows_conting`,
 `branch_flow_max` (for the high boundary) and `branch_flow_min` (for the lower boundary) respectively.
 """
-function con_thermal_branch!(fnm::FullNetworkModel; threshold=_SF_THRESHOLD)
+function con_thermal_branch!(G::Type{<:Grid}, fnm::FullNetworkModel; threshold=_SF_THRESHOLD)
     #Shared Data
     system = fnm.system
     bus_names = sort(keys(get_buses(system)))
@@ -786,9 +807,10 @@ function con_thermal_branch!(fnm::FullNetworkModel; threshold=_SF_THRESHOLD)
     # out under some contingency.
     branches_names_monitored_or_out = union(branches_out_names, mon_branches_names)
     #Add the nodal net injections for the base-case
-    _con_nodal_net_injection!(fnm, bus_names, D, unit_codes_perbus, load_names_perbus)
+    _con_nodal_net_injection!(G, fnm, bus_names, D, unit_codes_perbus, load_names_perbus)
     #Add the branch flows constraints for all scenarios
     _con_branch_flows!(
+        G,
         fnm,
         mon_branches_names,
         branches_names_monitored_or_out,
@@ -796,12 +818,14 @@ function con_thermal_branch!(fnm::FullNetworkModel; threshold=_SF_THRESHOLD)
         lodfs_converted
     )
     _con_branch_flow_slacks!(
+        G,
         fnm,
         mon_branches,
         mon_branches_names,
         scenarios,
     )
     _con_branch_flow_limits!(
+        G,
         fnm,
         mon_branches,
         mon_branches_names,
@@ -811,7 +835,9 @@ function con_thermal_branch!(fnm::FullNetworkModel; threshold=_SF_THRESHOLD)
 end
 
 "Upper bound on generation + ancillary services"
-function _con_ancillary_max!(model::Model, unit_codes, datetimes, Pmax, Pregmax, u, u_reg)
+function _con_ancillary_max!(
+    ::Type{<:Grid}, model::Model, unit_codes, datetimes, Pmax, Pregmax, u, u_reg
+)
     p = model[:p]
     r_reg = model[:r_reg]
     r_spin = model[:r_spin]
@@ -840,7 +866,9 @@ function _con_ancillary_max!(model::Model, unit_codes, datetimes, Pmax, Pregmax,
 end
 
 "Lower bound on generation - ancillary services"
-function _con_ancillary_min!(model::Model, unit_codes, datetimes, Pmin, Pregmin, u, u_reg)
+function _con_ancillary_min!(
+    ::Type{<:Grid}, model::Model, unit_codes, datetimes, Pmin, Pregmin, u, u_reg
+)
     p = model[:p]
     r_reg = model[:r_reg]
     # `u`/`u_reg` may be variables or parameters (which we'd usually write as `U`/`U_reg`).
@@ -855,7 +883,9 @@ end
 
 # For UC only, so `u_reg` should be a variable here.
 "Upper bound on regulation"
-function _con_regulation_max!(model::Model, unit_codes, datetimes, Pregmin, Pregmax, u_reg)
+function _con_regulation_max!(
+    ::Type{<:Grid}, model::Model, unit_codes, datetimes, Pregmin, Pregmax, u_reg
+)
     r_reg = model[:r_reg]
     @constraint(
         model,
@@ -866,7 +896,9 @@ function _con_regulation_max!(model::Model, unit_codes, datetimes, Pregmin, Preg
 end
 
 "Upper bound on spinning + online supplemental reserves"
-function _con_spin_and_sup_max!(model::Model, unit_codes, datetimes, Pmin, Pmax, u)
+function _con_spin_and_sup_max!(
+    ::Type{<:Grid}, model::Model, unit_codes, datetimes, Pmin, Pmax, u
+)
     r_spin = model[:r_spin]
     r_on_sup = model[:r_on_sup]
     indices_union = union(eachindex(r_spin), eachindex(r_on_sup))
@@ -891,7 +923,9 @@ function _con_spin_and_sup_max!(model::Model, unit_codes, datetimes, Pmin, Pmax,
 end
 
 "Upper bound on offline supplemental reserve"
-function _con_off_sup_max!(model::Model, unit_codes, datetimes, Pmin, Pmax, u)
+function _con_off_sup_max!(
+    ::Type{<:Grid}, model::Model, unit_codes, datetimes, Pmin, Pmax, u
+)
     r_off_sup = model[:r_off_sup]
     # `u` may be a variable or a parameter (which we'd usually write as `U`).
     @constraint(
@@ -903,7 +937,7 @@ function _con_off_sup_max!(model::Model, unit_codes, datetimes, Pmin, Pmax, u)
 end
 
 """
-    con_ancillary_ramp_rates!(fnm::FullNetworkModel)
+    con_ancillary_ramp_rates!(::Type{<:Grid}, fnm::FullNetworkModel)
 
 Adds ancillary service ramp rate constraints to the full network model.
 
@@ -911,7 +945,7 @@ $(latex(con_ancillary_ramp_rates!))
 
 The constraints are named `ramp_regulation` and `ramp_spin_sup`.
 """
-function con_ancillary_ramp_rates!(fnm::FullNetworkModel)
+function con_ancillary_ramp_rates!(::Type{<:Grid}, fnm::FullNetworkModel)
     model = fnm.model
     system = fnm.system
     datetimes = fnm.datetimes
@@ -950,7 +984,7 @@ function con_ancillary_ramp_rates!(fnm::FullNetworkModel)
 end
 
 """
-    con_generation_ramp_rates!(fnm::FullNetworkModel; slack=nothing)
+    con_generation_ramp_rates!(::Type{<:Grid}, fnm::FullNetworkModel; slack=nothing)
 
 Adds generation ramp rate constraints to the full network model.
 
@@ -958,7 +992,7 @@ $(latex(con_generation_ramp_rates!))
 
 The constraints are named `ramp_up`, `ramp_up_initial`, `ramp_down`, and `ramp_down_initial`.
 """
-function con_generation_ramp_rates!(fnm::FullNetworkModel; slack=nothing)
+function con_generation_ramp_rates!(::Type{<:Grid}, fnm::FullNetworkModel; slack=nothing)
     model = fnm.model
     system = fnm.system
     datetimes = fnm.datetimes
@@ -1056,7 +1090,7 @@ function latex(::typeof(con_must_run!))
 end
 
 """
-    con_must_run!(fnm::FullNetworkModel)
+    con_must_run!(::Type{<:Grid}, fnm::FullNetworkModel)
 
 Ensure that the units with must run flag set to 1 are committed.
 
@@ -1064,7 +1098,7 @@ $(latex(con_must_run!))
 
 The constraint is named `must_run`.
 """
-function con_must_run!(fnm::FullNetworkModel)
+function con_must_run!(::Type{<:Grid}, fnm::FullNetworkModel)
     unit_codes = keys(get_generators(fnm.system))
     MR = _keyed_to_dense(get_must_run(fnm.system))
     u = fnm.model[:u]
@@ -1083,7 +1117,7 @@ function latex(::typeof(con_availability!))
 end
 
 """
-    con_availability!(fnm::FullNetworkModel)
+    con_availability!(::Type{<:Grid}, fnm::FullNetworkModel)
 
 Ensure that unavailable units cannot be committed; units that are available may or may not be.
 
@@ -1091,7 +1125,7 @@ $(latex(con_availability!))
 
 The constraint is named `availability`.
 """
-function con_availability!(fnm::FullNetworkModel)
+function con_availability!(::Type{<:Grid}, fnm::FullNetworkModel)
     unit_codes = keys(get_generators(fnm.system))
     A = _keyed_to_dense(get_availability(fnm.system))
     u = fnm.model[:u]
