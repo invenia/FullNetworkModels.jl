@@ -1,7 +1,7 @@
 @testset "API functions" begin
 
     @testset "Prints" begin
-        G = Grid
+        G = FakeGrid
         fnm = FullNetworkModel{UC}(TEST_SYSTEM)
         t1 = DateTime(2017, 12, 15)
         t2 = DateTime(2017, 12, 15, 23)

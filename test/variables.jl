@@ -60,7 +60,7 @@ function tests_bid_variables(fnm, label, f)
 end
 
 @testset "Variables" begin
-    G = Grid
+    G = FakeGrid
     fnm = FullNetworkModel{UC}(TEST_SYSTEM)
     @testset "var_thermal_generation!" begin
         var_thermal_generation!(G, fnm)

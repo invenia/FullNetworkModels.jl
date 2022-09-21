@@ -74,7 +74,7 @@ function tests_ancillary_costs(fnm)
 end
 
 @testset "Objectives" begin
-    G = Grid
+    G = FakeGrid
     @testset "obj_thermal_variable_cost!" begin
         t = first(get_datetimes(TEST_SYSTEM))
         @testset "Adding cost before generation variables throws error" begin

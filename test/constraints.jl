@@ -264,7 +264,7 @@ function _simple_template(
     system::System, ::Type{UC}, solver, datetimes=get_datetimes(system);
     slack=nothing
 )
-    G = Grid
+    G = FakeGrid
     fnm = FullNetworkModel{UC}(system, datetimes)
     var_thermal_generation!(G, fnm)
     var_commitment!(G, fnm)
@@ -287,7 +287,7 @@ function _simple_template(
     system::System, ::Type{ED}, solver, datetimes=get_datetimes(system);
     slack = nothing
 )
-    G = Grid
+    G = FakeGrid
     fnm = FullNetworkModel{ED}(system, datetimes)
     var_thermal_generation!(G, fnm)
     con_generation_limits!(G, fnm)
@@ -300,7 +300,7 @@ function _simple_template(
 end
 
 @testset "Constraints" begin
-    G = Grid
+    G = FakeGrid
     @testset "con_generation_limits!" begin
         @testset "ED with generator status as a parameter" begin
             fnm = FullNetworkModel{ED}(TEST_SYSTEM_RT)
