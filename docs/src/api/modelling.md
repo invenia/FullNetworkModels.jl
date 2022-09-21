@@ -4,7 +4,7 @@
 
 ```@autodocs
 Modules = [FullNetworkModels]
-Pages = ["model/variables.jl"]
+Pages = ["model/general/variables.jl"]
 Private = false
 ```
 
@@ -12,7 +12,7 @@ Private = false
 
 ```@autodocs
 Modules = [FullNetworkModels]
-Pages = ["model/objectives.jl"]
+Pages = ["model/general/objectives.jl"]
 Private = false
 ```
 
@@ -20,6 +20,6 @@ Private = false
 
 ```@autodocs
 Modules = [FullNetworkModels]
-Pages = ["model/constraints.jl"]
+Pages = ["model/general/constraints.jl"]
 Private = false
 ```
