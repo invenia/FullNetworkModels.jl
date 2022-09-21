@@ -1,6 +1,7 @@
 @testset "API functions" begin
 
     @testset "Prints" begin
+        G = FakeGrid
         fnm = FullNetworkModel{UC}(TEST_SYSTEM)
         t1 = DateTime(2017, 12, 15)
         t2 = DateTime(2017, 12, 15, 23)
@@ -12,7 +13,7 @@
             Model formulation: 0 variables and 0 constraints
             """
         )
-        var_commitment!(fnm)
+        var_commitment!(G, fnm)
         n_units = length(fnm.datetimes) * length(get_generators(fnm.system))
         @test sprint(show, fnm) == strip("""
             FullNetworkModel{UnitCommitment}
@@ -22,7 +23,7 @@
               Variable names: u
             """
         )
-        con_must_run!(fnm)
+        con_must_run!(G, fnm)
         @test sprint(show, fnm) == strip("""
             FullNetworkModel{UnitCommitment}
             Time periods: $t1 to $t2

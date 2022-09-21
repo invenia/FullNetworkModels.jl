@@ -15,14 +15,14 @@ function latex(::typeof(var_thermal_generation!))
 end
 
 """
-    var_thermal_generation!(fnm::FullNetworkModel)
+    var_thermal_generation!(::Type{<:Grid}, fnm::FullNetworkModel)
 
 Adds the thermal generation variables `p` indexed, respectively, by the unit codes of the
 thermal generators in `system` and by the time periods considered:
 
 $(latex(var_thermal_generation!))
 """
-function var_thermal_generation!(fnm::FullNetworkModel)
+function var_thermal_generation!(::Type{<:Grid}, fnm::FullNetworkModel)
     unit_codes = keys(get_generators(fnm.system))
     @variable(fnm.model, p[g in unit_codes, t in fnm.datetimes] >= 0)
     return fnm
@@ -35,14 +35,14 @@ function latex(::typeof(var_commitment!))
 end
 
 """
-    var_commitment!(fnm::FullNetworkModel)
+    var_commitment!(::Type{<:Grid}, fnm::FullNetworkModel)
 
 Adds the binary commitment variables `u` indexed, respectively, by the unit codes of the
 thermal generators in `system` and by the time periods considered:
 
 $(latex(var_commitment!))
 """
-function var_commitment!(fnm::FullNetworkModel)
+function var_commitment!(::Type{<:Grid}, fnm::FullNetworkModel)
     unit_codes = keys(get_generators(fnm.system))
     @variable(fnm.model, u[g in unit_codes, t in fnm.datetimes], Bin)
     return fnm
@@ -63,7 +63,7 @@ function latex(::typeof(_con_startup_shutdown!))
 end
 
 """
-    var_startup_shutdown!(fnm::FullNetworkModel)
+    var_startup_shutdown!(::Type{<:Grid}, fnm::FullNetworkModel)
 
 Adds the variables `v` and `w` representing the start-up and shutdown of generators,
 respectively, indexed by the unit codes of the thermal generators in `system` and by the
@@ -72,7 +72,7 @@ time periods considered:
 $(latex(_con_startup_shutdown!))
 $(latex(_var_startup_shutdown!))
 """
-function var_startup_shutdown!(fnm::FullNetworkModel)
+function var_startup_shutdown!(::Type{<:Grid}, fnm::FullNetworkModel)
     model = fnm.model
     system = fnm.system
     datetimes = fnm.datetimes
@@ -132,7 +132,7 @@ function latex(::typeof(_con_reg_commitment!))
 end
 
 """
-    var_ancillary_services!(fnm::FullNetworkModel)
+    var_ancillary_services!(G::Type{<:Grid}, fnm::FullNetworkModel)
 
 Adds the ancillary service variables indexed, respectively, by the unit codes of the thermal
 generators in system and by the datetimes considered.
@@ -147,21 +147,21 @@ For UC, there is the additional variable regulation commitment, named `u_reg`.
 $(latex(_var_reg_commitment!))
 $(latex(_con_reg_commitment!))
 """
-function var_ancillary_services!(fnm::FullNetworkModel{<:UC})
+function var_ancillary_services!(G::Type{<:Grid}, fnm::FullNetworkModel{<:UC})
     unit_codes = keys(get_generators(fnm.system))
-    _var_ancillary_services!(fnm, unit_codes, fnm.datetimes)
+    _var_ancillary_services!(G, fnm, unit_codes, fnm.datetimes)
     _var_reg_commitment!(fnm.model, unit_codes, fnm.datetimes)
     _con_reg_commitment!(fnm.model, unit_codes, fnm.datetimes)
     return fnm
 end
 
-function var_ancillary_services!(fnm::FullNetworkModel{<:ED})
+function var_ancillary_services!(G::Type{<:Grid}, fnm::FullNetworkModel{<:ED})
     unit_codes = keys(get_generators(fnm.system))
-    _var_ancillary_services!(fnm, unit_codes, fnm.datetimes)
+    _var_ancillary_services!(G, fnm, unit_codes, fnm.datetimes)
     return fnm
 end
 
-function _var_ancillary_services!(fnm::FullNetworkModel, unit_codes, datetimes)
+function _var_ancillary_services!(::Type{<:Grid}, fnm::FullNetworkModel, unit_codes, datetimes)
     system = fnm.system
     model = fnm.model
     reg_pairs = _provider_indices(get_regulation_offers(system))
@@ -205,7 +205,7 @@ function latex(::typeof(var_bids!))
 end
 
 """
-    var_bids!(fnm::FullNetworkModel)
+    var_bids!(::Type{<:Grid}, fnm::FullNetworkModel)
 
 Adds the virtual and price-sensitive demand bid variables indexed, respectively, by the bid
 names and time periods.
@@ -214,7 +214,7 @@ $(latex(var_bids!))
 
 The created variables are named `inc`, `dec`, `psl`.
 """
-function var_bids!(fnm::FullNetworkModel)
+function var_bids!(::Type{<:Grid}, fnm::FullNetworkModel)
     inc_names = axiskeys(get_increments(fnm.system), 1)
     dec_names = axiskeys(get_decrements(fnm.system), 1)
     psl_names = axiskeys(get_price_sensitive_loads(fnm.system), 1)

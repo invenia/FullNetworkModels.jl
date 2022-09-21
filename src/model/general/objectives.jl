@@ -28,7 +28,7 @@ function latex(::typeof(_var_thermal_gen_blocks_ed!))
 end
 
 """
-    obj_thermal_variable_cost!(fnm::FullNetworkModel{UC})
+    obj_thermal_variable_cost!(::Type{<:Grid}, fnm::FullNetworkModel{UC})
 
 Adds the variable cost related to thermal generators by using auxiliary generation variables
 that multiply the offer prices. The variables `p_aux` are indexed, respectively, by the unit
@@ -47,7 +47,7 @@ Or if a `ED` model, adds the constraints:
 
 $(latex(_var_thermal_gen_blocks_ed!))
 """
-function obj_thermal_variable_cost!(fnm::FullNetworkModel{T}) where T
+function obj_thermal_variable_cost!(::Type{<:Grid}, fnm::FullNetworkModel{T}) where T
     model = fnm.model
     system = fnm.system
     datetimes = fnm.datetimes
@@ -74,13 +74,13 @@ function latex(::typeof(obj_thermal_noload_cost!))
 end
 
 """
-    obj_thermal_noload_cost!(fnm::FullNetworkModel)
+    obj_thermal_noload_cost!(::Type{<:Grid}, fnm::FullNetworkModel)
 
 Adds the no-load cost of thermal generators to the model formulation:
 
 $(latex(obj_thermal_noload_cost!))
 """
-function obj_thermal_noload_cost!(fnm::FullNetworkModel)
+function obj_thermal_noload_cost!(::Type{<:Grid}, fnm::FullNetworkModel)
     return _obj_static_cost!(fnm, :u, :no_load_cost)
 end
 
@@ -91,13 +91,13 @@ function latex(::typeof(obj_thermal_startup_cost!))
 end
 
 """
-    obj_thermal_startup_cost!(fnm::FullNetworkModel)
+    obj_thermal_startup_cost!(::Type{<:Grid}, fnm::FullNetworkModel)
 
 Adds the start-up cost of thermal generators to the model formulation:
 
 $(latex(obj_thermal_startup_cost!))
 """
-function obj_thermal_startup_cost!(fnm::FullNetworkModel)
+function obj_thermal_startup_cost!(::Type{<:Grid}, fnm::FullNetworkModel)
     return _obj_static_cost!(fnm, :v, :startup_cost)
 end
 
@@ -117,7 +117,7 @@ Adds to the objective function:
 
 $(latex(obj_ancillary_costs!))
 """
-function obj_ancillary_costs!(fnm::FullNetworkModel)
+function obj_ancillary_costs!(::Type{<:Grid}, fnm::FullNetworkModel)
     _obj_thermal_linear_cost!(fnm, :r_reg, get_regulation_offers)
     _obj_thermal_linear_cost!(fnm, :r_spin, get_spinning_offers)
     _obj_thermal_linear_cost!(fnm, :r_on_sup, get_on_supplemental_offers)
@@ -171,7 +171,7 @@ function latex(::typeof(_var_bid_blocks!))
 end
 
 """
-    obj_bids!(fnm::FullNetworkModel)
+    obj_bids!(::Type{<:Grid}, fnm::FullNetworkModel)
 
 Adds the bid curves related to virtual supply and demand bids as well as price-sensitive
 demand bids. Uses auxiliary variables that multiply the bid prices. The variables `*_aux`
@@ -186,7 +186,7 @@ And adds the following constraints:
 
 $(latex(_var_bid_blocks!))
 """
-function obj_bids!(fnm::FullNetworkModel)
+function obj_bids!(::Type{<:Grid}, fnm::FullNetworkModel)
     model = fnm.model
     system = fnm.system
     datetimes = fnm.datetimes

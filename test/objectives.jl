@@ -74,6 +74,7 @@ function tests_ancillary_costs(fnm)
 end
 
 @testset "Objectives" begin
+    G = FakeGrid
     @testset "obj_thermal_variable_cost!" begin
         t = first(get_datetimes(TEST_SYSTEM))
         @testset "Adding cost before generation variables throws error" begin
@@ -83,8 +84,8 @@ end
         end
         @testset "Economic dispatch" begin
             fnm = FullNetworkModel{ED}(TEST_SYSTEM_RT)
-            var_thermal_generation!(fnm)
-            obj_thermal_variable_cost!(fnm)
+            var_thermal_generation!(G, fnm)
+            obj_thermal_variable_cost!(G, fnm)
             tests_thermal_variable_cost(fnm)
             # The output of these `sprint`s change depending on the value of U; we assume
             # it's always 1 since that's how we're defining the test system.
@@ -95,9 +96,9 @@ end
         end
         @testset "Unit commitment" begin
             fnm = FullNetworkModel{UC}(TEST_SYSTEM)
-            var_thermal_generation!(fnm)
-            var_commitment!(fnm)
-            obj_thermal_variable_cost!(fnm)
+            var_thermal_generation!(G, fnm)
+            var_commitment!(G, fnm)
+            obj_thermal_variable_cost!(G, fnm)
             tests_thermal_variable_cost(fnm)
             @test sprint(show, constraint_by_name(fnm.model, "gen_block_limits[7,$t,1]")) ==
                 "gen_block_limits[7,$t,1] : -0.5 u[7,$t] + p_aux[7,$t,1] ≤ 0.0"
@@ -105,32 +106,32 @@ end
     end
     @testset "obj_ancillary_costs! $T" for T in (UC, ED)
         fnm = FullNetworkModel{T}(TEST_SYSTEM)
-        var_commitment!(fnm)
-        var_ancillary_services!(fnm)
-        obj_ancillary_costs!(fnm)
+        var_commitment!(G, fnm)
+        var_ancillary_services!(G, fnm)
+        obj_ancillary_costs!(G, fnm)
         tests_ancillary_costs(fnm)
     end
     @testset "obj_thermal_noload_cost!" begin
         fnm = FullNetworkModel{UC}(TEST_SYSTEM)
-        var_thermal_generation!(fnm)
-        var_commitment!(fnm)
-        obj_thermal_variable_cost!(fnm)
-        obj_thermal_noload_cost!(fnm)
+        var_thermal_generation!(G, fnm)
+        var_commitment!(G, fnm)
+        obj_thermal_variable_cost!(G, fnm)
+        obj_thermal_noload_cost!(G, fnm)
         tests_static_noload_cost(fnm)
     end
     @testset "obj_thermal_startup_cost!" begin
         fnm = FullNetworkModel{UC}(TEST_SYSTEM)
-        var_commitment!(fnm)
-        var_startup_shutdown!(fnm)
-        obj_thermal_noload_cost!(fnm)
-        obj_thermal_startup_cost!(fnm)
+        var_commitment!(G, fnm)
+        var_startup_shutdown!(G, fnm)
+        obj_thermal_noload_cost!(G, fnm)
+        obj_thermal_startup_cost!(G, fnm)
         tests_static_startup_cost(fnm)
     end
     @testset "obj_bids!" begin
         system = build_test_system(MISO, DA; n_periods=2)
         fnm = FullNetworkModel{UC}(system)
-        var_bids!(fnm)
-        obj_bids!(fnm)
+        var_bids!(G, fnm)
+        obj_bids!(G, fnm)
         # Check if objective function accurately reflects the bids in the system
         # All bids have just one block equal to $100/pu
         # https://gitlab.invenia.ca/invenia/research/FullNetworkDataPrep.jl/-/blob/16f570e9116d86a2ce65e2e08aa702cefa268cc5/src/testutils.jl#L162

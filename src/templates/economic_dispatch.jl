@@ -42,7 +42,7 @@ Arguments:
  - `datetimes=get_datetimes(system)`: The time periods considered in the model.
 """
 function (ed::EconomicDispatch)(
-    ::Type{MISO}, system::SystemRT, solver=nothing, datetimes=get_datetimes(system)
+    G::Type{MISO}, system::SystemRT, solver=nothing, datetimes=get_datetimes(system)
 )
     sl = ed.slack
     branch_flows = ed.branch_flows
@@ -51,24 +51,24 @@ function (ed::EconomicDispatch)(
     @timeit_debug get_timer("FNTimer") "initialise FNM" fnm = FullNetworkModel{ED}(system, datetimes)
     # Variables
     @timeit_debug get_timer("FNTimer") "add variables to model" begin
-        var_thermal_generation!(fnm)
-        var_ancillary_services!(fnm)
+        var_thermal_generation!(G, fnm)
+        var_ancillary_services!(G, fnm)
     end
     # Constraints
     @timeit_debug get_timer("FNTimer") "add constraints to model" begin
-        con_generation_limits!(fnm)
-        con_ancillary_limits!(fnm)
-        con_regulation_requirements!(fnm; slack=sl.ancillary_requirements)
-        con_operating_reserve_requirements!(fnm; slack=sl.ancillary_requirements)
-        con_energy_balance!(fnm; slack=sl.energy_balance)
+        con_generation_limits!(G, fnm)
+        con_ancillary_limits!(G, fnm)
+        con_regulation_requirements!(G, fnm; slack=sl.ancillary_requirements)
+        con_operating_reserve_requirements!(G, fnm; slack=sl.ancillary_requirements)
+        con_energy_balance!(G, fnm; slack=sl.energy_balance)
         branch_flows && @timeit_debug get_timer("FNTimer") "thermal branch constraints" begin
-            con_thermal_branch!(fnm; threshold)
+            con_thermal_branch!(G, fnm; threshold)
         end
     end
     # Objectives
     @timeit_debug get_timer("FNTimer") "add objectives to model" begin
-        obj_thermal_variable_cost!(fnm)
-        obj_ancillary_costs!(fnm)
+        obj_thermal_variable_cost!(G, fnm)
+        obj_ancillary_costs!(G, fnm)
     end
     @timeit_debug get_timer("FNTimer") "set optimizer" set_optimizer(fnm, solver; add_bridges=false)
     return fnm

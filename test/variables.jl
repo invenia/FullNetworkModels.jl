@@ -60,30 +60,31 @@ function tests_bid_variables(fnm, label, f)
 end
 
 @testset "Variables" begin
+    G = FakeGrid
     fnm = FullNetworkModel{UC}(TEST_SYSTEM)
     @testset "var_thermal_generation!" begin
-        var_thermal_generation!(fnm)
+        var_thermal_generation!(G, fnm)
         tests_thermal_variable(fnm, "p")
         @test !has_variable(fnm.model, "u")
     end
     @testset "var_commitment!" begin
-        var_commitment!(fnm)
+        var_commitment!(G, fnm)
         tests_commitment(fnm)
     end
     @testset "var_startup_shutdown!" begin
-        var_startup_shutdown!(fnm)
+        var_startup_shutdown!(G, fnm)
         set_names!(fnm; force=true)  # added new variables which need names
         tests_startup_shutdown(fnm)
     end
     @testset "var_ancillary_services!" begin
-        var_ancillary_services!(fnm)
+        var_ancillary_services!(G, fnm)
         tests_thermal_variable(fnm, "u_reg")
         @testset for service in ("r_reg", "r_spin", "r_on_sup", "r_off_sup")
             tests_ancillary_variable(fnm, service)
         end
     end
     @testset "var_bids!" begin
-        var_bids!(fnm)
+        var_bids!(G, fnm)
         tests_bid_variables(fnm, "inc", get_increments)
         tests_bid_variables(fnm, "dec", get_decrements)
         tests_bid_variables(fnm, "psl", get_price_sensitive_loads)
